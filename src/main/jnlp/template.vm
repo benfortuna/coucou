@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jnlp spec="$jnlpspec" codebase="$project.Url" href="$outputFile">
+<jnlp spec="$jnlpspec" codebase="$project.Url/webstart" href="$outputFile">
   <information>
     <title>$project.Name</title>
     <vendor>$project.Organization.Name</vendor>
