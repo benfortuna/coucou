@@ -11,7 +11,7 @@
 	<name>Coucou</name>
 	<version>0.0.1-SNAPSHOT</version>
 	<description>Online communications tool</description>
-	<url>http://basetools.org/coucou/webstart</url>
+	<url>http://basetools.org/coucou</url>
 	<dependencies>
 		<dependency>
 			<groupId>net.java.dev.glazedlists</groupId>
@@ -19,31 +19,21 @@
 			<version>1.8.0</version>
 		</dependency>
 		<dependency>
-			<groupId>net.java.desktop.substance</groupId>
-			<artifactId>substance</artifactId>
-			<version>5.3</version>
-			<scope>system</scope>
-			<systemPath>/media/2C47-5097/Development/coucou/lib/substance.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>net.java.desktop.flamingo</groupId>
-			<artifactId>flamingo</artifactId>
-			<version>4.2</version>
-			<scope>system</scope>
-			<systemPath>/media/2C47-5097/Development/coucou/lib/flamingo.jar</systemPath>
-		</dependency>
-		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy</artifactId>
 			<version>1.6.5</version>
 		</dependency>
-        <dependency>
+		<dependency>
             <groupId>org.codehaus.groovy.maven.runtime</groupId>
             <artifactId>gmaven-runtime-1.6</artifactId>
             <version>1.0-rc-5</version>
             <scope>provided</scope>
         </dependency>
 	</dependencies>
+	<scm>
+		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>
+		<developerConnection>scm:svn:http://svn.mnode.org/base/coucou/trunk</developerConnection>
+	</scm>
 
 	<build>
 		<plugins>
