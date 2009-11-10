@@ -9,7 +9,7 @@ import javax.swing.JFrame
 import javax.swing.JTabbedPane
 import javax.swing.JScrollPane
 import javax.swing.UIManager
-
+import org.jdesktop.swingx.JXStatusBar//import org.jdesktop.swingx.ResizeBehavior
 import groovy.swing.SwingXBuilder
 import griffon.builder.flamingo.FlamingoBuilder
 
@@ -22,14 +22,19 @@ class CoucouFrame {
 
         def headingFont = new Font('Arial', Font.PLAIN, 14)
 
+//        def statusBarConstraints = new JXStatusBar.Constraint(ResizeBehavior.FIXED)
+        
         swing.frame(title: 'Coucou', defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
             size: [800, 500], show: true, locationRelativeTo: null) {
-            lookAndFeel("system")
+//            lookAndFeel('substance')
             actions() {
                 action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
                 action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'))
                 action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                 action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/icons/liquidicity/exit.png'), accelerator: shortcut('Q'), closure: { dispose() })
+
+                action(id: 'busyAction', name: 'Busy', smallIcon: imageIcon('/icons/liquidicity/busy.png'), closure: {})
+                action(id: 'invisibleAction', name: 'Invisible', smallIcon: imageIcon('/icons/liquidicity/invisible.png'), closure: {})
                 
                 action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                 action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
@@ -57,8 +62,8 @@ class CoucouFrame {
                 }
                 menu(text: "Edit", mnemonic: 'E') {
                     menu(text: "Status") {
-                        menuItem(text: "Busy", icon: imageIcon('/icons/liquidicity/busy.png'))
-                        menuItem(text: "Invisible", icon: imageIcon('/icons/liquidicity/invisible.png'))
+                        menuItem(busyAction)
+                        menuItem(invisibleAction)
                         separator()
                         menuItem(text: "Edit Status Message..")
                     }
@@ -189,6 +194,43 @@ class CoucouFrame {
                         hyperlink('Show related messages..')
                     }
                 }
+            }
+            statusBar(constraints: BorderLayout.SOUTH) {
+                flowLayout(alignment: FlowLayout.TRAILING)
+                toggleButton(busyAction,
+                        text: null,
+                        toolTipText: 'Busy',
+                        selectedIcon: imageIcon('/icons/liquidicity/busy_selected.png'),
+                        rolloverIcon: imageIcon('/icons/liquidicity/busy_rollover.png'),
+                        margin: null,
+                        border: emptyBorder([0, 4, 0, 4]),
+                        borderPainted: false,
+                        contentAreaFilled: false,
+                        focusPainted: false,
+                        opaque: false)
+//                        contraints: statusBarContraints)
+                toggleButton(invisibleAction,
+                        text: null,
+                        toolTipText: 'Invisible',
+                        selectedIcon: imageIcon('/icons/liquidicity/invisible_selected.png'),
+                        rolloverIcon: imageIcon('/icons/liquidicity/invisible_rollover.png'),
+                        margin: null,
+                        border: emptyBorder([0, 4, 0, 4]),
+                        borderPainted: false,
+                        contentAreaFilled: false,
+                        focusPainted: false,
+                        opaque: false)
+                toggleButton(workOfflineAction,
+                        text: null,
+                        toolTipText: 'Work Offline',
+                        selectedIcon: imageIcon('/icons/liquidicity/offline_selected.png'),
+                        rolloverIcon: imageIcon('/icons/liquidicity/offline_rollover.png'),
+                        margin: null,
+                        border: emptyBorder([0, 4, 0, 4]),
+                        borderPainted: false,
+                        contentAreaFilled: false,
+                        focusPainted: false,
+                        opaque: false)
             }
         }
     }
