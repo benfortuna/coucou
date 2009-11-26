@@ -21,6 +21,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<id>mnode-snapshots</id>
+			<name>Micronode Snapshots</name>
+			<url>http://build.mnode.org/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
