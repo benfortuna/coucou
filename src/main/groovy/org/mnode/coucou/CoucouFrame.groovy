@@ -9,7 +9,7 @@ import javax.swing.JFrame
 import javax.swing.JTabbedPane
 import javax.swing.JScrollPane
 import javax.swing.UIManager
-import org.jdesktop.swingx.JXStatusBar//import org.jdesktop.swingx.ResizeBehavior
+import org.jdesktop.swingx.JXStatusBarimport groovy.swing.LookAndFeelHelper//import org.jdesktop.swingx.ResizeBehavior
 import groovy.swing.SwingXBuilder
 import griffon.builder.flamingo.FlamingoBuilder
 
@@ -17,8 +17,11 @@ class CoucouFrame {
     public static void main(String[] args) {
         
         UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0));
+        LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceBusinessLookAndFeel')
         def swing = new SwingXBuilder()
-        swing.lookAndFeel('substance', 'system')
+        swing.edt {
+            lookAndFeel('substance5', 'system')
+        }
         def flamingo = new FlamingoBuilder()
 
         def headingFont = new Font('Arial', Font.PLAIN, 14)
@@ -197,6 +200,7 @@ class CoucouFrame {
                         }
                     }
                 }
+                /*
                 statusBar(constraints: BorderLayout.SOUTH) {
                     flowLayout(alignment: FlowLayout.TRAILING)
                     toggleButton(busyAction,
@@ -234,6 +238,7 @@ class CoucouFrame {
                             focusPainted: false,
                             opaque: false)
                 }
+                */
             }
         }
     }
