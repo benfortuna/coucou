@@ -9,19 +9,38 @@ import javax.swing.JFrame
 import javax.swing.JTabbedPane
 import javax.swing.JScrollPane
 import javax.swing.UIManager
-import org.jdesktop.swingx.JXStatusBarimport groovy.swing.LookAndFeelHelper//import org.jdesktop.swingx.ResizeBehavior
+import org.jdesktop.swingx.JXStatusBar
+import groovy.swing.LookAndFeelHelper
+//import org.jdesktop.swingx.ResizeBehavior
+
 import groovy.swing.SwingXBuilder
 import griffon.builder.flamingo.FlamingoBuilder
+import org.jvnet.substance.SubstanceLookAndFeel
+import org.jvnet.substance.api.SubstanceConstants
 
-class CoucouFrame {
+/*
+@Grapes([
+    @Grab(group='org.codehaus.griffon.swingxbuilder', module='swingxbuilder', version='0.1.6'),
+    @Grab(group='net.java.dev.substance', module='substance', version='5.3'),
+    @Grab(group='net.java.dev.substance', module='substance-swingx', version='5.3'),
+    @Grab(group='org.swinglabs', module='swingx', version='0.9.2'),
+    @Grab(group='jgoodies', module='forms', version='1.0.5'),
+    @Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
+    @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
+    @Grab(group='org.apache.xmlgraphics', module='batik-awt-util', version='1.7')])
+    */
+public class CoucouFrame {
     public static void main(String[] args) {
         
         UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0));
-        LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceBusinessLookAndFeel')
+         UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
+         UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind.GRID)
+        LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceNebulaLookAndFeel')
         def swing = new SwingXBuilder()
         swing.edt {
-            lookAndFeel('substance5', 'system')
+            lookAndFeel('substance5')//, 'system')
         }
+       
         def flamingo = new FlamingoBuilder()
 
         def headingFont = new Font('Arial', Font.PLAIN, 14)
@@ -108,7 +127,7 @@ class CoucouFrame {
                         menuItem(text: "About")
                     }
                 }
-                tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT) {
+                tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
                     panel(name: 'Home') {
                         borderLayout()
                         vbox(constraints: BorderLayout.CENTER) {
@@ -180,12 +199,12 @@ class CoucouFrame {
                             vglue()
                         }
                     }
-                    panel(name: 'Inbox') {
+                    panel(name: 'Inbox', id: 'inboxPanel') {
                         flamingo.treeBreadcrumbBar(tree: tree())
                     }
-                    panel(name: 'Work') {
+                    panel(name: 'Work', id: 'workPanel') {
                     }
-                    panel(name: 'RE: Test') {
+                    panel(name: 'RE: Test', id: 'messagePanel') {
                         borderLayout()
                         panel(constraints: BorderLayout.NORTH) {
                             flowLayout(alignment: FlowLayout.LEADING)
@@ -239,6 +258,10 @@ class CoucouFrame {
                             opaque: false)
                 }
                 */
+                tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND , SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
+                inboxPanel.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                workPanel.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                messagePanel.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
             }
         }
     }
