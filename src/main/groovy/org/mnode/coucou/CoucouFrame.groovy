@@ -49,7 +49,7 @@ public class CoucouFrame {
         
         swing.edt {
             frame(title: 'Coucou', defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
-                size: [800, 500], show: true, locationRelativeTo: null) {
+                size: [800, 500], show: true, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
     //            lookAndFeel('substance')
                 actions() {
                     action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
