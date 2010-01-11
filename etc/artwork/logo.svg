@@ -10,11 +10,11 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="744.09448819"
-   height="1052.3622047"
+   width="1052.3622"
+   height="744.09448"
    id="svg2"
    version="1.1"
-   inkscape:version="0.47pre4 r22446"
+   inkscape:version="0.47 r22583"
    sodipodi:docname="logo.svg">
   <defs
      id="defs4">
@@ -161,21 +161,25 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
+     inkscape:zoom="0.7"
      inkscape:cx="811.04611"
      inkscape:cy="415.42857"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:snap-bbox="true"
-     inkscape:window-width="1018"
-     inkscape:window-height="523"
-     inkscape:window-x="0"
-     inkscape:window-y="26"
+     inkscape:window-width="1680"
+     inkscape:window-height="1000"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1">
     <inkscape:grid
        type="xygrid"
-       id="grid2816" />
+       id="grid2816"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -192,52 +196,71 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(0,-308.2677)">
     <g
-       id="g2849"
-       inkscape:export-filename="/media/2C47-5097/Development/coucou/src/main/resources/logo-48.png"
-       inkscape:export-xdpi="14.49"
-       inkscape:export-ydpi="14.49">
-      <path
-         transform="matrix(1.3694376,1.3611522,-0.61588923,0.61963818,90.527695,145.77007)"
-         d="m 280,232.36218 a 40,60 0 1 1 -80,0 40,60 0 1 1 80,0 z"
-         sodipodi:ry="60"
-         sodipodi:rx="40"
-         sodipodi:cy="232.36218"
-         sodipodi:cx="240"
-         id="path2827"
-         style="fill:url(#linearGradient3617);fill-opacity:1"
-         sodipodi:type="arc" />
-      <path
-         transform="matrix(-1.3694376,1.3611522,0.61588923,0.61963818,627.63901,145.77007)"
-         d="m 280,232.36218 a 40,60 0 1 1 -80,0 40,60 0 1 1 80,0 z"
-         sodipodi:ry="60"
-         sodipodi:rx="40"
-         sodipodi:cy="232.36218"
-         sodipodi:cx="240"
-         id="path2827-3"
-         style="fill:url(#linearGradient3636);fill-opacity:1"
-         sodipodi:type="arc" />
-      <path
-         transform="matrix(-1.3694376,-1.3611522,0.61588923,-0.61963818,627.63901,1246.0841)"
-         d="m 280,232.36218 a 40,60 0 1 1 -80,0 40,60 0 1 1 80,0 z"
-         sodipodi:ry="60"
-         sodipodi:rx="40"
-         sodipodi:cy="232.36218"
-         sodipodi:cx="240"
-         id="path2827-3-3"
-         style="fill:url(#linearGradient3674);fill-opacity:1"
-         sodipodi:type="arc" />
-      <path
-         transform="matrix(1.3694376,-1.3611522,-0.61588923,-0.61963818,90.527695,1246.0841)"
-         d="m 280,232.36218 a 40,60 0 1 1 -80,0 40,60 0 1 1 80,0 z"
-         sodipodi:ry="60"
-         sodipodi:rx="40"
-         sodipodi:cy="232.36218"
-         sodipodi:cx="240"
-         id="path2827-6"
-         style="fill:url(#linearGradient3712);fill-opacity:1"
-         sodipodi:type="arc" />
+       id="g2888"
+       inkscape:export-filename="F:\Development\coucou\src\main\jnlp\resources\splash.png"
+       inkscape:export-xdpi="34.697342"
+       inkscape:export-ydpi="34.697342">
+      <g
+         transform="matrix(0.40280477,0,0,0.42804389,163.99136,343.75067)"
+         inkscape:export-ydpi="14.49"
+         inkscape:export-xdpi="14.49"
+         inkscape:export-filename="/media/2C47-5097/Development/coucou/src/main/resources/logo-48.png"
+         id="g2849">
+        <path
+           sodipodi:type="arc"
+           style="fill:url(#linearGradient3617);fill-opacity:1"
+           id="path2827"
+           sodipodi:cx="240"
+           sodipodi:cy="232.36218"
+           sodipodi:rx="40"
+           sodipodi:ry="60"
+           d="m 280,232.36218 c 0,33.13709 -17.90861,60 -40,60 -22.09139,0 -40,-26.86291 -40,-60 0,-33.13708 17.90861,-60 40,-60 22.09139,0 40,26.86292 40,60 z"
+           transform="matrix(1.3694376,1.3611522,-0.61588923,0.61963818,90.527695,145.77007)" />
+        <path
+           sodipodi:type="arc"
+           style="fill:url(#linearGradient3636);fill-opacity:1"
+           id="path2827-3"
+           sodipodi:cx="240"
+           sodipodi:cy="232.36218"
+           sodipodi:rx="40"
+           sodipodi:ry="60"
+           d="m 280,232.36218 c 0,33.13709 -17.90861,60 -40,60 -22.09139,0 -40,-26.86291 -40,-60 0,-33.13708 17.90861,-60 40,-60 22.09139,0 40,26.86292 40,60 z"
+           transform="matrix(-1.3694376,1.3611522,0.61588923,0.61963818,627.63901,145.77007)" />
+        <path
+           sodipodi:type="arc"
+           style="fill:url(#linearGradient3674);fill-opacity:1"
+           id="path2827-3-3"
+           sodipodi:cx="240"
+           sodipodi:cy="232.36218"
+           sodipodi:rx="40"
+           sodipodi:ry="60"
+           d="m 280,232.36218 c 0,33.13709 -17.90861,60 -40,60 -22.09139,0 -40,-26.86291 -40,-60 0,-33.13708 17.90861,-60 40,-60 22.09139,0 40,26.86292 40,60 z"
+           transform="matrix(-1.3694376,-1.3611522,0.61588923,-0.61963818,627.63901,1246.0841)" />
+        <path
+           sodipodi:type="arc"
+           style="fill:url(#linearGradient3712);fill-opacity:1"
+           id="path2827-6"
+           sodipodi:cx="240"
+           sodipodi:cy="232.36218"
+           sodipodi:rx="40"
+           sodipodi:ry="60"
+           d="m 280,232.36218 c 0,33.13709 -17.90861,60 -40,60 -22.09139,0 -40,-26.86291 -40,-60 0,-33.13708 17.90861,-60 40,-60 22.09139,0 40,26.86292 40,60 z"
+           transform="matrix(1.3694376,-1.3611522,-0.61588923,-0.61963818,90.527695,1246.0841)" />
+      </g>
+      <text
+         sodipodi:linespacing="125%"
+         id="text2884"
+         y="689.83093"
+         x="417.89063"
+         style="font-size:144px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:GungsuhChe;-inkscape-font-specification:GungsuhChe"
+         xml:space="preserve"><tspan
+           y="689.83093"
+           x="417.89063"
+           id="tspan2886"
+           sodipodi:role="line">Coucou</tspan></text>
     </g>
   </g>
 </svg>
