@@ -49,6 +49,17 @@ public class Coucou{
 
              frame(title: 'Coucou', id: 'coucouFrame', defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
                      size: [800, 600], show: false, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
+                 
+                 borderLayout()
+                 splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
+                     panel(constraints: 'left', border: emptyBorder(10)) {
+                         borderLayout()
+                         scrollPane(border: null) {
+                             list()
+                         }
+                     }
+                     panel(constraints: 'right', border: emptyBorder(10))
+                 }
              }
              
              if (SystemTray.isSupported()) {
