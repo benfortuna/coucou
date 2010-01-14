@@ -189,7 +189,7 @@
 							used to automatically identify the jar containing the main class.
 						-->
 						<!-- this is perhaps going to change -->
-						<mainClass>org.mnode.coucou.CoucouFrame</mainClass>
+						<mainClass>org.mnode.coucou.Coucou</mainClass>
 					</jnlp>
 
 
