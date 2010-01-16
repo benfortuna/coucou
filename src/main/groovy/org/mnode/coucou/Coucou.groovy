@@ -22,6 +22,7 @@ package org.mnode.coucou
 import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
 import java.awt.Color
+import java.awt.Component
 import java.awt.Insets
 import java.awt.event.MouseEvent
 import javax.swing.UIManager
@@ -37,9 +38,13 @@ import org.jvnet.substance.SubstanceLookAndFeel
 import org.jvnet.substance.api.SubstanceConstants
 import org.jvnet.substance.api.SubstanceConstants.TabCloseKind
 import org.jvnet.substance.api.tabbed.TabCloseCallback
+import org.jvnet.substance.api.tabbed.VetoableMultipleTabCloseListener
+import org.jvnet.substance.api.tabbed.VetoableTabCloseListener
 import org.jvnet.lafwidget.LafWidget
 import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
 import org.jdesktop.swingx.JXHyperlink
+import org.jdesktop.swingx.JXStatusBar
+import org.jdesktop.swingx.JXStatusBar.Constraint
 
 /**
  * @author fortuna
@@ -88,12 +93,34 @@ public class Coucou{
              }
              
              swing.panel(name: account.name) {
-                 label(text: 'Service Name')
-                 textField()
-                 label(text: 'Username')
-                 textField()
-                 label(text: 'Password')
-                 passwordField()
+                 borderLayout()
+                 panel() {
+                     label(text: 'Service Name')
+                     textField()
+                     label(text: 'Username')
+                     textField()
+                     label(text: 'Password')
+                     passwordField()
+                 }
+                 hbox(constraints: BorderLayout.SOUTH) {
+                     hglue()
+                     button(text: 'Close')
+                 }
+             }
+         }
+
+         def newContactTab = { contact ->
+                 
+             if (!contact) {
+                 contact = new Contact();
+             }
+             
+             swing.panel(name: contact.name) {
+                 borderLayout()
+                 hbox(constraints: BorderLayout.SOUTH) {
+                     hglue()
+                     button(text: 'Close')
+                 }
              }
          }
 
@@ -112,8 +139,13 @@ public class Coucou{
                         def tab = newAccountTab()
                         tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                         tabs.add(tab)
-//                        tabs.setIconAt(tabs.indexOfComponent(tab), FileSystemView.fileSystemView.getSystemIcon(file))
-//                        tabs.setToolTipTextAt(tabs.indexOfComponent(tab), file.absolutePath)
+                        tabs.selectedComponent = tab
+                    })
+                    
+                    action(id: 'newContactAction', name: 'New Contact..', closure: {
+                        def tab = newContactTab()
+                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                        tabs.add(tab)
                         tabs.selectedComponent = tab
                     })
                 }
@@ -121,7 +153,7 @@ public class Coucou{
                 borderLayout()
                  
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
-                    panel(name: 'Home') {
+                    panel(name: 'Home', id: 'homeTab') {
                          borderLayout()
                          splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
                              panel(constraints: 'left', border: emptyBorder(10)) {
@@ -136,6 +168,10 @@ public class Coucou{
                                      textField('Search', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                          list()
+                                     }
+                                     hbox(constraints: BorderLayout.SOUTH) {
+                                         hglue()
+                                         hyperlink(new JXHyperlink(newContactAction))
                                      }
                                  }
                                  panel(name: 'History') {
@@ -160,10 +196,11 @@ public class Coucou{
                  }
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_CALLBACK, new TabCloseCallbackImpl())
+                 SubstanceLookAndFeel.registerTabCloseChangeListener(tabs, new VetoableMultipleTabCloseListenerImpl([homeTab]))
                  tabs.putClientProperty(LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
              
                  statusBar(constraints: BorderLayout.SOUTH, border:emptyBorder([0, 4, 0, 4]), id: 'cStatusBar') {
-                     label(id: 'statusMessage', text: 'Ready')
+                     label(id: 'statusMessage', text: 'Ready', constraints: new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL))
                     toggleButton(busyAction,
                             text: null,
                             toolTipText: 'Busy',
@@ -256,6 +293,21 @@ class XmppAccount {
     }
 }
 
+class Contact {
+    
+    def firstName
+    def lastName
+    
+    String getName() {
+        if (firstName) {
+            return "${firstName} ${lastName}" 
+        }
+        else {
+            return "<New contact>"
+        }
+    }
+}
+
 class TabCloseCallbackImpl implements TabCloseCallback {
 
       public TabCloseKind onAreaClick(JTabbedPane tabbedPane, int tabIndex, MouseEvent mouseEvent) {
@@ -295,4 +347,40 @@ class TabCloseCallbackImpl implements TabCloseCallback {
         result.append("</body></html>");
         return result.toString();
       }
+}
+
+class VetoableMultipleTabCloseListenerImpl implements VetoableMultipleTabCloseListener {
+    
+    def vetoedTabs
+    
+    public VetoableMultipleTabCloseListenerImpl(def tabs) {
+        this.vetoedTabs = tabs
+    }
+    
+    public boolean vetoTabsClosing(JTabbedPane tabbedPane, Set<Component> tabComponents) {
+        tabComponents.removeAll(vetoedTabs)
+        return false
+    }
+    
+    public void tabsClosing(JTabbedPane tabbedPane, Set<Component> tabComponents) {}
+    
+    public void tabsClosed(JTabbedPane tabbedPane, Set<Component> tabComponents) {}
+}
+
+
+class VetoableTabCloseListenerImpl implements VetoableTabCloseListener {
+    
+    def vetoedTab
+    
+    public VetoableTabCloseListenerImpl(def tab) {
+        this.vetoedTab = tab
+    }
+    
+    public boolean vetoTabClosing(JTabbedPane tabbedPane, Component tabComponent) {
+        return tabComponent == vetoedTab
+    }
+    
+    public void tabClosing(JTabbedPane tabbedPane, Component tabComponent) {}
+    
+    public void tabClosed(JTabbedPane tabbedPane, Component tabComponent) {}
 }
