@@ -21,6 +21,7 @@ package org.mnode.coucou
 
 import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Insets
 import java.awt.event.MouseEvent
 import javax.swing.UIManager
@@ -38,6 +39,7 @@ import org.jvnet.substance.api.SubstanceConstants.TabCloseKind
 import org.jvnet.substance.api.tabbed.TabCloseCallback
 import org.jvnet.lafwidget.LafWidget
 import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
+import org.jdesktop.swingx.JXHyperlink
 
 /**
  * @author fortuna
@@ -69,7 +71,7 @@ public class Coucou{
              frame.visible = false
          }
      }
-
+     
      static void main(def args) {
          UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0))
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
@@ -78,6 +80,22 @@ public class Coucou{
          LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
         
          def swing = new SwingXBuilder()
+
+         def newAccountTab = { account ->
+                 
+             if (!account) {
+                 account = new XmppAccount();
+             }
+             
+             swing.panel(name: account.name) {
+                 label(text: 'Service Name')
+                 textField()
+                 label(text: 'Username')
+                 textField()
+                 label(text: 'Password')
+                 passwordField()
+             }
+         }
 
          swing.edt {
              lookAndFeel('seaglass', 'substance5', 'system')
@@ -88,7 +106,16 @@ public class Coucou{
                 actions() {
                     action(id: 'busyAction', name: 'Busy', smallIcon: imageIcon('/busy.png'), closure: {})
                     action(id: 'invisibleAction', name: 'Invisible', smallIcon: imageIcon('/invisible.png'), closure: {})
-                    action(id: 'workOfflineAction', name: 'Work Offline', smallIcon: imageIcon('/offline.png'), accelerator: shortcut('shift O'))
+                    action(id: 'workOfflineAction', name: 'Work Offline', smallIcon: imageIcon('/offline.png'), accelerator: shortcut('shift O'), closure: {})
+                    
+                    action(id: 'newAccountAction', name: 'Create Account..', closure: {
+                        def tab = newAccountTab()
+                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                        tabs.add(tab)
+//                        tabs.setIconAt(tabs.indexOfComponent(tab), FileSystemView.fileSystemView.getSystemIcon(file))
+//                        tabs.setToolTipTextAt(tabs.indexOfComponent(tab), file.absolutePath)
+                        tabs.selectedComponent = tab
+                    })
                 }
                 
                 borderLayout()
@@ -103,7 +130,31 @@ public class Coucou{
                                      list()
                                  }
                              }
-                             panel(constraints: 'right', border: emptyBorder(10))
+                             tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
+                                 panel(name: 'Contacts') {
+                                     borderLayout()
+                                     textField('Search', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                         list()
+                                     }
+                                 }
+                                 panel(name: 'History') {
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                         list()
+                                     }
+                                 }
+                                 panel(name: 'Accounts') {
+                                     borderLayout()
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                         list()
+                                     }
+                                     hbox(constraints: BorderLayout.SOUTH) {
+                                         hglue()
+                                         hyperlink(new JXHyperlink(newAccountAction))
+                                     }
+                                 }
+                             }
+                             navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                          }
                      }
                  }
@@ -189,6 +240,21 @@ public class Coucou{
     
 }
 
+class XmppAccount {
+    
+    def host
+    def user
+    def password
+    
+    String getName() {
+        if (user) {
+            return "${user}@${host}"
+        }
+        else {
+            return "<New account>"
+        }
+    }
+}
 
 class TabCloseCallbackImpl implements TabCloseCallback {
 
