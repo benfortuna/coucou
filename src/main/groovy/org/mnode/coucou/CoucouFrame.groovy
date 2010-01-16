@@ -14,7 +14,7 @@ import groovy.swing.LookAndFeelHelper
 //import org.jdesktop.swingx.ResizeBehavior
 
 import groovy.swing.SwingXBuilder
-import griffon.builder.flamingo.FlamingoBuilder
+//import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.substance.SubstanceLookAndFeel
 import org.jvnet.substance.api.SubstanceConstants
 
@@ -41,7 +41,7 @@ public class CoucouFrame {
             lookAndFeel('substance5')//, 'system')
         }
        
-        def flamingo = new FlamingoBuilder()
+//        def flamingo = new FlamingoBuilder()
 
         def headingFont = new Font('Arial', Font.PLAIN, 14)
 
@@ -200,7 +200,7 @@ public class CoucouFrame {
                         }
                     }
                     panel(name: 'Inbox', id: 'inboxPanel') {
-                        flamingo.treeBreadcrumbBar(tree: tree())
+//                        flamingo.treeBreadcrumbBar(tree: tree())
                     }
                     panel(name: 'Work', id: 'workPanel') {
                     }

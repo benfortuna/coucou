@@ -36,32 +36,56 @@
 			<artifactId>glazedlists_java15</artifactId>
 			<version>1.8.0</version>
 		</dependency>
+		<!--
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy</artifactId>
 			<version>1.6.5</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>ant</artifactId>
+					<groupId>org.apache.ant</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>junit</artifactId>
+					<groupId>junit</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>ant-launcher</artifactId>
+					<groupId>org.apache.ant</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+		 -->
 		<dependency>
             <groupId>org.codehaus.groovy.maven.runtime</groupId>
             <artifactId>gmaven-runtime-1.6</artifactId>
-            <version>1.0-rc-5</version>
+            <version>1.0</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>ant</artifactId>
+					<groupId>org.apache.ant</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>junit</artifactId>
+					<groupId>junit</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>ant-launcher</artifactId>
+					<groupId>org.apache.ant</groupId>
+				</exclusion>
+			</exclusions>
+            <!-- 
             <scope>provided</scope>
+             -->
         </dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-awt-util</artifactId>
-			<version>1.7</version>
-		</dependency>
-		<dependency>
-			<groupId>org.swinglabs</groupId>
-			<artifactId>swingx</artifactId>
-			<version>0.9.2</version>
-		</dependency>
+		<!--
 		<dependency>
 			<groupId>org.codehaus.griffon.flamingobuilder</groupId>
 			<artifactId>flamingobuilder</artifactId>
 			<version>0.2</version>
 		</dependency>
+		-->
 		<dependency>
 			<groupId>org.codehaus.griffon.swingxbuilder</groupId>
 			<artifactId>swingxbuilder</artifactId>
@@ -82,10 +106,53 @@
 			<artifactId>substance-swingx</artifactId>
 			<version>5.3</version>
 		</dependency>
+		<!--
 		<dependency>
 			<groupId>jgoodies</groupId>
 			<artifactId>forms</artifactId>
 			<version>1.0.5</version>
+		</dependency>
+		-->
+		<dependency>
+			<groupId>org.mnode.base</groupId>
+			<artifactId>base-views</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.swinglabs</groupId>
+			<artifactId>swingx</artifactId>
+			<version>0.9.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-awt-util</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-swing</artifactId>
+			<version>1.7</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>xalan</artifactId>
+					<groupId>xalan</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-transcoder</artifactId>
+			<version>1.7</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>xalan</artifactId>
+					<groupId>xalan</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>org.apache.xmlgraphics</artifactId>
+					<groupId>fop</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<scm>
