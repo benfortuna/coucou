@@ -45,7 +45,7 @@ import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
-
+import org.jivesoftware.smack.XMPPConnectionimport org.jivesoftware.smack.XMPPException
 /**
  * @author fortuna
  *
@@ -104,7 +104,8 @@ public class Coucou{
                  }
                  hbox(constraints: BorderLayout.SOUTH) {
                      hglue()
-                     button(text: 'Close')
+                     button(text: 'Connect', id: 'connectButton')
+                     connectButton.actionPerformed = { account.connect() }
                  }
              }
          }
@@ -148,6 +149,106 @@ public class Coucou{
                         tabs.add(tab)
                         tabs.selectedComponent = tab
                     })
+
+                    action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
+                    action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'))
+                    action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
+                    action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
+                    
+                     action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://wiki.mnode.org/coucou')) })
+                     action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
+                     action(id: 'aboutAction', name: 'About', closure: {
+                         dialog(title: 'About Coucou', size: [300, 200], show: true, owner: coucouFrame, modal: true, locationRelativeTo: coucouFrame) {
+                             borderLayout()
+                             label(text: 'Coucou 1.0', constraints: BorderLayout.NORTH, border: emptyBorder(10))
+                             panel(constraints: BorderLayout.CENTER, border: emptyBorder(10)) {
+                                 borderLayout()
+                                 scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                     table(editable: false) {
+                                         def systemProps = []
+                                         for (propName in System.properties.keySet()) {
+                                             systemProps.add([property: propName, value: System.properties.getProperty(propName)])
+                                         }
+                                         tableModel(list: systemProps) {
+                                             propertyColumn(header:'Property', propertyName:'property')
+                                             propertyColumn(header:'Value', propertyName:'value')
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     })
+                    
+                    action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
+                    action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
+                    action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
+                }
+                
+                tipOfTheDay(id: 'tips', model: defaultTipModel(tips: [
+                    defaultTip(name: 'test', tip: '<html><em>testing</em>')
+                ]))
+                
+                menuBar() {
+                    menu(text: "File", mnemonic: 'F') {
+                        menuItem(closeTabAction)
+                        menuItem(text: "Close Other Tabs")
+                        menuItem(closeAllTabsAction)
+                        separator()
+                        menuItem(text: "Chat", icon: imageIcon('/chat.png'))
+                        menuItem(text: "Call")
+                        menuItem(text: "Send File..")
+                    separator()
+                        menuItem(printAction)
+                    separator()
+                        menuItem(text: "Import..")
+                    separator()
+                        menuItem(exitAction)
+                    }
+                    menu(text: "Edit", mnemonic: 'E') {
+                        menu(text: "Status") {
+                            checkBoxMenuItem(busyAction, selectedIcon: imageIcon('/busy_selected.png', id: 'busySelectedIcon'),
+                                    rolloverIcon: imageIcon('/busy_rollover.png', id: 'busyRolloverIcon'))
+                            checkBoxMenuItem(invisibleAction, selectedIcon: imageIcon('/invisible_selected.png', id: 'invisibleSelectedIcon'),
+                                    rolloverIcon: imageIcon('/invisible_rollover.png', id: 'invisibleRolloverIcon'))
+                            separator()
+                            menuItem(text: "Edit Status Message..")
+                        }
+                        separator()
+                        menuItem(text: "Delete")
+                        separator()
+                        menuItem(text: "Mail Filters")
+                        menuItem(text: "Accounts")
+                        menuItem(text: "Preferences", icon: imageIcon('/preferences.png'))
+                    }
+                    menu(text: "View", mnemonic: 'V') {
+                        checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
+                    }
+                    menu(text: "Action", mnemonic: 'A') {
+                        menuItem(replyAction)
+                        menuItem(replyAllAction)
+                        menuItem(forwardAction)
+                    separator()
+                    menu(text: "Tag") {
+                        menuItem(text: "New Tag..")
+                    }
+                    separator()
+                        menuItem(text: "Flag")
+                        menuItem(text: "Annotate")
+                    }
+                    menu(text: "Tools", mnemonic: 'T') {
+                        menu(text: "Search") {
+                            menuItem(text: "New Search..")
+                        }
+                        separator()
+                        checkBoxMenuItem(workOfflineAction, selectedIcon: imageIcon('/offline_selected.png', id: 'offlineSelectedIcon'),
+                                rolloverIcon: imageIcon('/offline_rollover.png', id: 'offlineRolloverIcon'))
+                    }
+                    menu(text: "Help", mnemonic: 'H') {
+                        menuItem(onlineHelpAction)
+                        menuItem(showTipsAction)
+                    separator()
+                        menuItem(aboutAction)
+                    }
                 }
                 
                 borderLayout()
@@ -182,7 +283,7 @@ public class Coucou{
                                  panel(name: 'Accounts') {
                                      borderLayout()
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                         list()
+                                         list(id: 'accountList')
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -204,8 +305,8 @@ public class Coucou{
                     toggleButton(busyAction,
                             text: null,
                             toolTipText: 'Busy',
-                            selectedIcon: imageIcon('/busy_selected.png'),
-                            rolloverIcon: imageIcon('/busy_rollover.png'),
+                            selectedIcon: busySelectedIcon,
+                            rolloverIcon: busyRolloverIcon,
                             margin: null,
                             border: emptyBorder([0, 4, 0, 4]),
                             borderPainted: false,
@@ -216,8 +317,8 @@ public class Coucou{
                     toggleButton(invisibleAction,
                             text: null,
                             toolTipText: 'Invisible',
-                            selectedIcon: imageIcon('/invisible_selected.png'),
-                            rolloverIcon: imageIcon('/invisible_rollover.png'),
+                            selectedIcon: invisibleSelectedIcon,
+                            rolloverIcon: invisibleRolloverIcon,
                             margin: null,
                             border: emptyBorder([0, 4, 0, 4]),
                             borderPainted: false,
@@ -227,8 +328,8 @@ public class Coucou{
                     toggleButton(workOfflineAction,
                             text: null,
                             toolTipText: 'Work Offline',
-                            selectedIcon: imageIcon('/offline_selected.png'),
-                            rolloverIcon: imageIcon('/offline_rollover.png'),
+                            selectedIcon: offlineSelectedIcon,
+                            rolloverIcon: offlineRolloverIcon,
                             margin: null,
                             border: emptyBorder([0, 4, 0, 4]),
                             borderPainted: false,
@@ -237,6 +338,7 @@ public class Coucou{
                             opaque: false)
                  }
              }
+             bind(source: viewStatusBar, sourceProperty:'selected', target:cStatusBar, targetProperty:'visible')
 
              if (SystemTray.isSupported()) {
                  TrayIcon trayIcon = new TrayIcon(imageIcon('/logo-12.png').image, 'Coucou')
@@ -289,6 +391,16 @@ class XmppAccount {
         }
         else {
             return "<New account>"
+        }
+    }
+    
+    void connect() {
+        try {
+            final XMPPConnection connection = new XMPPConnection("basepatterns.org");
+            connection.connect();
+            connection.login("test", "!password");
+        } catch (XMPPException ex) {
+            ex.printStackTrace();
         }
     }
 }
