@@ -362,7 +362,7 @@ public class Coucou{
              bind(source: viewStatusBar, sourceProperty:'selected', target:cStatusBar, targetProperty:'visible')
 
              if (SystemTray.isSupported()) {
-                 TrayIcon trayIcon = new TrayIcon(imageIcon('/logo-12.png').image, 'Coucou')
+                 TrayIcon trayIcon = new TrayIcon(imageIcon('/logo-14.png').image, 'Coucou')
                  trayIcon.imageAutoSize = false
                  trayIcon.mousePressed = { event ->
                      if (event.button == MouseEvent.BUTTON1) {
