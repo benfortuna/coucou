@@ -36,6 +36,7 @@ import java.awt.PopupMenu
 import java.awt.SystemTray
 import java.awt.MenuItem
 import javax.swing.JFrame
+import javax.swing.JFileChooser
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
 import org.jvnet.substance.SubstanceLookAndFeel
@@ -51,7 +52,7 @@ import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.XMPPException
-/**
+import javax.swing.filechooser.FileFilterimport java.io.File/**
  * @author fortuna
  *
  */
@@ -190,6 +191,8 @@ public class Coucou{
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
                 }
                 
+                fileChooser(id: 'chooser', fileFilter: new ImageFileFilter())
+                
                 tipOfTheDay(id: 'tips', model: defaultTipModel(tips: [
                     defaultTip(name: 'test', tip: '<html><em>testing</em>')
                 ]))
@@ -262,7 +265,15 @@ public class Coucou{
                 panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(5)) {
                     flowLayout(alignment: FlowLayout.LEADING)
                     
-                    button(icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                    button(id: 'photoButton', icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                    photoButton.actionPerformed = {
+                            if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                                doLater {
+                                   photoButton.icon = imageIcon(imageIcon(chooser.selectedFile.absolutePath).image.getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                                }
+                            }
+                    }
+                    
                     vbox() {
                         textField(id: 'nameField', text: '<Enter your name here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 24))
                         nameField.focusGained = { nameField.selectAll() }
@@ -516,4 +527,15 @@ class VetoableTabCloseListenerImpl implements VetoableTabCloseListener {
     public void tabClosing(JTabbedPane tabbedPane, Component tabComponent) {}
     
     public void tabClosed(JTabbedPane tabbedPane, Component tabComponent) {}
+}
+
+class ImageFileFilter extends FileFilter {
+    
+    boolean accept(File file) {
+        return file.directory || file.name =~ /\.(gif|jpg|png|bmp)$/
+    }
+    
+    String getDescription() {
+        return 'All Image Files'
+    }
 }
