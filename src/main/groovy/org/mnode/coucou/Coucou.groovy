@@ -23,6 +23,10 @@ import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.Font
+import java.awt.Image
 import java.awt.Insets
 import java.awt.event.MouseEvent
 import javax.swing.UIManager
@@ -45,7 +49,8 @@ import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
-import org.jivesoftware.smack.XMPPConnectionimport org.jivesoftware.smack.XMPPException
+import org.jivesoftware.smack.XMPPConnection
+import org.jivesoftware.smack.XMPPException
 /**
  * @author fortuna
  *
@@ -57,6 +62,7 @@ import org.jivesoftware.smack.XMPPConnectionimport org.jivesoftware.smack.XMPPE
     @Grab(group='net.java.dev.substance', module='substance-swingx', version='5.3'),
     //@Grab(group='org.swinglabs', module='swingx', version='0.9.2'),
     @Grab(group='org.mnode.base', module='base-views', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-xmpp', version='0.0.1-SNAPSHOT'),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
@@ -252,7 +258,22 @@ public class Coucou{
                 }
                 
                 borderLayout()
-                 
+                
+                panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(5)) {
+                    flowLayout(alignment: FlowLayout.LEADING)
+                    
+                    button(icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                    vbox() {
+                        textField(id: 'nameField', text: '<Enter your name here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 24))
+                        nameField.focusGained = { nameField.selectAll() }
+                        
+                        //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
+                        comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 14))
+                        statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
+                        //statusField.focusGained = { nameField.selectAll() }
+                    }
+                }
+                
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
                     panel(name: 'Home', id: 'homeTab') {
                          borderLayout()
