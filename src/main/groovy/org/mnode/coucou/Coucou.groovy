@@ -28,6 +28,7 @@ import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.Image
 import java.awt.Insets
+import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.UIManager
 import groovy.swing.LookAndFeelHelper
@@ -35,10 +36,14 @@ import java.awt.TrayIcon
 import java.awt.PopupMenu
 import java.awt.SystemTray
 import java.awt.MenuItem
+import java.util.regex.Pattern
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JFrame
 import javax.swing.JFileChooser
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
+import javax.swing.event.DocumentListener
+import javax.swing.event.DocumentEvent
 import org.jvnet.substance.SubstanceLookAndFeel
 import org.jvnet.substance.api.SubstanceConstants
 import org.jvnet.substance.api.SubstanceConstants.TabCloseKind
@@ -47,12 +52,16 @@ import org.jvnet.substance.api.tabbed.VetoableMultipleTabCloseListener
 import org.jvnet.substance.api.tabbed.VetoableTabCloseListener
 import org.jvnet.lafwidget.LafWidget
 import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
+import org.jvnet.flamingo.svg.SvgBatikResizableIcon
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
+import org.jdesktop.swingx.decorator.PatternFilter
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.XMPPException
-import javax.swing.filechooser.FileFilterimport java.io.File/**
+import javax.swing.filechooser.FileFilter
+import java.io.File
+import javax.swing.DefaultListCellRendererimport javax.swing.JListimport javax.swing.DefaultListModel/**
  * @author fortuna
  *
  */
@@ -282,6 +291,12 @@ public class Coucou{
                         comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 14))
                         statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
                         //statusField.focusGained = { nameField.selectAll() }
+                        
+                        def statusModel = new DefaultComboBoxModel()
+                        statusModel.addElement('Available')
+                        statusModel.addElement('Busy')
+                        statusModel.addElement('Away')
+                        statusField.model = statusModel
                     }
                 }
                 
@@ -292,13 +307,42 @@ public class Coucou{
                              panel(constraints: 'left', border: emptyBorder(10)) {
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                     list()
+                                     list(id: 'timeline')
+                                     timeline.cellRenderer = new TimelineListCellRenderer()
+                                     
+                                     def timelineModel = new DefaultListModel()
+                                     timelineModel.addElement(new ImMessage('Coucou'))
+                                     timelineModel.addElement(new MailMessage('Coucou'))
+                                     timelineModel.addElement(new EventMessage('Coucou'))
+                                     timelineModel.addElement(new TaskMessage('Coucou'))
+                                     timeline.model = timelineModel
                                  }
                              }
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts') {
                                      borderLayout()
-                                     textField('Search', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     
+                                     def findFilter = new PatternFilter()
+                                     
+                                     def findText = 'Find..'
+                                     textField(text: findText, id: 'findField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     findField.focusGained = {
+                                         if (findField.text == findText) {
+                                             findField.text = null
+                                         }
+                                     }
+                                     findField.focusLost = {
+                                         if (!findField.text) {
+                                             findField.text = findText
+                                         }
+                                     }
+                                     findField.keyPressed = { e ->
+                                         if (e.keyCode == KeyEvent.VK_ESCAPE) {
+                                             findField.text = null
+                                         }
+                                     }
+                                     findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
+                                     
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                          list()
                                      }
@@ -537,5 +581,125 @@ class ImageFileFilter extends FileFilter {
     
     String getDescription() {
         return 'All Image Files'
+    }
+}
+
+class FindFilterUpdater implements DocumentListener {
+
+    def findField
+    
+    def findFilter
+    
+    public FindFilterUpdater(def field, def filter) {
+        findField = field
+        findFilter = filter
+    }
+    
+    void insertUpdate(DocumentEvent e) {
+        if (findField.text) {
+            findFilter.setPattern("\\Q${findField.text}\\E", Pattern.CASE_INSENSITIVE)
+        }
+        else {
+            findFilter.pattern = null
+        }
+    }
+    
+    void removeUpdate(DocumentEvent e) {
+        if (findField.text) {
+            findFilter.setPattern("\\Q${findField.text}\\E", Pattern.CASE_INSENSITIVE)
+        }
+        else {
+            findFilter.pattern = null
+        }
+    }
+    
+    void changedUpdate(DocumentEvent e) {
+        if (findField.text) {
+            findFilter.setPattern("\\Q${findField.text}\\E", Pattern.CASE_INSENSITIVE)
+        }
+        else {
+            findFilter.pattern = null
+        }
+    }
+}
+
+class ImMessage {
+    
+    def text
+    
+    public ImMessage(def text) {
+        this.text = text
+    }
+    
+    String toString() {
+        return text
+    }
+}
+
+class MailMessage {
+    
+    def text
+    
+    public MailMessage(def text) {
+        this.text = text
+    }
+    
+    String toString() {
+        return text
+    }
+}
+
+class EventMessage {
+    
+    def text
+    
+    public EventMessage(def text) {
+        this.text = text
+    }
+    
+    String toString() {
+        return text
+    }
+}
+
+class TaskMessage {
+    
+    def text
+    
+    public TaskMessage(def text) {
+        this.text = text
+    }
+    
+    String toString() {
+        return text
+    }
+}
+
+class TimelineListCellRenderer extends DefaultListCellRenderer {
+
+    def iconSize = new Dimension(20, 20)
+    def imIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), iconSize)
+    def mailIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/mail.svg'), iconSize)
+    def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
+    def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+    
+    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+        if (value instanceof ImMessage) {
+            setIcon(imIcon)
+        }
+        else if (value instanceof MailMessage) {
+            setIcon(mailIcon)
+        }
+        else if (value instanceof EventMessage) {
+            setIcon(eventIcon)
+        }
+        else if (value instanceof TaskMessage) {
+            setIcon(taskIcon)
+        }
+        else {
+            setIcon(null)
+        }
+        return this
     }
 }
