@@ -61,7 +61,10 @@ import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.XMPPException
 import javax.swing.filechooser.FileFilter
 import java.io.File
-import javax.swing.DefaultListCellRendererimport javax.swing.JListimport javax.swing.DefaultListModel/**
+import javax.swing.DefaultListCellRenderer
+import javax.swing.JList
+import javax.swing.DefaultListModel
+/**
  * @author fortuna
  *
  */
@@ -677,11 +680,18 @@ class TaskMessage {
 
 class TimelineListCellRenderer extends DefaultListCellRenderer {
 
-    def iconSize = new Dimension(20, 20)
+    def iconSize = new Dimension(32, 32)
     def imIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), iconSize)
     def mailIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/mail.svg'), iconSize)
     def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
     def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+    
+    public TimelineListCellRenderer() {
+        iconTextGap = 10
+        verticalAlignment = CENTER
+        //alignmentY = 0.5
+        verticalTextPosition = TOP
+    }
     
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
