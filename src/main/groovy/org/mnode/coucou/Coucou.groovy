@@ -57,6 +57,7 @@ import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
 import org.jdesktop.swingx.decorator.PatternFilter
+import org.jdesktop.swingx.decorator.HighlighterFactory
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.XMPPException
 import javax.swing.filechooser.FileFilter
@@ -312,12 +313,13 @@ public class Coucou{
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                      list(id: 'timeline')
                                      timeline.cellRenderer = new TimelineListCellRenderer()
+                                     timeline.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      
                                      def timelineModel = new DefaultListModel()
-                                     timelineModel.addElement(new ImMessage('Coucou'))
-                                     timelineModel.addElement(new MailMessage('Coucou'))
-                                     timelineModel.addElement(new EventMessage('Coucou'))
-                                     timelineModel.addElement(new TaskMessage('Coucou'))
+                                     timelineModel.addElement(new ImMessage('Coucou', 'test@example.com', '9:23am'))
+                                     timelineModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', '9:23am', 3))
+                                     timelineModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', '9:23am'))
+                                     timelineModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', '9:23am'))
                                      timeline.model = timelineModel
                                  }
                              }
@@ -628,53 +630,71 @@ class FindFilterUpdater implements DocumentListener {
 
 class ImMessage {
     
+    def sender
     def text
+    def time
     
-    public ImMessage(def text) {
+    public ImMessage(def text, def sender, def time) {
         this.text = text
+        this.sender = sender
+        this.time = time
     }
     
     String toString() {
-        return text
+        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
     }
 }
 
 class MailMessage {
     
+    def sender
     def text
+    def time
+    def count
     
-    public MailMessage(def text) {
+    public MailMessage(def text, def sender, def time, def count) {
         this.text = text
+        this.sender = sender
+        this.time = time
+        this.count = count
     }
     
     String toString() {
-        return text
+        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr><td colspan=2><font color=silver size=-1>${count} Messages</font></td></tr></table></html>"
     }
 }
 
 class EventMessage {
     
+    def sender
     def text
+    def time
     
-    public EventMessage(def text) {
+    public EventMessage(def text, def sender, def time) {
         this.text = text
+        this.sender = sender
+        this.time = time
     }
     
     String toString() {
-        return text
+        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
     }
 }
 
 class TaskMessage {
     
+    def sender
     def text
+    def time
     
-    public TaskMessage(def text) {
+    public TaskMessage(def text, def sender, def time) {
         this.text = text
+        this.sender = sender
+        this.time = time
     }
     
     String toString() {
-        return text
+        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
     }
 }
 
