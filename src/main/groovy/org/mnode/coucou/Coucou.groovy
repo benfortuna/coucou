@@ -44,6 +44,7 @@ import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
 import javax.swing.event.DocumentListener
 import javax.swing.event.DocumentEvent
+import javax.swing.tree.DefaultMutableTreeNode as TreeNode
 import org.jvnet.substance.SubstanceLookAndFeel
 import org.jvnet.substance.api.SubstanceConstants
 import org.jvnet.substance.api.SubstanceConstants.TabCloseKind
@@ -311,16 +312,16 @@ public class Coucou{
                              panel(constraints: 'left', border: emptyBorder(10)) {
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                     list(id: 'timeline')
-                                     timeline.cellRenderer = new TimelineListCellRenderer()
-                                     timeline.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                     list(id: 'activity')
+                                     activity.cellRenderer = new TimelineListCellRenderer()
+                                     activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      
-                                     def timelineModel = new DefaultListModel()
-                                     timelineModel.addElement(new ImMessage('Coucou', 'test@example.com', '9:23am'))
-                                     timelineModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', '9:23am', 3))
-                                     timelineModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', '9:23am'))
-                                     timelineModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', '9:23am'))
-                                     timeline.model = timelineModel
+                                     def activityModel = new DefaultListModel()
+                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', '9:23am'))
+                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', '9:23am', 3))
+                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', '9:23am'))
+                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', '9:23am'))
+                                     activity.model = activityModel
                                  }
                              }
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
@@ -357,8 +358,21 @@ public class Coucou{
                                      }
                                  }
                                  panel(name: 'History') {
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                         list()
+                                     scrollPane(border: null) {
+                                         tree(id: 'historyTree', rootVisible: false)
+                                         historyTree.model.root.removeAllChildren()
+                                         
+                                         def mailNode = new TreeNode('Mail')
+                                         mailNode.add(new TreeNode('Inbox'))
+                                         mailNode.add(new TreeNode('Sent'))
+                                         mailNode.add(new TreeNode('Drafts'))
+                                         mailNode.add(new TreeNode('Deleted'))
+                                         
+                                         historyTree.model.root.add(mailNode)
+                                         historyTree.model.root.add(new TreeNode('Conversations'))
+                                         historyTree.model.root.add(new TreeNode('Events'))
+                                         historyTree.model.root.add(new TreeNode('Tasks'))
+                                         historyTree.model.reload(historyTree.model.root)
                                      }
                                  }
                                  panel(name: 'Accounts') {
