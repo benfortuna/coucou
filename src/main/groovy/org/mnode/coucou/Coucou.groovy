@@ -66,7 +66,7 @@ import java.io.File
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JList
 import javax.swing.DefaultListModel
-/**
+import org.netbeans.spi.wizard.WizardPageimport org.netbeans.spi.wizard.Wizardimport org.netbeans.spi.wizard.WizardBranchController/**
  * @author fortuna
  *
  */
@@ -99,6 +99,10 @@ public class Coucou{
      }
      
      static void main(def args) {
+//     	System.setProperty("java.net.useSystemProxies", "true");
+    	System.setProperty("apple.laf.useScreenMenuBar", "true");
+    	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
+         
          UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0))
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
          //UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
@@ -158,17 +162,71 @@ public class Coucou{
                     action(id: 'workOfflineAction', name: 'Work Offline', smallIcon: imageIcon('/offline.png'), accelerator: shortcut('shift O'), closure: {})
                     
                     action(id: 'newAccountAction', name: 'Create Account..', closure: {
-                        def tab = newAccountTab()
-                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
-                        tabs.add(tab)
-                        tabs.selectedComponent = tab
+//                        def tab = newAccountTab()
+//                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+//                        tabs.add(tab)
+//                        tabs.selectedComponent = tab
+                        def accountTypeSelect = new WizardPageImpl('accountTypeSelect', 'Select Account Type')
+//                        accountTypeSelect.description = 'Select Account Type'
+                        accountTypeSelect.validation = {
+                            if (!accountButtonGroup.selection) {
+                                return 'Please select an account type'
+                            }
+                            return null
+                        }
+                        accountTypeSelect.add panel(border: emptyBorder(50)) {
+                            gridLayout(cols: 1, rows: 2, vgap: 10)
+                            buttonGroup(id: 'accountButtonGroup')
+                            radioButton(text: 'XMPP', buttonGroup: accountButtonGroup, name: 'xmppAccount')
+                            radioButton(text: 'Email', buttonGroup: accountButtonGroup, name: 'emailAccount')
+                        }
+
+                        def xmppAccountDetails = new WizardPageImpl('xmppAccountDetails', 'Provide XMPP Details')
+                        xmppAccountDetails.validation = {
+                            null
+                        }
+                        xmppAccountDetails.add panel() {
+                            gridLayout(cols: 2, rows: 2, vgap: 10)
+                            label(text: 'Username')
+                            textField(name: 'usernameField')
+                            label(text: 'Password')
+                            passwordField(name: 'passwordField')
+                        }
+
+                        def emailAccountDetails = new WizardPageImpl('emailAccountDetails', 'Provide Email Details')
+                        emailAccountDetails.validation = {
+                            null
+                        }
+                        emailAccountDetails.add panel() {
+                            gridLayout(cols: 2, rows: 2, vgap: 10)
+                            label(text: 'Email Address')
+                            textField(name: 'emailAddressField')
+                            label(text: 'Password')
+                            passwordField(name: 'passwordField')
+                        }
+
+                        def branchController = new WizardBranchControllerImpl(accountTypeSelect)
+//                        branchController.keys = ['accountTypeSelect': []
+                        branchController.wizards = [
+                                'xmppAccount': WizardPage.createWizard("Add XMPP Account", (WizardPage[]) [xmppAccountDetails]),
+                                'emailAccount': WizardPage.createWizard("Add Email Account", (WizardPage[]) [emailAccountDetails])]
+//                        Wizard wizard = WizardPage.createWizard("Add Account", (WizardPage[]) [accountTypeSelect]);
+                        Wizard wizard = branchController.createWizard()
+                        wizard.show();
                     })
                     
                     action(id: 'newContactAction', name: 'New Contact..', closure: {
-                        def tab = newContactTab()
-                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
-                        tabs.add(tab)
-                        tabs.selectedComponent = tab
+//                        def tab = newContactTab()
+//                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+//                        tabs.add(tab)
+//                        tabs.selectedComponent = tab
+                        def accountTypeSelect = new WizardPageImpl('accountTypeSelect', 'Select Account Type')
+//                        accountTypeSelect.description = 
+                        accountTypeSelect.layout = gridLayout(cols: 1, rows: 3)
+                        accountTypeSelect.add radioButton(label: 'XMPP')
+                        
+                        Wizard wizard = WizardPage.createWizard("Add Contact", (WizardPage[]) [accountTypeSelect]);
+                        wizard.show();
                     })
 
                     action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
@@ -467,6 +525,19 @@ public class Coucou{
            coucouFrame.windowClosing = {
                close(coucouFrame, !SystemTray.isSupported())
            }
+           
+           // bonjour..
+           /*
+           try {
+               JmDNS jmdns = JmDNS.create();
+               ServiceInfo info = ServiceInfo.create("_presence._tcp.local.", "Coucou [" + username + "]", 1337, 0, 0, "");
+               jmdns.registerService(info);
+           } catch (IOException e1) {
+               // TODO Auto-generated catch block
+               e1.printStackTrace();
+           }
+           */
+           
            coucouFrame.visible = true
          }
          
@@ -745,5 +816,48 @@ class TimelineListCellRenderer extends DefaultListCellRenderer {
             setIcon(null)
         }
         return this
+    }
+}
+
+class WizardPageImpl extends WizardPage {
+    
+//    static String description
+    
+    def validation
+    
+    public WizardPageImpl(String stepId, String stepDescription) {
+        super(stepId, stepDescription)
+    }
+//    static String getDescription() {
+//        return description
+//    }
+    
+    protected String validateContents(Component component, Object event) {
+        String validationString = validation()
+        if (validationString) {
+            return validationString;
+        }
+        return super.validateContents(component, event);
+    }
+}
+
+class WizardBranchControllerImpl extends WizardBranchController {
+    
+//    def keys = [:]
+
+    def wizards = [:]
+    
+    public WizardBranchControllerImpl(WizardPage page) {
+        super(page)
+    }
+    
+    protected Wizard getWizardForStep(String wizardStep, Map settings) {
+        for (e in wizards) {
+            if (settings[e.key]) {
+                println "matched: ${e.key}"
+                return e.value
+            }
+        }
+        return null
     }
 }

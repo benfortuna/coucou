@@ -159,6 +159,16 @@
 			<artifactId>base-xmpp</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+        <dependency>
+            <groupId>org.netbeans.wizard</groupId>
+            <artifactId>wizard</artifactId>
+            <version>0.998.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jmdns</groupId>
+            <artifactId>jmdns</artifactId>
+            <version>2.0</version>
+        </dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>
