@@ -220,12 +220,26 @@ public class Coucou{
 //                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
 //                        tabs.add(tab)
 //                        tabs.selectedComponent = tab
-                        def accountTypeSelect = new WizardPageImpl('accountTypeSelect', 'Select Account Type')
+                        def contactDetails = new WizardPageImpl('contactDetails', 'Specify contact details')
 //                        accountTypeSelect.description = 
-                        accountTypeSelect.layout = gridLayout(cols: 1, rows: 3)
-                        accountTypeSelect.add radioButton(label: 'XMPP')
+                        contactDetails.layout = gridLayout(cols: 2, rows: 3)
+                        contactDetails.add panel() {
+                            label(text: 'First Name')
+                            textField(name: 'firstNameField', id: 'firstNameField')
+                            label(text: 'Last Name')
+                            textField(name: 'lastNameField', id: 'lastNameField')
+                        }
+                        contactDetails.validation = {
+                            if (!firstNameField.text) {
+                                return 'Please specify the contact first name'
+                            }
+                            if (!lastNameField.text) {
+                                return 'Please specify the contact last name'
+                            }
+                            return null
+                        }
                         
-                        Wizard wizard = WizardPage.createWizard("Add Contact", (WizardPage[]) [accountTypeSelect]);
+                        Wizard wizard = WizardPage.createWizard("Add Contact", (WizardPage[]) [contactDetails]);
                         wizard.show();
                     })
 
@@ -854,7 +868,6 @@ class WizardBranchControllerImpl extends WizardBranchController {
     protected Wizard getWizardForStep(String wizardStep, Map settings) {
         for (e in wizards) {
             if (settings[e.key]) {
-                println "matched: ${e.key}"
                 return e.value
             }
         }
