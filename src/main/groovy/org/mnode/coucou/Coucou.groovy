@@ -119,6 +119,9 @@ public class Coucou{
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
          
+        System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+        System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
+        
          UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0))
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
          //UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
@@ -530,7 +533,7 @@ public class Coucou{
                                          }
                                          accountsTree.model.reload(accountsTree.model.root)
                                          //accountList.model = accountsModel
-                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', false, null, null, false)
+                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -1006,6 +1009,8 @@ class AccountsUpdateListener implements javax.jcr.observation.EventListener {
             if (event.type == Event.NODE_ADDED) {
                 println "Account added: ${event.path}"
                 //accountsList.model.addElement(event.path)
+//                def node = session.rootNode.getNode(event.path)
+                
             }
             else if (event.type == Event.NODE_REMOVED) {
                 println "Account removed: ${event.path}"
