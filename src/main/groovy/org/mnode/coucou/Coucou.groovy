@@ -66,7 +66,17 @@ import java.io.File
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JList
 import javax.swing.DefaultListModel
-import org.netbeans.spi.wizard.WizardPageimport org.netbeans.spi.wizard.Wizardimport org.netbeans.spi.wizard.WizardBranchController/**
+import org.netbeans.spi.wizard.WizardPage
+import org.netbeans.spi.wizard.Wizard
+import org.netbeans.spi.wizard.WizardBranchController
+import org.netbeans.spi.wizard.WizardException
+import org.netbeans.spi.wizard.WizardPage.WizardResultProducer
+import javax.jcr.SimpleCredentials
+import javax.jcr.observation.*
+import org.apache.jackrabbit.core.TransientRepository
+import net.miginfocom.swing.MigLayout
+
+/**
  * @author fortuna
  *
  */
@@ -85,6 +95,12 @@ import org.netbeans.spi.wizard.WizardPageimport org.netbeans.spi.wizard.Wizard
     @Grab(group='org.apache.xmlgraphics', module='batik-swing', version='1.7'),
     @Grab(group='org.apache.xmlgraphics', module='batik-transcoder', version='1.7'),
     @Grab(group='net.java.dev.datatips', module='datatips', version='20091219'),
+    @Grab(group='org.netbeans.wizard', module='wizard', version='0.998.1'),
+    @Grab(group='javax.jcr', module='jcr', version='2.0'),
+    @Grab(group='org.apache.commons', module='commons-compress', version='1.0'),
+    @Grab(group='org.apache.jackrabbit', module='jackrabbit-core', version='2.0-beta6'),
+    @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
+    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
     */
 public class Coucou{
@@ -99,15 +115,51 @@ public class Coucou{
      }
      
      static void main(def args) {
-//     	System.setProperty("java.net.useSystemProxies", "true");
-    	System.setProperty("apple.laf.useScreenMenuBar", "true");
-    	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
+//         System.setProperty("java.net.useSystemProxies", "true");
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
          
          UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0))
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
          //UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
          LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceNebulaLookAndFeel')
          LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
+        
+        def repository = new TransientRepository()
+        
+        def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
+        Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
+        
+        if (!session.rootNode.hasNode('accounts')) {
+            println 'Initialising accounts node..'
+            def accountsNode = session.rootNode.addNode('accounts')
+            session.rootNode.save()
+        }
+        if (!session.rootNode.hasNode('contacts')) {
+            println 'Initialising contacts node..'
+            def contactsNode = session.rootNode.addNode('contacts')
+            session.rootNode.save()
+        }
+        if (!session.rootNode.hasNode('mail')) {
+            println 'Initialising mail node..'
+            def mailNode = session.rootNode.addNode('mail')
+            session.rootNode.save()
+        }
+        if (!session.rootNode.hasNode('conversations')) {
+            println 'Initialising conversations node..'
+            def conversationsNode = session.rootNode.addNode('conversations')
+            session.rootNode.save()
+        }
+        if (!session.rootNode.hasNode('events')) {
+            println 'Initialising events node..'
+            def eventsNode = session.rootNode.addNode('events')
+            session.rootNode.save()
+        }
+        if (!session.rootNode.hasNode('tasks')) {
+            println 'Initialising tasks node..'
+            def tasksNode = session.rootNode.addNode('tasks')
+            session.rootNode.save()
+        }
         
          def swing = new SwingXBuilder()
 
@@ -150,6 +202,10 @@ public class Coucou{
              }
          }
 
+        def openFolderTab = { folder ->
+             swing.panel(name: folder.getProperty('displayName').string)
+        }
+        
          swing.edt {
              lookAndFeel('seaglass', 'substance5', 'system')
 
@@ -166,7 +222,9 @@ public class Coucou{
 //                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
 //                        tabs.add(tab)
 //                        tabs.selectedComponent = tab
+                        def pageSize = new Dimension(250, 200)
                         def accountTypeSelect = new WizardPageImpl('accountTypeSelect', 'Select Account Type')
+                        accountTypeSelect.preferredSize = pageSize
 //                        accountTypeSelect.description = 'Select Account Type'
                         accountTypeSelect.validation = {
                             if (!accountButtonGroup.selection) {
@@ -174,41 +232,43 @@ public class Coucou{
                             }
                             return null
                         }
-                        accountTypeSelect.add panel(border: emptyBorder(50)) {
-                            gridLayout(cols: 1, rows: 2, vgap: 10)
+                        accountTypeSelect.add panel(layout: new MigLayout('fill')) {
+                            //gridLayout(cols: 1, rows: 2, vgap: 10)
                             buttonGroup(id: 'accountButtonGroup')
-                            radioButton(text: 'XMPP', buttonGroup: accountButtonGroup, name: 'xmppAccount')
+                            radioButton(text: 'XMPP', buttonGroup: accountButtonGroup, name: 'xmppAccount', constraints: 'wrap')
                             radioButton(text: 'Email', buttonGroup: accountButtonGroup, name: 'emailAccount')
                         }
 
                         def xmppAccountDetails = new WizardPageImpl('xmppAccountDetails', 'Provide XMPP Details')
+                        xmppAccountDetails.preferredSize = pageSize
                         xmppAccountDetails.validation = {
                             null
                         }
-                        xmppAccountDetails.add panel() {
-                            gridLayout(cols: 2, rows: 2, vgap: 10)
+                        xmppAccountDetails.add panel(layout: new MigLayout('fill')) {
+                            //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'Username')
-                            textField(name: 'usernameField')
+                            textField(name: 'usernameField', columns: 20, constraints: 'wrap')
                             label(text: 'Password')
-                            passwordField(name: 'passwordField')
+                            passwordField(name: 'passwordField', columns: 20)
                         }
 
                         def emailAccountDetails = new WizardPageImpl('emailAccountDetails', 'Provide Email Details')
+                        emailAccountDetails.preferredSize = pageSize
                         emailAccountDetails.validation = {
                             null
                         }
-                        emailAccountDetails.add panel() {
-                            gridLayout(cols: 2, rows: 2, vgap: 10)
+                        emailAccountDetails.add panel(layout: new MigLayout('fill')) {
+                            //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'Email Address')
-                            textField(name: 'emailAddressField')
+                            textField(name: 'emailAddressField', columns: 20)
                             label(text: 'Password')
-                            passwordField(name: 'passwordField')
+                            passwordField(name: 'passwordField', columns: 20)
                         }
 
                         def branchController = new WizardBranchControllerImpl(accountTypeSelect)
 //                        branchController.keys = ['accountTypeSelect': []
                         branchController.wizards = [
-                                'xmppAccount': WizardPage.createWizard("Add XMPP Account", (WizardPage[]) [xmppAccountDetails]),
+                                'xmppAccount': WizardPage.createWizard("Add XMPP Account", (WizardPage[]) [xmppAccountDetails], new CreateAccountProducer(session.rootNode.getNode('accounts'))),
                                 'emailAccount': WizardPage.createWizard("Add Email Account", (WizardPage[]) [emailAccountDetails])]
 //                        Wizard wizard = WizardPage.createWizard("Add Account", (WizardPage[]) [accountTypeSelect]);
                         Wizard wizard = branchController.createWizard()
@@ -220,14 +280,16 @@ public class Coucou{
 //                        tab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
 //                        tabs.add(tab)
 //                        tabs.selectedComponent = tab
+                        def pageSize = new Dimension(250, 200)
                         def contactDetails = new WizardPageImpl('contactDetails', 'Specify contact details')
 //                        accountTypeSelect.description = 
-                        contactDetails.layout = gridLayout(cols: 2, rows: 3)
-                        contactDetails.add panel() {
+                        contactDetails.preferredSize = pageSize
+                        contactDetails.add panel(layout: new MigLayout('fill')) {
+                            //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'First Name')
-                            textField(name: 'firstNameField', id: 'firstNameField')
+                            textField(name: 'firstNameField', id: 'firstNameField', columns: 20, constraints: 'wrap')
                             label(text: 'Last Name')
-                            textField(name: 'lastNameField', id: 'lastNameField')
+                            textField(name: 'lastNameField', id: 'lastNameField', columns: 20)
                         }
                         contactDetails.validation = {
                             if (!firstNameField.text) {
@@ -251,7 +313,7 @@ public class Coucou{
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://wiki.mnode.org/coucou')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
                      action(id: 'aboutAction', name: 'About', closure: {
-                         dialog(title: 'About Coucou', size: [300, 200], show: true, owner: coucouFrame, modal: true, locationRelativeTo: coucouFrame) {
+                         dialog(title: 'About Coucou', size: [350, 250], show: true, owner: coucouFrame, modal: true, locationRelativeTo: coucouFrame) {
                              borderLayout()
                              label(text: 'Coucou 1.0', constraints: BorderLayout.NORTH, border: emptyBorder(10))
                              panel(constraints: BorderLayout.CENTER, border: emptyBorder(10)) {
@@ -397,7 +459,7 @@ public class Coucou{
                                  }
                              }
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
-                                 panel(name: 'Contacts') {
+                                 panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
                                      
                                      def findFilter = new PatternFilter()
@@ -429,9 +491,10 @@ public class Coucou{
                                          hyperlink(new JXHyperlink(newContactAction))
                                      }
                                  }
-                                 panel(name: 'History') {
+                                 panel(name: 'History', border: emptyBorder(10)) {
+                                     borderLayout()
                                      scrollPane(border: null) {
-                                         tree(id: 'historyTree', rootVisible: false)
+                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
                                          historyTree.model.root.removeAllChildren()
                                          
                                          def mailNode = new TreeNode('Mail')
@@ -447,10 +510,27 @@ public class Coucou{
                                          historyTree.model.reload(historyTree.model.root)
                                      }
                                  }
-                                 panel(name: 'Accounts') {
+                                 panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                         list(id: 'accountList')
+                                         tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
+                                         accountsTree.model.root.removeAllChildren()
+                                         //list(id: 'accountList')
+                                         //def accountsModel = new DefaultListModel()
+                                         def accountTypeNodes = session.rootNode.getNode('accounts').getNodes()
+                                         while (accountTypeNodes.hasNext()) {
+                                             //accountsModel.addElement accountNodes.nextNode().name
+                                             def accountTypeNode = accountTypeNodes.nextNode()
+                                             def treeNode = new TreeNode(accountTypeNode.name)
+                                             def accountNodes = accountTypeNode.getNodes()
+                                             while (accountNodes.hasNext()) {
+                                                 treeNode.add(new TreeNode(accountNodes.next().name))
+                                             }
+                                             accountsTree.model.root.add(treeNode)
+                                         }
+                                         accountsTree.model.reload(accountsTree.model.root)
+                                         //accountList.model = accountsModel
+                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', false, null, null, false)
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -872,5 +952,65 @@ class WizardBranchControllerImpl extends WizardBranchController {
             }
         }
         return null
+    }
+}
+
+class CreateAccountProducer implements WizardResultProducer {
+
+    def accountsNode
+    
+    CreateAccountProducer(def accountsNode) {
+        this.accountsNode = accountsNode
+    }
+    
+    Object finish(Map data) throws WizardException {
+        if (data['xmppAccount']) {
+            if (!accountsNode.hasNode('xmpp')) {
+                accountsNode.addNode('xmpp')
+            }
+            def node = accountsNode.addNode("xmpp/${data['usernameField']}")
+            accountsNode.save()
+        }
+        return null
+    }
+
+    boolean cancel(Map settings) {
+        return true;
+    }
+}
+
+class SessionLogout extends Thread {
+
+    def session
+    
+    SessionLogout(def session) {
+        this.session = session
+    }
+    
+    void run() {
+        session.logout()
+    }
+}
+
+class AccountsUpdateListener implements EventListener {
+
+    def accountsList
+    
+    AccountsUpdateListener(def list) {
+        accountsList = list
+    }
+    
+    void onEvent(EventIterator events) {
+        while (events.hasNext()) {
+            def event = events.nextEvent()
+            if (event.type == Event.NODE_ADDED) {
+                println "Account added: ${event.path}"
+                //accountsList.model.addElement(event.path)
+            }
+            else if (event.type == Event.NODE_REMOVED) {
+                println "Account removed: ${event.path}"
+                //accountsList.model.removeElement(event.path)
+            }
+        }
     }
 }
