@@ -992,7 +992,7 @@ class SessionLogout extends Thread {
     }
 }
 
-class AccountsUpdateListener implements EventListener {
+class AccountsUpdateListener implements javax.jcr.observation.EventListener {
 
     def accountsList
     
