@@ -75,7 +75,7 @@ import javax.jcr.SimpleCredentials
 import javax.jcr.observation.*
 import org.apache.jackrabbit.core.TransientRepository
 import net.miginfocom.swing.MigLayout
-
+import org.mnode.base.desktop.AbstractTreeModelimport javax.swing.tree.TreePath
 /**
  * @author fortuna
  *
@@ -517,12 +517,10 @@ public class Coucou{
                                      borderLayout()
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                          tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
+                                         /*
                                          accountsTree.model.root.removeAllChildren()
-                                         //list(id: 'accountList')
-                                         //def accountsModel = new DefaultListModel()
                                          def accountTypeNodes = session.rootNode.getNode('accounts').getNodes()
                                          while (accountTypeNodes.hasNext()) {
-                                             //accountsModel.addElement accountNodes.nextNode().name
                                              def accountTypeNode = accountTypeNodes.nextNode()
                                              def treeNode = new TreeNode(accountTypeNode.name)
                                              def accountNodes = accountTypeNode.getNodes()
@@ -532,8 +530,9 @@ public class Coucou{
                                              accountsTree.model.root.add(treeNode)
                                          }
                                          accountsTree.model.reload(accountsTree.model.root)
-                                         //accountList.model = accountsModel
-                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
+                                         */
+                                         accountsTree.model = new RepositoryTreeModel(session.rootNode.getNode('accounts'))
+//                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -1015,6 +1014,63 @@ class AccountsUpdateListener implements javax.jcr.observation.EventListener {
             else if (event.type == Event.NODE_REMOVED) {
                 println "Account removed: ${event.path}"
                 //accountsList.model.removeElement(event.path)
+            }
+        }
+    }
+}
+
+class RepositoryTreeModel extends AbstractTreeModel {
+    
+    def root
+    
+    RepositoryTreeModel(def rootNode) {
+        root = rootNode
+        root.session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, root.path, true, null, null, false)
+    }
+    
+    Object getChild(Object parent, int index) {
+        def nodes = parent.nodes
+        nodes.skip(index - 1)
+        return nodes.next()
+    }
+    
+    int getChildCount(Object parent) {
+        return parent.nodes.size
+    }
+    
+    int getIndexOfChild(Object parent, Object child) {
+        def nodes = parent.nodes
+        while (nodes.hasNext()) {
+            if (nodes.next() == child) {
+                return nodes.position
+            }
+        }
+        return -1
+    }
+    
+    Object getRoot() {
+        return root
+    }
+    
+    boolean isLeaf(Object node) {
+        return !node.hasNodes()
+    }
+    
+    void onEvent(EventIterator events) {
+        while (events.hasNext()) {
+            def event = events.nextEvent()
+            if (event.type == Event.NODE_ADDED) {
+                println "Account added: ${event.path}"
+                def node = session.rootNode.getNode(event.path)
+                def path = [node]
+                while (node.parent != null) {
+                    path.insert(0, node.parent)
+                    node = node.parent
+                }
+                fireTreeStructureChanged(new TreePath((Object[]) path))
+            }
+            else if (event.type == Event.NODE_REMOVED) {
+                println "Account removed: ${event.path}"
             }
         }
     }
