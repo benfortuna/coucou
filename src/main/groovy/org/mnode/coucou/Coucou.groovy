@@ -71,11 +71,15 @@ import org.netbeans.spi.wizard.Wizard
 import org.netbeans.spi.wizard.WizardBranchController
 import org.netbeans.spi.wizard.WizardException
 import org.netbeans.spi.wizard.WizardPage.WizardResultProducer
+import javax.jcr.ItemNotFoundException
 import javax.jcr.SimpleCredentials
 import javax.jcr.observation.*
 import org.apache.jackrabbit.core.TransientRepository
 import net.miginfocom.swing.MigLayout
-import org.mnode.base.desktop.AbstractTreeModelimport javax.swing.tree.TreePath
+import org.mnode.base.desktop.AbstractTreeModel
+import javax.swing.tree.TreePath
+import org.apache.jackrabbit.core.config.RepositoryConfig
+
 /**
  * @author fortuna
  *
@@ -88,6 +92,7 @@ import org.mnode.base.desktop.AbstractTreeModelimport javax.swing.tree.TreePath
     //@Grab(group='org.swinglabs', module='swingx', version='0.9.2'),
     @Grab(group='org.mnode.base', module='base-views', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-xmpp', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT'),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
@@ -118,17 +123,18 @@ public class Coucou{
 //         System.setProperty("java.net.useSystemProxies", "true");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
-         
-        System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
-        System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
          UIManager.put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0))
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
          //UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
          LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceNebulaLookAndFeel')
          LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
+         
+        //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+        //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
-        def repository = new TransientRepository()
+        def repoConfig = RepositoryConfig.create(Coucou.class.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+        def repository = new TransientRepository(repoConfig)
         
         def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
         Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
@@ -313,7 +319,7 @@ public class Coucou{
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
-                     action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://wiki.mnode.org/coucou')) })
+                     action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
                      action(id: 'aboutAction', name: 'About', closure: {
                          dialog(title: 'About Coucou', size: [350, 250], show: true, owner: coucouFrame, modal: true, locationRelativeTo: coucouFrame) {
@@ -340,6 +346,7 @@ public class Coucou{
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
+                    action(id: 'logoutAction', name: 'Logout', closure: { session.logout() })
                 }
                 
                 fileChooser(id: 'chooser', fileFilter: new ImageFileFilter())
@@ -402,6 +409,7 @@ public class Coucou{
                         separator()
                         checkBoxMenuItem(workOfflineAction, selectedIcon: imageIcon('/offline_selected.png', id: 'offlineSelectedIcon'),
                                 rolloverIcon: imageIcon('/offline_rollover.png', id: 'offlineRolloverIcon'))
+                        menuItem(logoutAction)
                     }
                     menu(text: "Help", mnemonic: 'H') {
                         menuItem(onlineHelpAction)
@@ -532,7 +540,9 @@ public class Coucou{
                                          accountsTree.model.reload(accountsTree.model.root)
                                          */
                                          accountsTree.model = new RepositoryTreeModel(session.rootNode.getNode('accounts'))
-//                                         session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
+                                         //session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
+                                         //session.workspace.observationManager.addEventListener(accountsTree.model, Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
+
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -994,32 +1004,7 @@ class SessionLogout extends Thread {
     }
 }
 
-class AccountsUpdateListener implements javax.jcr.observation.EventListener {
-
-    def accountsList
-    
-    AccountsUpdateListener(def list) {
-        accountsList = list
-    }
-    
-    void onEvent(EventIterator events) {
-        while (events.hasNext()) {
-            def event = events.nextEvent()
-            if (event.type == Event.NODE_ADDED) {
-                println "Account added: ${event.path}"
-                //accountsList.model.addElement(event.path)
-//                def node = session.rootNode.getNode(event.path)
-                
-            }
-            else if (event.type == Event.NODE_REMOVED) {
-                println "Account removed: ${event.path}"
-                //accountsList.model.removeElement(event.path)
-            }
-        }
-    }
-}
-
-class RepositoryTreeModel extends AbstractTreeModel {
+class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observation.EventListener {
     
     def root
     
@@ -1030,8 +1015,11 @@ class RepositoryTreeModel extends AbstractTreeModel {
     
     Object getChild(Object parent, int index) {
         def nodes = parent.nodes
-        nodes.skip(index - 1)
-        return nodes.next()
+        if (index >= 0 && index < nodes.size) {
+            nodes.skip(index)
+            return nodes.nextNode()
+        }
+        return null
     }
     
     int getChildCount(Object parent) {
@@ -1041,7 +1029,7 @@ class RepositoryTreeModel extends AbstractTreeModel {
     int getIndexOfChild(Object parent, Object child) {
         def nodes = parent.nodes
         while (nodes.hasNext()) {
-            if (nodes.next() == child) {
+            if (nodes.nextNode() == child) {
                 return nodes.position
             }
         }
@@ -1061,12 +1049,19 @@ class RepositoryTreeModel extends AbstractTreeModel {
             def event = events.nextEvent()
             if (event.type == Event.NODE_ADDED) {
                 println "Account added: ${event.path}"
-                def node = session.rootNode.getNode(event.path)
-                def path = [node]
-                while (node.parent != null) {
-                    path.insert(0, node.parent)
-                    node = node.parent
+                def path = []
+                try {
+                    def node = root.session.getItem(event.path)
+                    while (node) {
+                        path.add(0, node)
+                        node = node.parent
+                    }
+                } catch (ItemNotFoundException e) {
+                    // must be the root node..
+                } catch (Exception e) {
+                    println e
                 }
+                println "Firing path change event: ${path}"
                 fireTreeStructureChanged(new TreePath((Object[]) path))
             }
             else if (event.type == Event.NODE_REMOVED) {
