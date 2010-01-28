@@ -188,6 +188,12 @@
         	<groupId>org.mnode.base</groupId>
         	<artifactId>base-desktop</artifactId>
         	<version>0.0.1-SNAPSHOT</version>
+        	<exclusions>
+        		<exclusion>
+        			<artifactId>jxlayer</artifactId>
+        			<groupId>org.swinglabs</groupId>
+        		</exclusion>
+        	</exclusions>
         </dependency>
 	</dependencies>
 	<scm>
