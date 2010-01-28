@@ -79,7 +79,7 @@ import net.miginfocom.swing.MigLayout
 import org.mnode.base.desktop.AbstractTreeModel
 import javax.swing.tree.TreePath
 import org.apache.jackrabbit.core.config.RepositoryConfig
-
+import javax.swing.tree.DefaultTreeCellRendererimport javax.swing.JTree
 /**
  * @author fortuna
  *
@@ -540,6 +540,7 @@ public class Coucou{
                                          accountsTree.model.reload(accountsTree.model.root)
                                          */
                                          accountsTree.model = new RepositoryTreeModel(session.rootNode.getNode('accounts'))
+                                         accountsTree.cellRenderer = new RepositoryTreeCellRenderer()
                                          //session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
                                          //session.workspace.observationManager.addEventListener(accountsTree.model, Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
 
@@ -1068,5 +1069,14 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
                 println "Account removed: ${event.path}"
             }
         }
+    }
+}
+
+class RepositoryTreeCellRenderer extends DefaultTreeCellRenderer {
+    
+    Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+        super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
+        text = value.name
+        return this
     }
 }
