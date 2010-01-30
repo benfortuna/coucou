@@ -23,6 +23,7 @@ import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Desktop
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
@@ -79,7 +80,13 @@ import net.miginfocom.swing.MigLayout
 import org.mnode.base.desktop.AbstractTreeModel
 import javax.swing.tree.TreePath
 import org.apache.jackrabbit.core.config.RepositoryConfig
-import javax.swing.tree.DefaultTreeCellRendererimport javax.swing.JTree
+import javax.swing.tree.DefaultTreeCellRenderer
+import javax.swing.JTree
+import javax.swing.ListModel
+import javax.swing.DefaultListCellRenderer
+import javax.swing.event.ListDataListener
+import org.apache.log4j.Logger
+
 /**
  * @author fortuna
  *
@@ -102,13 +109,16 @@ import javax.swing.tree.DefaultTreeCellRendererimport javax.swing.JTree
     @Grab(group='net.java.dev.datatips', module='datatips', version='20091219'),
     @Grab(group='org.netbeans.wizard', module='wizard', version='0.998.1'),
     @Grab(group='javax.jcr', module='jcr', version='2.0'),
-    @Grab(group='org.apache.commons', module='commons-compress', version='1.0'),
-    @Grab(group='org.apache.jackrabbit', module='jackrabbit-core', version='2.0-beta6'),
+    //@Grab(group='org.apache.commons', module='commons-compress', version='1.0'),
+    @Grab(group='org.apache.jackrabbit', module='jackrabbit-core', version='2.0.0'),
+    //@Grab(group='org.apache.jackrabbit', module='jackrabbit-text-extractors', version='2.0.0'),
     @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
     @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
     */
 public class Coucou{
+     
+     static Logger log = Logger.getInstance(Coucou.class)
      
      static void close(def frame, def exit) {
          if (exit) {
@@ -140,33 +150,23 @@ public class Coucou{
         Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
         
         if (!session.rootNode.hasNode('accounts')) {
-            println 'Initialising accounts node..'
+            log.info 'Initialising accounts node..'
             def accountsNode = session.rootNode.addNode('accounts')
             session.rootNode.save()
         }
         if (!session.rootNode.hasNode('contacts')) {
-            println 'Initialising contacts node..'
+            log.info 'Initialising contacts node..'
             def contactsNode = session.rootNode.addNode('contacts')
             session.rootNode.save()
         }
-        if (!session.rootNode.hasNode('mail')) {
-            println 'Initialising mail node..'
-            def mailNode = session.rootNode.addNode('mail')
+        if (!session.rootNode.hasNode('history')) {
+            log.info 'Initialising history node..'
+            def historyNode = session.rootNode.addNode('history')
             session.rootNode.save()
         }
-        if (!session.rootNode.hasNode('conversations')) {
-            println 'Initialising conversations node..'
-            def conversationsNode = session.rootNode.addNode('conversations')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('events')) {
-            println 'Initialising events node..'
-            def eventsNode = session.rootNode.addNode('events')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('tasks')) {
-            println 'Initialising tasks node..'
-            def tasksNode = session.rootNode.addNode('tasks')
+        if (!session.rootNode.hasNode('archive')) {
+            log.info 'Initialising archive node..'
+            def archiveNode = session.rootNode.addNode('archive')
             session.rootNode.save()
         }
         
@@ -472,40 +472,49 @@ public class Coucou{
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
+                                     label(text: 'Contacts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
                                      
-                                     def findFilter = new PatternFilter()
+                                     panel() {
+                                         borderLayout()
+                                         
+                                         def findFilter = new PatternFilter()
                                      
-                                     def findText = 'Find..'
-                                     textField(text: findText, id: 'findField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                     findField.focusGained = {
-                                         if (findField.text == findText) {
-                                             findField.text = null
+                                         def findText = 'Find..'
+                                         textField(text: findText, id: 'findField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                         findField.focusGained = {
+                                             if (findField.text == findText) {
+                                                 findField.text = null
+                                             }
                                          }
-                                     }
-                                     findField.focusLost = {
-                                         if (!findField.text) {
-                                             findField.text = findText
+                                         findField.focusLost = {
+                                             if (!findField.text) {
+                                                 findField.text = findText
+                                             }
                                          }
-                                     }
-                                     findField.keyPressed = { e ->
-                                         if (e.keyCode == KeyEvent.VK_ESCAPE) {
-                                             findField.text = null
+                                         findField.keyPressed = { e ->
+                                             if (e.keyCode == KeyEvent.VK_ESCAPE) {
+                                                 findField.text = null
+                                             }
                                          }
-                                     }
-                                     findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
+                                         findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
                                      
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                         list()
-                                     }
-                                     hbox(constraints: BorderLayout.SOUTH) {
-                                         hglue()
-                                         hyperlink(new JXHyperlink(newContactAction))
+                                         scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                             list(id: 'contactsList')
+                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
+                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
+                                         }
+                                         hbox(constraints: BorderLayout.SOUTH) {
+                                             hglue()
+                                             hyperlink(new JXHyperlink(newContactAction))
+                                         }
                                      }
                                  }
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
+                                     label(text: 'History', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
                                      scrollPane(border: null) {
                                          tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
+                                         /*
                                          historyTree.model.root.removeAllChildren()
                                          
                                          def mailNode = new TreeNode('Mail')
@@ -519,11 +528,15 @@ public class Coucou{
                                          historyTree.model.root.add(new TreeNode('Events'))
                                          historyTree.model.root.add(new TreeNode('Tasks'))
                                          historyTree.model.reload(historyTree.model.root)
+                                         */
+                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
+                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
                                      }
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                     label(text: 'Accounts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
+                                     scrollPane(border: null) {
                                          tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
                                          /*
                                          accountsTree.model.root.removeAllChildren()
@@ -673,7 +686,7 @@ class XmppAccount {
             connection.connect();
             connection.login("test", "!password");
         } catch (XMPPException ex) {
-            ex.printStackTrace();
+            log.error ex;
         }
     }
 }
@@ -984,6 +997,13 @@ class CreateAccountProducer implements WizardResultProducer {
             def node = accountsNode.addNode("xmpp/${data['usernameField']}")
             accountsNode.save()
         }
+        else if (data['emailAccount']) {
+            if (!accountsNode.hasNode('mail')) {
+                accountsNode.addNode('mail')
+            }
+            def node = accountsNode.addNode("mail/${data['emaiLAddressField']}")
+            accountsNode.save()
+        }
         return null
     }
 
@@ -1001,7 +1021,9 @@ class SessionLogout extends Thread {
     }
     
     void run() {
+        log.info 'Logging out session..'
         session.logout()
+        log.info 'Session logged out.'
     }
 }
 
@@ -1049,7 +1071,7 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
         while (events.hasNext()) {
             def event = events.nextEvent()
             if (event.type == Event.NODE_ADDED) {
-                println "Account added: ${event.path}"
+                log.info "Node added: ${event.path}"
                 def path = []
                 try {
                     def node = root.session.getItem(event.path)
@@ -1062,11 +1084,11 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
                 } catch (Exception e) {
                     println e
                 }
-                println "Firing path change event: ${path}"
+                log.info "Firing path change event: ${path}"
                 fireTreeStructureChanged(new TreePath((Object[]) path))
             }
             else if (event.type == Event.NODE_REMOVED) {
-                println "Account removed: ${event.path}"
+                log.info "Node removed: ${event.path}"
             }
         }
     }
@@ -1076,6 +1098,42 @@ class RepositoryTreeCellRenderer extends DefaultTreeCellRenderer {
     
     Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
+        text = value.name
+        return this
+    }
+}
+
+class RepositoryListModel implements ListModel {
+
+    def node
+    
+    RepositoryListModel(def node) {
+        this.node = node
+    }
+    
+    Object getElementAt(int index) {
+        def nodes = node.nodes
+        if (index >= 0 && index < nodes.size) {
+            nodes.skip(index)
+            return nodes.nextNode()
+        }
+        return null
+    }
+ 
+    int getSize() {
+        return node.nodes.size
+    }
+ 
+    void addListDataListener(ListDataListener l) {}
+
+    void removeListDataListener(ListDataListener l) {}
+}
+
+
+class RepositoryListCellRenderer extends DefaultListCellRenderer {
+    
+    Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
         text = value.name
         return this
     }
