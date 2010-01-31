@@ -1077,13 +1077,11 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
                 log.info "Node added: ${event.path}"
                 def path = []
                 def childIndices = [root.nodes.size - 1]
-                def children = []
                 try {
                     def node = root.session.getItem(event.path)
-                    children.add(node)
-                    while (node) {
+                    while (node && node.parent) {
+                        path.add(0, node.parent)
                         node = node.parent
-                        path.add(0, node)
                     }
                 } catch (ItemNotFoundException e) {
                     // must be the root node..
@@ -1091,8 +1089,8 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
                     log.error e
                 }
                 log.info "Firing path change event: ${path}"
-                fireTreeStructureChanged((Object[]) path)
-                fireTreeNodesInserted((Object[]) path, (int[]) childIndices, (Object[]) children)
+//                fireTreeStructureChanged((Object[]) path)
+                fireTreeNodesInserted((Object[]) path, (int[]) childIndices)
             }
             else if (event.type == Event.NODE_REMOVED) {
                 log.info "Node removed: ${event.path}"
