@@ -118,18 +118,18 @@ import org.apache.log4j.Logger
     */
 public class Coucou{
      
-     static Logger log = Logger.getInstance(Coucou.class)
+    static Logger log = Logger.getInstance(Coucou.class)
      
-     static void close(def frame, def exit) {
-         if (exit) {
-             System.exit(0)
-         }
-         else {
-             frame.visible = false
-         }
-     }
+    static void close(def frame, def exit) {
+        if (exit) {
+            System.exit(0)
+        }
+        else {
+            frame.visible = false
+        }
+    }
      
-     static void main(def args) {
+    static void main(def args) {
 //         System.setProperty("java.net.useSystemProxies", "true");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Coucou");
@@ -458,7 +458,7 @@ public class Coucou{
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                      list(id: 'activity')
-                                     activity.cellRenderer = new TimelineListCellRenderer()
+                                     activity.cellRenderer = new ActivityListCellRenderer()
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      
                                      def activityModel = new DefaultListModel()
@@ -659,10 +659,8 @@ public class Coucou{
            */
            
            coucouFrame.visible = true
-         }
-         
-     }
-    
+        }
+    }
 }
 
 class XmppAccount {
@@ -903,7 +901,7 @@ class TaskMessage {
     }
 }
 
-class TimelineListCellRenderer extends DefaultListCellRenderer {
+class ActivityListCellRenderer extends DefaultListCellRenderer {
 
     def iconSize = new Dimension(32, 32)
     def imIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), iconSize)
@@ -911,11 +909,12 @@ class TimelineListCellRenderer extends DefaultListCellRenderer {
     def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
     def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
     
-    public TimelineListCellRenderer() {
+    public ActivityListCellRenderer() {
         iconTextGap = 10
         verticalAlignment = CENTER
         //alignmentY = 0.5
         verticalTextPosition = TOP
+//        border = BorderFactory.createEmptyBorder(2, 5, 2, 0)
     }
     
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -1014,6 +1013,8 @@ class CreateAccountProducer implements WizardResultProducer {
 
 class SessionLogout extends Thread {
 
+    static def log = Logger.getInstance(SessionLogout.class)
+    
     def session
     
     SessionLogout(def session) {
