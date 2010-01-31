@@ -1000,7 +1000,7 @@ class CreateAccountProducer implements WizardResultProducer {
             if (!accountsNode.hasNode('mail')) {
                 accountsNode.addNode('mail')
             }
-            def node = accountsNode.addNode("mail/${data['emaiLAddressField']}")
+            def node = accountsNode.addNode("mail/${data['emailAddressField']}")
             accountsNode.save()
         }
         return null
@@ -1029,6 +1029,8 @@ class SessionLogout extends Thread {
 }
 
 class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observation.EventListener {
+
+    static def log = Logger.getInstance(RepositoryTreeModel.class)
     
     def root
     
@@ -1074,19 +1076,23 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
             if (event.type == Event.NODE_ADDED) {
                 log.info "Node added: ${event.path}"
                 def path = []
+                def childIndices = [root.nodes.size - 1]
+                def children = []
                 try {
                     def node = root.session.getItem(event.path)
+                    children.add(node)
                     while (node) {
-                        path.add(0, node)
                         node = node.parent
+                        path.add(0, node)
                     }
                 } catch (ItemNotFoundException e) {
                     // must be the root node..
                 } catch (Exception e) {
-                    println e
+                    log.error e
                 }
                 log.info "Firing path change event: ${path}"
-                fireTreeStructureChanged(new TreePath((Object[]) path))
+                fireTreeStructureChanged((Object[]) path)
+                fireTreeNodesInserted((Object[]) path, (int[]) childIndices, (Object[]) children)
             }
             else if (event.type == Event.NODE_REMOVED) {
                 log.info "Node removed: ${event.path}"
