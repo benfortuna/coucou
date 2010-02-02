@@ -19,6 +19,7 @@
  */
 package org.mnode.coucou
 
+import groovy.beans.Bindable
 import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
 import java.awt.Color
@@ -29,8 +30,10 @@ import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.Image
 import java.awt.Insets
+import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
+import javax.swing.AbstractAction
 import javax.swing.UIManager
 import groovy.swing.LookAndFeelHelper
 import java.awt.TrayIcon
@@ -82,7 +85,9 @@ import javax.swing.tree.TreePath
 import org.apache.jackrabbit.core.config.RepositoryConfig
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.JTree
+import javax.swing.JOptionPane
 import javax.swing.ListModel
+import javax.swing.ComboBoxModel
 import javax.swing.DefaultListCellRenderer
 import javax.swing.event.ListDataListener
 import org.apache.log4j.Logger
@@ -113,6 +118,7 @@ import org.apache.log4j.Logger
     @Grab(group='org.apache.jackrabbit', module='jackrabbit-core', version='2.0.0'),
     //@Grab(group='org.apache.jackrabbit', module='jackrabbit-text-extractors', version='2.0.0'),
     @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
+    @Grab(group='net.fortuna.ical4j', module='ical4j-connector', version='0.9'),
     @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
     */
@@ -169,6 +175,16 @@ public class Coucou{
             def archiveNode = session.rootNode.addNode('archive')
             session.rootNode.save()
         }
+        if (!session.rootNode.hasNode('presence')) {
+            log.info 'Initialising presence node..'
+            def presenceNode = session.rootNode.addNode('presence')
+            presenceNode.addNode('Available')
+            presenceNode.addNode('Busy')
+            presenceNode.addNode('Away')
+            session.rootNode.save()
+        }
+        
+        def editContext = new EditContext()
         
          def swing = new SwingXBuilder()
 
@@ -269,16 +285,17 @@ public class Coucou{
                         emailAccountDetails.add panel(layout: new MigLayout('fill')) {
                             //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'Email Address')
-                            textField(name: 'emailAddressField', columns: 20)
+                            textField(name: 'emailAddressField', columns: 20, constraints: 'wrap')
                             label(text: 'Password')
                             passwordField(name: 'passwordField', columns: 20)
                         }
 
+                        def createAccountProducer = new CreateAccountProducer(session.rootNode.getNode('accounts'))
                         def branchController = new WizardBranchControllerImpl(accountTypeSelect)
 //                        branchController.keys = ['accountTypeSelect': []
                         branchController.wizards = [
-                                'xmppAccount': WizardPage.createWizard("Add XMPP Account", (WizardPage[]) [xmppAccountDetails], new CreateAccountProducer(session.rootNode.getNode('accounts'))),
-                                'emailAccount': WizardPage.createWizard("Add Email Account", (WizardPage[]) [emailAccountDetails])]
+                                'xmppAccount': WizardPage.createWizard("Add XMPP Account", (WizardPage[]) [xmppAccountDetails], createAccountProducer),
+                                'emailAccount': WizardPage.createWizard("Add Email Account", (WizardPage[]) [emailAccountDetails], createAccountProducer)]
 //                        Wizard wizard = WizardPage.createWizard("Add Account", (WizardPage[]) [accountTypeSelect]);
                         Wizard wizard = branchController.createWizard()
                         wizard.show();
@@ -296,9 +313,14 @@ public class Coucou{
                         contactDetails.add panel(layout: new MigLayout('fill')) {
                             //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'First Name')
-                            textField(name: 'firstNameField', id: 'firstNameField', columns: 20, constraints: 'wrap')
+                            textField(name: 'firstNameField', id: 'firstNameField', columns: 15, constraints: 'wrap')
                             label(text: 'Last Name')
-                            textField(name: 'lastNameField', id: 'lastNameField', columns: 20)
+                            textField(name: 'lastNameField', id: 'lastNameField', columns: 15, constraints: 'wrap')
+                            label(text: 'Display Name')
+                            textField(name: 'displayNameField', id: 'displayNameField', columns: 20)
+                            
+                            bind(source: firstNameField, sourceProperty: 'text', target: displayNameField, targetProperty: 'text', converter: { it + ' ' + lastNameField.text })
+                            bind(source: lastNameField, sourceProperty: 'text', target: displayNameField, targetProperty: 'text', converter: { firstNameField.text + ' ' + it })
                         }
                         contactDetails.validation = {
                             if (!firstNameField.text) {
@@ -310,7 +332,7 @@ public class Coucou{
                             return null
                         }
                         
-                        Wizard wizard = WizardPage.createWizard("Add Contact", (WizardPage[]) [contactDetails]);
+                        Wizard wizard = WizardPage.createWizard("Add Contact", (WizardPage[]) [contactDetails], new CreateContactProducer(session.rootNode.getNode('contacts')));
                         wizard.show();
                     })
 
@@ -318,6 +340,12 @@ public class Coucou{
                     action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'))
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
+                    
+                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
+                         if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete item: ${editContext.item}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                             editContext.delete()
+                         }
+                     })
                     
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
@@ -381,13 +409,14 @@ public class Coucou{
                             menuItem(text: "Edit Status Message..")
                         }
                         separator()
-                        menuItem(text: "Delete")
+                        menuItem(deleteAction)
                         separator()
                         menuItem(text: "Mail Filters")
                         menuItem(text: "Accounts")
                         menuItem(text: "Preferences", icon: imageIcon('/preferences.png'))
                     }
                     menu(text: "View", mnemonic: 'V') {
+                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar', state: true)
                         checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
                     }
                     menu(text: "Action", mnemonic: 'A') {
@@ -442,13 +471,18 @@ public class Coucou{
                         statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
                         //statusField.focusGained = { nameField.selectAll() }
                         
+                        /*
                         def statusModel = new DefaultComboBoxModel()
                         statusModel.addElement('Available')
                         statusModel.addElement('Busy')
                         statusModel.addElement('Away')
                         statusField.model = statusModel
+                        */
+                        statusField.model = new RepositoryComboBoxModel(session.rootNode.getNode('presence'))
+                        statusField.renderer = new RepositoryListCellRenderer()
                     }
                 }
+                bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
                 
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
                     panel(name: 'Home', id: 'homeTab') {
@@ -556,7 +590,32 @@ public class Coucou{
                                          accountsTree.cellRenderer = new RepositoryTreeCellRenderer()
                                          //session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
                                          //session.workspace.observationManager.addEventListener(accountsTree.model, Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
-
+                                        accountsTree.valueChanged = { e ->
+                                            if (e.path) {
+                                                editContext.item = e.path.lastPathComponent
+                                                editContext.enabled = true
+                                                log.info "Enable deletion for: ${editContext.item}"
+                                            }
+                                            else {
+                                                editContext.enabled = false
+                                                log.info "Disable deletion"
+                                            }
+                                        }
+                                        accountsTree.focusGained = {
+                                             if (accountsTree.selectionPath) {
+                                                 editContext.item = accountsTree.selectionPath.lastPathComponent
+                                                 editContext.enabled = true
+                                                 log.info "Enable deletion for: ${editContext.item}"
+                                             }
+                                             else {
+                                                 editContext.enabled = false
+                                                 log.info "Disable deletion"
+                                             }
+                                        }
+                                        accountsTree.focusLost = {
+                                            editContext.enabled = false
+                                            log.info "Disable deletion"
+                                        }
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -610,8 +669,8 @@ public class Coucou{
                             focusPainted: false,
                             opaque: false)
                  }
+                 bind(source: viewStatusBar, sourceProperty:'selected', target:cStatusBar, targetProperty:'visible')
              }
-             bind(source: viewStatusBar, sourceProperty:'selected', target:cStatusBar, targetProperty:'visible')
 
              if (SystemTray.isSupported()) {
                  TrayIcon trayIcon = new TrayIcon(imageIcon('/logo-14.png').image, 'Coucou')
@@ -980,6 +1039,25 @@ class WizardBranchControllerImpl extends WizardBranchController {
     }
 }
 
+class CreateContactProducer implements WizardResultProducer {
+
+    def contactsNode
+    
+    CreateContactProducer(def contactsNode) {
+        this.contactsNode = contactsNode
+    }
+    
+    Object finish(Map data) throws WizardException {
+        //def node = contactsNode.addNode(Text.escape("${data['displayNameField']}"))
+        //contactsNode.save()
+        return null
+    }
+
+    boolean cancel(Map settings) {
+        return true;
+    }
+}
+
 class CreateAccountProducer implements WizardResultProducer {
 
     def accountsNode
@@ -1076,9 +1154,10 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
             if (event.type == Event.NODE_ADDED) {
                 log.info "Node added: ${event.path}"
                 def path = []
-                def childIndices = [root.nodes.size - 1]
+                def childIndices = []
                 try {
                     def node = root.session.getItem(event.path)
+                    childIndices.add(node.nodes.size - 1)
                     while (node && node.parent) {
                         path.add(0, node.parent)
                         node = node.parent
@@ -1088,7 +1167,7 @@ class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observa
                 } catch (Exception e) {
                     log.error e
                 }
-                log.info "Firing path change event: ${path}"
+                log.info "Firing path change event: ${path}, ${childIndices}"
 //                fireTreeStructureChanged((Object[]) path)
                 fireTreeNodesInserted((Object[]) path, (int[]) childIndices)
             }
@@ -1142,4 +1221,41 @@ class RepositoryListCellRenderer extends DefaultListCellRenderer {
         text = value.name
         return this
     }
+}
+
+class RepositoryComboBoxModel extends RepositoryListModel implements ComboBoxModel {
+
+    def selectedNode
+
+    RepositoryComboBoxModel(def node) {
+        super(node)
+    }
+    
+    Object getSelectedItem() {
+        return selectedNode
+    }
+    
+    void setSelectedItem(Object anItem) {
+        selectedNode = anItem
+    }
+}
+
+class EditContext {
+    
+    @Bindable boolean enabled
+    
+    def item
+    
+    void delete() {
+        if (item instanceof Node) {
+            item.remove()
+            item.parent.save()
+        }
+    }
+    
+    void copy() {}
+    
+    void cut() {}
+    
+    void paste() {}
 }
