@@ -28,6 +28,7 @@ import java.awt.Desktop
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
+import java.awt.Graphics
 import java.awt.Image
 import java.awt.Insets
 import java.awt.event.ActionEvent
@@ -84,6 +85,7 @@ import org.mnode.base.desktop.AbstractTreeModel
 import javax.swing.tree.TreePath
 import org.apache.jackrabbit.core.config.RepositoryConfig
 import javax.swing.tree.DefaultTreeCellRenderer
+import javax.swing.Icon
 import javax.swing.JTree
 import javax.swing.JOptionPane
 import javax.swing.ListModel
@@ -91,6 +93,7 @@ import javax.swing.ComboBoxModel
 import javax.swing.DefaultListCellRenderer
 import javax.swing.event.ListDataListener
 import org.apache.log4j.Logger
+import com.ocpsoft.pretty.time.PrettyTime
 
 /**
  * @author fortuna
@@ -120,6 +123,7 @@ import org.apache.log4j.Logger
     @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
     @Grab(group='net.fortuna.ical4j', module='ical4j-connector', version='0.9'),
     @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
+    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
     */
 public class Coucou{
@@ -496,10 +500,10 @@ public class Coucou{
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      
                                      def activityModel = new DefaultListModel()
-                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', '9:23am'))
-                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', '9:23am', 3))
-                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', '9:23am'))
-                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', '9:23am'))
+                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
+                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
+                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
+                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      activity.model = activityModel
                                  }
                              }
@@ -627,6 +631,7 @@ public class Coucou{
                          }
                      }
                  }
+                tabs.setIconAt(tabs.indexOfComponent(homeTab), new OverlayIcon(imageIcon('/logo-12.png'), 14, 18))
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_CALLBACK, new TabCloseCallbackImpl())
                  SubstanceLookAndFeel.registerTabCloseChangeListener(tabs, new VetoableMultipleTabCloseListenerImpl([homeTab]))
@@ -903,7 +908,10 @@ class ImMessage {
     }
     
     String toString() {
-        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
+        return "<html><table width=100%>" \
+            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
+            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
+            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
     }
 }
 
@@ -922,7 +930,10 @@ class MailMessage {
     }
     
     String toString() {
-        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr><td colspan=2><font color=silver size=-1>${count} Messages</font></td></tr></table></html>"
+        return "<html><table width=100%>" \
+            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td><td style='font-size:1em;color:silver;text-align:right'>${count} Messages</td></tr>" \
+            + "<tr><td colspan=2 style='font-size:1em;text-align:left'>${text}</td></tr>" \
+            + "<tr><td colspan=2 style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
     }
 }
 
@@ -939,7 +950,10 @@ class EventMessage {
     }
     
     String toString() {
-        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
+        return "<html><table width=100%>" \
+            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
+            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
+            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
     }
 }
 
@@ -956,7 +970,10 @@ class TaskMessage {
     }
     
     String toString() {
-        return "<html><table width=100%><tr><th><font color=silver>${sender}</font></th><th><font color=silver>${time}</font></th></tr><tr><td colspan=2><font size=+1>${text}</font></td></tr></table></html>"
+        return "<html><table width=100%>" \
+            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
+            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
+            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
     }
 }
 
@@ -1258,4 +1275,29 @@ class EditContext {
     void cut() {}
     
     void paste() {}
+}
+
+class OverlayIcon implements Icon {
+    
+    int height
+    int width
+    Icon baseIcon
+    
+    OverlayIcon(Icon icon, int width, int height) {
+        baseIcon = icon
+        this.width = width
+        this.height = height
+    }
+    
+    int getIconHeight() {
+        return height
+    }
+    
+    int getIconWidth() {
+        return width
+    }
+    
+    void paintIcon(Component c, Graphics g, int x, int y) {
+        baseIcon.paintIcon(c, g, (int) (x + (width - baseIcon.iconWidth) / 2), (int) (y + (height - baseIcon.iconHeight) / 2))
+    }
 }
