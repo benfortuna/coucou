@@ -42,11 +42,13 @@ import java.awt.PopupMenu
 import java.awt.SystemTray
 import java.awt.MenuItem
 import java.util.regex.Pattern
+import javax.swing.table.AbstractTableModel
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JFrame
 import javax.swing.JFileChooser
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
+import javax.swing.JSplitPane
 import javax.swing.event.DocumentListener
 import javax.swing.event.DocumentEvent
 import javax.swing.tree.DefaultMutableTreeNode as TreeNode
@@ -58,12 +60,14 @@ import org.jvnet.substance.api.tabbed.VetoableMultipleTabCloseListener
 import org.jvnet.substance.api.tabbed.VetoableTabCloseListener
 import org.jvnet.lafwidget.LafWidget
 import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
+import org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind
 import org.jvnet.flamingo.svg.SvgBatikResizableIcon
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
 import org.jdesktop.swingx.decorator.PatternFilter
 import org.jdesktop.swingx.decorator.HighlighterFactory
+import org.jdesktop.swingx.treetable.AbstractTreeTableModel
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.XMPPException
 import javax.swing.filechooser.FileFilter
@@ -77,6 +81,7 @@ import org.netbeans.spi.wizard.WizardBranchController
 import org.netbeans.spi.wizard.WizardException
 import org.netbeans.spi.wizard.WizardPage.WizardResultProducer
 import javax.jcr.ItemNotFoundException
+import javax.jcr.PropertyType
 import javax.jcr.SimpleCredentials
 import javax.jcr.observation.*
 import org.apache.jackrabbit.core.TransientRepository
@@ -231,8 +236,60 @@ public class Coucou{
              }
          }
 
-        def openFolderTab = { folder ->
-             swing.panel(name: folder.getProperty('displayName').string)
+        def openNodeTab = { tabs, node ->
+            if (tabs.tabCount > 0) {
+                for (i in 0..tabs.tabCount - 1) {
+                    if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
+                        tabs.selectedComponent = tabs.getComponentAt(i)
+                        return
+                    }
+                }
+            }
+            
+            swing.edt {
+                def newTab = panel(name: node.name)
+                newTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                newTab.putClientProperty('coucou.node', node)
+                tabs.add newTab
+                tabs.selectedComponent = newTab
+            }
+        }
+        
+        def openExplorerTab = { tabs, node ->
+            if (tabs.tabCount > 0) {
+                for (i in 0..tabs.tabCount - 1) {
+                    if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
+                        tabs.selectedComponent = tabs.getComponentAt(i)
+                        return
+                    }
+                }
+            }
+            
+            swing.edt {
+                def explorerTab = panel(name: 'Repository Explorer', border: emptyBorder(10)) {
+                    borderLayout()
+                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200) {
+                        scrollPane(constraints: 'left') {
+                            treeTable(id: 'explorerTree')
+                            explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
+                            explorerTree.selectionModel.valueChanged = {
+                                def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
+                                if (selectedPath) {
+                                    propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
+                                }
+                            }
+                        }
+                        scrollPane(constraints: 'right') {
+                            table(id: 'propertyTable')
+                        }
+                    }
+                }
+            
+                explorerTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                explorerTab.putClientProperty('coucou.node', node)
+                tabs.add explorerTab
+                tabs.selectedComponent = explorerTab
+            }
         }
         
          swing.edt {
@@ -379,6 +436,7 @@ public class Coucou{
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
                     action(id: 'logoutAction', name: 'Logout', closure: { session.logout() })
+                    action(id: 'repositoryExplorerAction', name: 'Repository Explorer', closure: { openExplorerTab(tabs, session.rootNode) })
                 }
                 
                 fileChooser(id: 'chooser', fileFilter: new ImageFileFilter())
@@ -443,6 +501,7 @@ public class Coucou{
                         checkBoxMenuItem(workOfflineAction, selectedIcon: imageIcon('/offline_selected.png', id: 'offlineSelectedIcon'),
                                 rolloverIcon: imageIcon('/offline_rollover.png', id: 'offlineRolloverIcon'))
                         menuItem(logoutAction)
+                        menuItem(repositoryExplorerAction)
                     }
                     menu(text: "Help", mnemonic: 'H') {
                         menuItem(onlineHelpAction)
@@ -620,6 +679,16 @@ public class Coucou{
                                             editContext.enabled = false
                                             log.info "Disable deletion"
                                         }
+                                        accountsTree.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
+                                                if (accountsTree.selectionPath) {
+                                                    def node = accountsTree.selectionPath.lastPathComponent
+                                                    if (!node.hasNodes()) {
+                                                        openNodeTab(tabs, node)
+                                                    }
+                                                }
+                                            }
+                                        }
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -635,7 +704,7 @@ public class Coucou{
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_CALLBACK, new TabCloseCallbackImpl())
                  SubstanceLookAndFeel.registerTabCloseChangeListener(tabs, new VetoableMultipleTabCloseListenerImpl([homeTab]))
-                 tabs.putClientProperty(LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
+                 tabs.putClientProperty(LafWidget.TABBED_PANE_PREVIEW_PAINTER, new TabPreviewPainterImpl())
              
                  statusBar(constraints: BorderLayout.SOUTH, border:emptyBorder([0, 4, 0, 4]), id: 'cStatusBar') {
                      label(id: 'statusMessage', text: 'Ready', constraints: new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL))
@@ -1299,5 +1368,143 @@ class OverlayIcon implements Icon {
     
     void paintIcon(Component c, Graphics g, int x, int y) {
         baseIcon.paintIcon(c, g, (int) (x + (width - baseIcon.iconWidth) / 2), (int) (y + (height - baseIcon.iconHeight) / 2))
+    }
+}
+
+class TabPreviewPainterImpl extends DefaultTabPreviewPainter {
+
+    TabOverviewKind getOverviewKind(JTabbedPane tabPane) {
+        //return TabOverviewKind.MENU_CAROUSEL
+        return TabOverviewKind.ROUND_CAROUSEL
+    }
+}
+
+class RepositoryTreeTableModel extends AbstractTreeTableModel {
+
+    RepositoryTreeTableModel(def rootNode) {
+        super(rootNode)
+    }
+    
+    int getColumnCount() {
+        return 3;
+    }
+    
+    String getColumnName(int column) {
+        def columnName
+        switch(column) {
+            case 0:
+                columnName = 'Name'
+                break
+            case 1:
+                columnName = 'Type'
+                break
+            case 2:
+                columnName = 'State'
+                break
+        }
+        return columnName
+    }
+    
+    Object getValueAt(Object node, int column) {
+        def value
+        switch(column) {
+            case 0:
+                value = node.name
+                break
+            case 1:
+                value = node.primaryNodeType.name
+                break
+            case 2:
+                value = node.isNew() ? 'N' : node.isModified() ? 'M' : null
+                break
+        }
+        return value
+    }
+    
+    Object getChild(Object parent, int index) {
+        def nodes = parent.nodes
+        if (index >= 0 && index < nodes.size) {
+            nodes.skip(index)
+            return nodes.nextNode()
+        }
+        return null
+    }
+    
+    int getChildCount(Object parent) {
+        return parent.nodes.size
+    }
+    
+    int getIndexOfChild(Object parent, Object child) {
+        def nodes = parent.nodes
+        while (nodes.hasNext()) {
+            if (nodes.nextNode() == child) {
+                return nodes.position
+            }
+        }
+        return -1
+    }
+    
+    boolean isLeaf(Object node) {
+        return !node.hasNodes()
+    }
+}
+
+class PropertiesTableModel extends AbstractTableModel {
+
+    def node
+    
+    PropertiesTableModel(def node) {
+        this.node = node
+    }
+    
+    int getRowCount() {
+        return node.properties.size
+    }
+    
+    int getColumnCount() {
+        return 3
+    }
+    
+    String getColumnName(int column) {
+        def columnName
+        switch(column) {
+            case 0:
+                columnName = 'Property Name'
+                break
+            case 1:
+                columnName = 'Type'
+                break
+            case 2:
+                columnName = 'Value'
+                break
+        }
+        return columnName
+    }
+    
+    Object getValueAt(int row, int column) {
+        def properties = node.properties
+        properties.skip(row)
+        def property = properties.nextProperty()
+        def value
+        switch(column) {
+            case 0:
+                value = property.name
+                break
+            case 1:
+                if (property.isMultiple()) {
+                }
+                else {
+                    value = PropertyType.nameFromValue(property.value.type)
+                }
+                break
+            case 2:
+                if (property.isMultiple()) {
+                }
+                else {
+                    value = property.value.string
+                }
+                break
+        }
+        return value
     }
 }
