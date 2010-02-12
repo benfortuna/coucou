@@ -99,7 +99,7 @@ import javax.swing.DefaultListCellRenderer
 import javax.swing.event.ListDataListener
 import org.apache.log4j.Logger
 import com.ocpsoft.pretty.time.PrettyTime
-
+import javax.swing.table.DefaultTableModelimport javax.swing.ListSelectionModel
 /**
  * @author fortuna
  *
@@ -277,10 +277,14 @@ public class Coucou{
                                 if (selectedPath) {
                                     propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
                                 }
+                                else {
+                                    propertyTable.model = new DefaultTableModel()
+                                }
                             }
                         }
                         scrollPane(constraints: 'right') {
                             table(id: 'propertyTable')
+                            propertyTable.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                         }
                     }
                 }
@@ -289,6 +293,10 @@ public class Coucou{
                 explorerTab.putClientProperty('coucou.node', node)
                 tabs.add explorerTab
                 tabs.selectedComponent = explorerTab
+                
+                def iconSize = new Dimension(14, 18)
+                def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+                tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
         }
         
