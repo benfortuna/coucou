@@ -558,7 +558,10 @@ public class Coucou{
                                      activity.cellRenderer = new ActivityListCellRenderer()
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      
+                                     def weatherNode = new XmlSlurper().parseText("http://weather.yahooapis.com/forecastrss?w=1103816&u=c".toURL().text)
+                                     
                                      def activityModel = new DefaultListModel()
+                                     activityModel.addElement(new WeatherMessage(weatherNode))
                                      activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
                                      activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
                                      activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
@@ -1043,6 +1046,22 @@ class TaskMessage {
             + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
             + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
             + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
+    }
+}
+
+class WeatherMessage {
+    
+    def weatherNode
+    
+    public WeatherMessage(def node) {
+        this.weatherNode = node
+    }
+    
+    String toString() {
+        return "<html><table width=100%>" \
+            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${weatherNode.channel.title}</td></tr>" \
+            + "<tr><td style='font-size:1em;text-align:left'>${weatherNode.channel.item.condition.@text}</td></tr>" \
+            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(Date.parse('EEE, dd MMM yyyy h:mm a', weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))}</td></tr></table></html>"
     }
 }
 
