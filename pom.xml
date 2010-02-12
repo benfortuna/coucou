@@ -205,6 +205,16 @@
         	<artifactId>ocpsoft-pretty-time</artifactId>
         	<version>1.0.5</version>
         </dependency>
+        <dependency>
+        	<groupId>net.java.dev.laf-widget</groupId>
+        	<artifactId>trellis</artifactId>
+        	<version>1.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>net.java.dev.laf-widget</groupId>
+        	<artifactId>checkers</artifactId>
+        	<version>1.0</version>
+        </dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>
