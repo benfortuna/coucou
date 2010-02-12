@@ -510,7 +510,7 @@ public class Coucou{
                         separator()
                         checkBoxMenuItem(workOfflineAction, selectedIcon: imageIcon('/offline_selected.png', id: 'offlineSelectedIcon'),
                                 rolloverIcon: imageIcon('/offline_rollover.png', id: 'offlineRolloverIcon'))
-                        menuItem(logoutAction)
+//                        menuItem(logoutAction)
                         menuItem(repositoryExplorerAction)
                     }
                     menu(text: "Help", mnemonic: 'H') {
