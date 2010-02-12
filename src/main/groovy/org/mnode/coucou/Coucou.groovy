@@ -133,7 +133,9 @@ import javax.swing.table.DefaultTableModelimport javax.swing.ListSelectionModel
     */
 public class Coucou{
      
-    static Logger log = Logger.getInstance(Coucou.class)
+    static final Logger log = Logger.getInstance(Coucou.class)
+    
+    static final def EMPTY_TABLE_MODEL = new DefaultTableModel()
      
     static void close(def frame, def exit) {
         if (exit) {
@@ -278,7 +280,7 @@ public class Coucou{
                                     propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
                                 }
                                 else {
-                                    propertyTable.model = new DefaultTableModel()
+                                    propertyTable.model = EMPTY_TABLE_MODEL
                                 }
                             }
                         }
@@ -294,7 +296,7 @@ public class Coucou{
                 tabs.add explorerTab
                 tabs.selectedComponent = explorerTab
                 
-                def iconSize = new Dimension(14, 18)
+                def iconSize = new Dimension(16, 16)
                 def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
@@ -341,9 +343,9 @@ public class Coucou{
                         xmppAccountDetails.add panel(layout: new MigLayout('fill')) {
                             //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'Username')
-                            textField(name: 'usernameField', columns: 20, constraints: 'wrap')
+                            textField(name: 'usernameField', columns: 15, constraints: 'wrap')
                             label(text: 'Password')
-                            passwordField(name: 'passwordField', columns: 20)
+                            passwordField(name: 'passwordField', columns: 15)
                         }
 
                         def emailAccountDetails = new WizardPageImpl('emailAccountDetails', 'Provide Email Details')
@@ -354,9 +356,9 @@ public class Coucou{
                         emailAccountDetails.add panel(layout: new MigLayout('fill')) {
                             //gridLayout(cols: 2, rows: 2, vgap: 10)
                             label(text: 'Email Address')
-                            textField(name: 'emailAddressField', columns: 20, constraints: 'wrap')
+                            textField(name: 'emailAddressField', columns: 15, constraints: 'wrap')
                             label(text: 'Password')
-                            passwordField(name: 'passwordField', columns: 20)
+                            passwordField(name: 'passwordField', columns: 15)
                         }
 
                         def createAccountProducer = new CreateAccountProducer(session.rootNode.getNode('accounts'))
@@ -386,7 +388,7 @@ public class Coucou{
                             label(text: 'Last Name')
                             textField(name: 'lastNameField', id: 'lastNameField', columns: 15, constraints: 'wrap')
                             label(text: 'Display Name')
-                            textField(name: 'displayNameField', id: 'displayNameField', columns: 20)
+                            textField(name: 'displayNameField', id: 'displayNameField', columns: 15)
                             
                             bind(source: firstNameField, sourceProperty: 'text', target: displayNameField, targetProperty: 'text', converter: { it + ' ' + lastNameField.text })
                             bind(source: lastNameField, sourceProperty: 'text', target: displayNameField, targetProperty: 'text', converter: { firstNameField.text + ' ' + it })
