@@ -100,7 +100,7 @@ import javax.swing.event.ListDataListener
 import org.apache.log4j.Logger
 import com.ocpsoft.pretty.time.PrettyTime
 import javax.swing.table.DefaultTableModelimport javax.swing.ListSelectionModel
-/**
+import org.mnode.base.desktop.PaddedIcon//import org.jvnet.flamingo.ribbon.JRibbonFrame//import griffon.builder.flamingo.FlamingoBuilder/**
  * @author fortuna
  *
  */
@@ -197,7 +197,9 @@ public class Coucou{
         
         def editContext = new EditContext()
         
-         def swing = new SwingXBuilder()
+        def swing = new SwingXBuilder()
+//        swing.registerBeanFactory('frame', JRibbonFrame.class)
+//        def flamingo = new FlamingoBuilder()
 
          def newAccountTab = { account ->
                  
@@ -274,6 +276,7 @@ public class Coucou{
                         scrollPane(constraints: 'left') {
                             treeTable(id: 'explorerTree')
                             explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
+                            explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                             explorerTree.selectionModel.valueChanged = {
                                 def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
                                 if (selectedPath) {
@@ -286,7 +289,6 @@ public class Coucou{
                         }
                         scrollPane(constraints: 'right') {
                             table(id: 'propertyTable')
-                            propertyTable.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                         }
                     }
                 }
@@ -305,6 +307,8 @@ public class Coucou{
          swing.edt {
              lookAndFeel('seaglass', 'substance5', 'system')
 
+//             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
+             
              frame(title: 'Coucou', id: 'coucouFrame', defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
                      size: [800, 600], show: false, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
                 
@@ -708,12 +712,18 @@ public class Coucou{
                                          hyperlink(new JXHyperlink(newAccountAction))
                                      }
                                  }
+                                 panel(name: 'Feeds', border: emptyBorder(10)) {
+                                     
+                                 }
+                                 panel(name: 'Planner', border: emptyBorder(10)) {
+                                     
+                                 }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                          }
                      }
                  }
-                tabs.setIconAt(tabs.indexOfComponent(homeTab), new OverlayIcon(imageIcon('/logo-12.png'), 14, 18))
+                tabs.setIconAt(tabs.indexOfComponent(homeTab), new PaddedIcon(imageIcon('/logo-12.png'), 14, 18))
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_CALLBACK, new TabCloseCallbackImpl())
                  SubstanceLookAndFeel.registerTabCloseChangeListener(tabs, new VetoableMultipleTabCloseListenerImpl([homeTab]))
@@ -786,6 +796,8 @@ public class Coucou{
                  
                  SystemTray.systemTray.add(trayIcon)
              }
+             
+//             coucouFrame.ribbon.configureHelp(helpIcon, onlineHelpAction)
              
 //           TrackerRegistry.instance.register(coucouFrame, 'coucouFrame');
            coucouFrame.windowClosing = {
@@ -927,7 +939,7 @@ class VetoableTabCloseListenerImpl implements VetoableTabCloseListener {
     public void tabClosed(JTabbedPane tabbedPane, Component tabComponent) {}
 }
 
-class ImageFileFilter extends FileFilter {
+class ImageFileFilter extends javax.swing.filechooser.FileFilter {
     
     boolean accept(File file) {
         return file.directory || file.name =~ /\.(gif|jpg|png|bmp)$/
@@ -1373,31 +1385,6 @@ class EditContext {
     void cut() {}
     
     void paste() {}
-}
-
-class OverlayIcon implements Icon {
-    
-    int height
-    int width
-    Icon baseIcon
-    
-    OverlayIcon(Icon icon, int width, int height) {
-        baseIcon = icon
-        this.width = width
-        this.height = height
-    }
-    
-    int getIconHeight() {
-        return height
-    }
-    
-    int getIconWidth() {
-        return width
-    }
-    
-    void paintIcon(Component c, Graphics g, int x, int y) {
-        baseIcon.paintIcon(c, g, (int) (x + (width - baseIcon.iconWidth) / 2), (int) (y + (height - baseIcon.iconHeight) / 2))
-    }
 }
 
 class TabPreviewPainterImpl extends DefaultTabPreviewPainter {
