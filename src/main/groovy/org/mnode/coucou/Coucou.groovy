@@ -99,20 +99,30 @@ import javax.swing.DefaultListCellRenderer
 import javax.swing.event.ListDataListener
 import org.apache.log4j.Logger
 import com.ocpsoft.pretty.time.PrettyTime
-import javax.swing.table.DefaultTableModelimport javax.swing.ListSelectionModel
-import org.mnode.base.desktop.PaddedIcon//import org.jvnet.flamingo.ribbon.JRibbonFrame//import griffon.builder.flamingo.FlamingoBuilder/**
+import javax.swing.table.DefaultTableModel
+import javax.swing.ListSelectionModel
+import org.mnode.base.desktop.PaddedIcon
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
+//import griffon.builder.flamingo.FlamingoBuilder
+import org.jvnet.flamingo.common.JCommandButton
+import org.jvnet.flamingo.common.JCommandButtonPanel
+
+/**
  * @author fortuna
  *
  */
  /*
 @Grapes([
+    @Grab(group='org.mnode.coucou', module='coucou', version='0.0.1-SNAPSHOT', transitive=false),
     @Grab(group='org.codehaus.griffon.swingxbuilder', module='swingxbuilder', version='0.1.6'),
     @Grab(group='net.java.dev.substance', module='substance', version='5.3'),
     @Grab(group='net.java.dev.substance', module='substance-swingx', version='5.3'),
+    @Grab(group='net.java.dev.substance', module='swingx', version='5.3'),
+    @Grab(group='swingx', module='swingx-beaninfo', version='0.9.5'),
     //@Grab(group='org.swinglabs', module='swingx', version='0.9.2'),
     @Grab(group='org.mnode.base', module='base-views', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-xmpp', version='0.0.1-SNAPSHOT'),
-    @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT', transitive=false),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
@@ -155,7 +165,7 @@ public class Coucou{
          UIManager.put(org.jvnet.lafwidget.LafWidget.ANIMATION_KIND, org.jvnet.lafwidget.utils.LafConstants.AnimationKind.FAST.derive(2))
          //UIManager.put(org.jvnet.lafwidget.LafWidget.TABBED_PANE_PREVIEW_PAINTER, new DefaultTabPreviewPainter())
          LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceNebulaLookAndFeel')
-         LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
+//         LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
          
         //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
@@ -305,7 +315,7 @@ public class Coucou{
         }
         
          swing.edt {
-             lookAndFeel('seaglass', 'substance5', 'system')
+             lookAndFeel('substance5', 'system')
 
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
              
@@ -586,7 +596,7 @@ public class Coucou{
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'Contacts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
+                                     label(text: 'Online Contacts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
                                      
                                      panel() {
                                          borderLayout()
@@ -613,9 +623,16 @@ public class Coucou{
                                          findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
                                      
                                          scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                             list(id: 'contactsList')
-                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
-                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
+//                                             list(id: 'contactsList')
+//                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
+//                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
+
+                                            def contactIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
+                                            def contactGrid = new JCommandButtonPanel()
+//                                            for (c in ['Tom', 'Dick', 'Harry']) {
+                                                contactGrid.add(new JCommandButton('Tom', contactIcon))
+//                                            }
+                                            widget(contactGrid)
                                          }
                                          hbox(constraints: BorderLayout.SOUTH) {
                                              hglue()
