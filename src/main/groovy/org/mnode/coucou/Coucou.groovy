@@ -502,8 +502,8 @@ public class Coucou{
                         menuItem(text: "Preferences", icon: imageIcon('/preferences.png'))
                     }
                     menu(text: "View", mnemonic: 'V') {
-                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar', state: true)
-                        checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
+                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar')
+                        checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar', state: true)
                     }
                     menu(text: "Action", mnemonic: 'A') {
                         menuItem(replyAction)
@@ -596,9 +596,14 @@ public class Coucou{
                              tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'Online Contacts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
                                      
-                                     panel() {
+                                     vbox {
+//                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                     
+                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                         
+                                         panel {
                                          borderLayout()
                                          
                                          def findFilter = new PatternFilter()
@@ -634,15 +639,18 @@ public class Coucou{
 //                                            }
                                             widget(contactGrid)
                                          }
+                                         }
+                                         vglue()
+                                     }
+                                     
                                          hbox(constraints: BorderLayout.SOUTH) {
                                              hglue()
                                              hyperlink(new JXHyperlink(newContactAction))
                                          }
-                                     }
                                  }
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'History', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
+                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
                                      scrollPane(border: null) {
                                          tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
                                          /*
@@ -666,7 +674,7 @@ public class Coucou{
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'Accounts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY)
+                                     label(text: 'Accounts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
                                      scrollPane(border: null) {
                                          tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
                                          /*
@@ -733,7 +741,6 @@ public class Coucou{
                                      
                                  }
                                  panel(name: 'Planner', border: emptyBorder(10)) {
-                                     
                                  }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
