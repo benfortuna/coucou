@@ -181,6 +181,11 @@
 			<artifactId>swingx-beaninfo</artifactId>
 			<version>0.9.5</version>
 		</dependency>
+		<dependency>
+			<groupId>rome</groupId>
+			<artifactId>rome</artifactId>
+			<version>0.9</version>
+		</dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>

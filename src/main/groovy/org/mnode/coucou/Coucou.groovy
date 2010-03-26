@@ -49,6 +49,7 @@ import javax.swing.JFileChooser
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
 import javax.swing.JSplitPane
+import javax.swing.SwingConstants
 import javax.swing.event.DocumentListener
 import javax.swing.event.DocumentEvent
 import javax.swing.tree.DefaultMutableTreeNode as TreeNode
@@ -106,6 +107,8 @@ import org.mnode.base.desktop.PaddedIcon
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
+import com.sun.syndication.io.SyndFeedInput
+import com.sun.syndication.io.XmlReader
 
 /**
  * @author fortuna
@@ -113,6 +116,9 @@ import org.jvnet.flamingo.common.JCommandButtonPanel
  */
  /*
 @Grapes([
+    @Grab(group='rome', module='rome', version='1.0'),
+//    @Grab(group='rome', module='rome-fetcher', version='1.0'),
+//    @Grab(group='jdom', module='jdom', version='1.0'),
     @Grab(group='org.mnode.coucou', module='coucou', version='0.0.1-SNAPSHOT', transitive=false),
     @Grab(group='org.codehaus.griffon.swingxbuilder', module='swingxbuilder', version='0.1.6'),
     @Grab(group='net.java.dev.substance', module='substance', version='5.3'),
@@ -314,6 +320,14 @@ public class Coucou{
             }
         }
         
+        def buildActivityString = { author, title, time ->
+//            StringBuilder builder = new StringBuilder()
+            "<html><table width=100%>" \
+                + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${author}</td></tr>" \
+                + "<tr><td style='font-size:1em;text-align:left'>${title}</td></tr>" \
+                + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
+        }
+        
          swing.edt {
              lookAndFeel('substance5', 'system')
 
@@ -503,7 +517,7 @@ public class Coucou{
                     }
                     menu(text: "View", mnemonic: 'V') {
                         checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar')
-                        checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar', state: true)
+                        checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
                     }
                     menu(text: "Action", mnemonic: 'A') {
                         menuItem(replyAction)
@@ -571,35 +585,18 @@ public class Coucou{
                 }
                 bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
                 
+//                splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
                     panel(name: 'Home', id: 'homeTab') {
                          borderLayout()
                          splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
-                             panel(constraints: 'left', border: emptyBorder(10)) {
-                                 borderLayout()
-                                 scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                     list(id: 'activity')
-                                     activity.cellRenderer = new ActivityListCellRenderer()
-                                     activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                     
-                                     def weatherNode = new XmlSlurper().parseText("http://weather.yahooapis.com/forecastrss?w=1103816&u=c".toURL().text)
-                                     
-                                     def activityModel = new DefaultListModel()
-                                     activityModel.addElement(new WeatherMessage(weatherNode))
-                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
-                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
-                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
-                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
-                                     activity.model = activityModel
-                                 }
-                             }
-                             tabbedPane(constraints: 'right', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
+                             tabbedPane(constraints: 'left', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
                                      
                                      vbox {
 //                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
-                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+//                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
                                      
                                          titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
                                          
@@ -738,12 +735,46 @@ public class Coucou{
                                      }
                                  }
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
+                                     borderLayout()
                                      
+                                     def addFeedText = 'Add a new feed..'
+                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                  }
                                  panel(name: 'Planner', border: emptyBorder(10)) {
+                                     borderLayout()
+                                     
+                                     def addTaskEventText = 'Add a new task / appointment..'
+                                     textField(text: addTaskEventText, id: 'addTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                  }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
+                             panel(constraints: 'right', border: emptyBorder(10)) {
+                                 borderLayout()
+                                 scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                     list(id: 'activity')
+                                     activity.cellRenderer = new ActivityListCellRenderer()
+                                     activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                     
+                                     def weatherNode = new XmlSlurper().parseText("http://weather.yahooapis.com/forecastrss?w=1103816&u=c".toURL().text)
+                                     
+                                     def activityModel = new DefaultListModel()
+                                     
+                                     // rome uses Thread.contextClassLoader..
+                                     Thread.currentThread().contextClassLoader = Coucou.class.classLoader
+//                                     def hudsonFeed = new SyndFeedInput().build(new XmlReader(new URL("http://mdsbu04/hudson/view/Trade%20Analytics/job/AnalyticsServer/rssAll")))
+                                     def coucouFeed = new SyndFeedInput().build(new XmlReader(new URL("http://coucou.im/feed")))
+                                     for (entry in coucouFeed.entries) {
+                                         entry.source = coucouFeed
+                                         activityModel.addElement(new FeedMessage(feedEntry: entry, buildActivityString: buildActivityString))
+                                     }
+                                     activityModel.addElement(new WeatherMessage(weatherNode: weatherNode, buildActivityString: buildActivityString))
+                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
+                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
+                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
+                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
+                                     activity.model = activityModel
+                                 }
+                             }
                          }
                      }
                  }
@@ -1098,16 +1129,25 @@ class TaskMessage {
 class WeatherMessage {
     
     def weatherNode
-    
-    public WeatherMessage(def node) {
-        this.weatherNode = node
-    }
+    def buildActivityString
     
     String toString() {
-        return "<html><table width=100%>" \
-            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${weatherNode.channel.title}</td></tr>" \
-            + "<tr><td style='font-size:1em;text-align:left'>${weatherNode.channel.item.condition.@text}</td></tr>" \
-            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(Date.parse('EEE, dd MMM yyyy h:mm a', weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))}</td></tr></table></html>"
+//        return "<html><table width=100%>" \
+//            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${weatherNode.channel.title}</td></tr>" \
+//            + "<tr><td style='font-size:1em;text-align:left'>${weatherNode.channel.item.condition.@text}</td></tr>" \
+//            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(Date.parse('EEE, dd MMM yyyy h:mm a', weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))}</td></tr></table></html>"
+        return buildActivityString(weatherNode.channel.title,
+             weatherNode.channel.item.condition.@text, Date.parse('EEE, dd MMM yyyy h:mm a',
+             weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))
+    }
+}
+
+class FeedMessage {
+    def feedEntry
+    def buildActivityString
+    
+    String toString() {
+        return buildActivityString(feedEntry.source.title, feedEntry.title, feedEntry.publishedDate)
     }
 }
 
