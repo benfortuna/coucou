@@ -29,6 +29,14 @@
 				<enabled>false</enabled>
 			</releases>
 		</repository>
+		<repository>
+			<id>jvnet-releases</id>
+			<name>Java.net Releases</name>
+			<url>http://download.java.net/maven/2/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -42,35 +50,65 @@
 	        	</exclusion>
 	        </exclusions>
     	</dependency>
+    	
 		<dependency>
-			<groupId>net.java.dev.glazedlists</groupId>
-			<artifactId>glazedlists_java15</artifactId>
-			<version>1.8.0</version>
+        	<groupId>org.mnode.base</groupId>
+        	<artifactId>base-desktop</artifactId>
+        	<version>0.0.1-SNAPSHOT</version>
+        </dependency>
+		<dependency>
+			<groupId>net.java.dev.substance</groupId>
+			<artifactId>swingx</artifactId>
+			<version>5.3</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.griffon.flamingobuilder</groupId>
-			<artifactId>flamingobuilder</artifactId>
-			<version>0.2</version>
+			<groupId>swingx</groupId>
+			<artifactId>swingx-beaninfo</artifactId>
+			<version>0.9.5</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.griffon.swingxbuilder</groupId>
 			<artifactId>swingxbuilder</artifactId>
 			<version>0.1.6</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>net.java.dev.flamingo</groupId>
-			<artifactId>flamingo</artifactId>
-			<version>4.2</version>
+        	<groupId>com.miglayout</groupId>
+        	<artifactId>miglayout</artifactId>
+        	<version>3.7.2</version>
+        	<scope>provided</scope>
+        </dependency>
+		<dependency>
+			<groupId>net.java.dev.glazedlists</groupId>
+			<artifactId>glazedlists_java15</artifactId>
+			<version>1.8.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+            <groupId>org.netbeans.wizard</groupId>
+            <artifactId>wizard</artifactId>
+            <version>0.998.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+		<dependency>
+			<groupId>org.mnode.base</groupId>
+			<artifactId>base-substance</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.substance</groupId>
 			<artifactId>substance</artifactId>
 			<version>5.3</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.substance</groupId>
 			<artifactId>substance-swingx</artifactId>
 			<version>5.3</version>
+			<scope>provided</scope>
 		</dependency>
 		<!--
 		<dependency>
@@ -83,11 +121,13 @@
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-awt-util</artifactId>
 			<version>1.7</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-swing</artifactId>
 			<version>1.7</version>
+			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<artifactId>xalan</artifactId>
@@ -99,6 +139,7 @@
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-transcoder</artifactId>
 			<version>1.7</version>
+			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
 					<artifactId>xalan</artifactId>
@@ -110,56 +151,75 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.mnode.base</groupId>
+			<artifactId>base-commons</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+        	<groupId>com.ocpsoft</groupId>
+        	<artifactId>ocpsoft-pretty-time</artifactId>
+        	<version>1.0.5</version>
+        	<scope>provided</scope>
+        </dependency>
+
+		<dependency>
+			<groupId>org.mnode.base</groupId>
+			<artifactId>base-feed</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>rome</groupId>
+			<artifactId>rome</artifactId>
+			<version>1.0</version>
+			<scope>provided</scope>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-xmpp</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+
 		<dependency>
-            <groupId>org.netbeans.wizard</groupId>
-            <artifactId>wizard</artifactId>
-            <version>0.998.1</version>
-        </dependency>
-		<dependency>
-            <groupId>jmdns</groupId>
-            <artifactId>jmdns</artifactId>
-            <version>2.0</version>
-        </dependency>
+			<groupId>org.mnode.base</groupId>
+			<artifactId>base-repository</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 		<dependency>
         	<groupId>org.apache.jackrabbit</groupId>
         	<artifactId>jackrabbit-core</artifactId>
         	<version>2.0.0</version>
+        	<scope>provided</scope>
         </dependency>
 		<dependency>
         	<groupId>org.slf4j</groupId>
         	<artifactId>slf4j-log4j12</artifactId>
         	<version>1.5.6</version>
-        </dependency>
-		<dependency>
-        	<groupId>com.miglayout</groupId>
-        	<artifactId>miglayout</artifactId>
-        	<version>3.7.2</version>
+        	<scope>provided</scope>
         </dependency>
 		<dependency>
         	<groupId>javax.jcr</groupId>
         	<artifactId>jcr</artifactId>
         	<version>2.0</version>
+        	<scope>provided</scope>
         </dependency>
+		
 		<dependency>
-        	<groupId>org.mnode.base</groupId>
-        	<artifactId>base-desktop</artifactId>
-        	<version>0.0.1-SNAPSHOT</version>
-        	<exclusions>
-        		<exclusion>
-        			<artifactId>jxlayer</artifactId>
-        			<groupId>org.swinglabs</groupId>
-        		</exclusion>
-        	</exclusions>
-        </dependency>
+			<groupId>org.codehaus.griffon.flamingobuilder</groupId>
+			<artifactId>flamingobuilder</artifactId>
+			<version>0.2</version>
+		</dependency>
 		<dependency>
-        	<groupId>com.ocpsoft</groupId>
-        	<artifactId>ocpsoft-pretty-time</artifactId>
-        	<version>1.0.5</version>
+			<groupId>net.java.dev.flamingo</groupId>
+			<artifactId>flamingo</artifactId>
+			<version>4.2</version>
+		</dependency>
+		<dependency>
+            <groupId>jmdns</groupId>
+            <artifactId>jmdns</artifactId>
+            <version>2.0</version>
         </dependency>
 		<dependency>
         	<groupId>net.java.dev.laf-widget</groupId>
@@ -171,21 +231,6 @@
         	<artifactId>checkers</artifactId>
         	<version>1.0</version>
         </dependency>
-		<dependency>
-			<groupId>net.java.dev.substance</groupId>
-			<artifactId>swingx</artifactId>
-			<version>5.3</version>
-		</dependency>
-		<dependency>
-			<groupId>swingx</groupId>
-			<artifactId>swingx-beaninfo</artifactId>
-			<version>0.9.5</version>
-		</dependency>
-		<dependency>
-			<groupId>rome</groupId>
-			<artifactId>rome</artifactId>
-			<version>0.9</version>
-		</dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>
