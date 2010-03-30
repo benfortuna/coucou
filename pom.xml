@@ -57,131 +57,25 @@
         	<version>0.0.1-SNAPSHOT</version>
         </dependency>
 		<dependency>
-			<groupId>net.java.dev.substance</groupId>
-			<artifactId>swingx</artifactId>
-			<version>5.3</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>swingx</groupId>
-			<artifactId>swingx-beaninfo</artifactId>
-			<version>0.9.5</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.griffon.swingxbuilder</groupId>
-			<artifactId>swingxbuilder</artifactId>
-			<version>0.1.6</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-        	<groupId>com.miglayout</groupId>
-        	<artifactId>miglayout</artifactId>
-        	<version>3.7.2</version>
-        	<scope>provided</scope>
-        </dependency>
-		<dependency>
-			<groupId>net.java.dev.glazedlists</groupId>
-			<artifactId>glazedlists_java15</artifactId>
-			<version>1.8.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-            <groupId>org.netbeans.wizard</groupId>
-            <artifactId>wizard</artifactId>
-            <version>0.998.1</version>
-            <scope>provided</scope>
-        </dependency>
-
-		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-substance</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>net.java.dev.substance</groupId>
-			<artifactId>substance</artifactId>
-			<version>5.3</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.substance</groupId>
-			<artifactId>substance-swingx</artifactId>
-			<version>5.3</version>
-			<scope>provided</scope>
-		</dependency>
-		<!--
-		<dependency>
-			<groupId>jgoodies</groupId>
-			<artifactId>forms</artifactId>
-			<version>1.0.5</version>
-		</dependency>
-		-->
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-awt-util</artifactId>
-			<version>1.7</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-swing</artifactId>
-			<version>1.7</version>
-			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<artifactId>xalan</artifactId>
-					<groupId>xalan</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-transcoder</artifactId>
-			<version>1.7</version>
-			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<artifactId>xalan</artifactId>
-					<groupId>xalan</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>org.apache.xmlgraphics</artifactId>
-					<groupId>fop</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-commons</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-        	<groupId>com.ocpsoft</groupId>
-        	<artifactId>ocpsoft-pretty-time</artifactId>
-        	<version>1.0.5</version>
-        	<scope>provided</scope>
-        </dependency>
-
-		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-feed</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>rome</groupId>
-			<artifactId>rome</artifactId>
-			<version>1.0</version>
-			<scope>provided</scope>
-		</dependency>
-		
-		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-xmpp</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-repository</artifactId>
@@ -205,7 +99,6 @@
         	<version>2.0</version>
         	<scope>provided</scope>
         </dependency>
-		
 		<dependency>
 			<groupId>org.codehaus.griffon.flamingobuilder</groupId>
 			<artifactId>flamingobuilder</artifactId>
@@ -231,6 +124,13 @@
         	<artifactId>checkers</artifactId>
         	<version>1.0</version>
         </dependency>
+		<!--
+		<dependency>
+			<groupId>jgoodies</groupId>
+			<artifactId>forms</artifactId>
+			<version>1.0.5</version>
+		</dependency>
+		-->
 	</dependencies>
 	<scm>
 		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>

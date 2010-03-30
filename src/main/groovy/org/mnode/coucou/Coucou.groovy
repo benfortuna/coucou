@@ -109,6 +109,13 @@ import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
 import com.sun.syndication.io.SyndFeedInput
 import com.sun.syndication.io.XmlReader
+//import ch.bluepenguin.jcr.groovy.builder.JcrBuilder
+import org.mnode.base.log.LogEntry
+import org.mnode.base.log.LogEntry.Level
+import org.mnode.base.log.FormattedLogEntry
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
@@ -116,40 +123,47 @@ import com.sun.syndication.io.XmlReader
  */
  /*
 @Grapes([
+//    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
     @Grab(group='rome', module='rome', version='1.0'),
 //    @Grab(group='rome', module='rome-fetcher', version='1.0'),
 //    @Grab(group='jdom', module='jdom', version='1.0'),
     @Grab(group='org.mnode.coucou', module='coucou', version='0.0.1-SNAPSHOT', transitive=false),
-    @Grab(group='org.codehaus.griffon.swingxbuilder', module='swingxbuilder', version='0.1.6'),
-    @Grab(group='net.java.dev.substance', module='substance', version='5.3'),
-    @Grab(group='net.java.dev.substance', module='substance-swingx', version='5.3'),
-    @Grab(group='net.java.dev.substance', module='swingx', version='5.3'),
-    @Grab(group='swingx', module='swingx-beaninfo', version='0.9.5'),
+//    @Grab(group='org.codehaus.griffon.swingxbuilder', module='swingxbuilder', version='0.1.6'),
+//    @Grab(group='net.java.dev.substance', module='substance', version='5.3'),
+//    @Grab(group='net.java.dev.substance', module='substance-swingx', version='5.3'),
+//    @Grab(group='net.java.dev.substance', module='swingx', version='5.3'),
+//    @Grab(group='swingx', module='swingx-beaninfo', version='0.9.5'),
     //@Grab(group='org.swinglabs', module='swingx', version='0.9.2'),
-    @Grab(group='org.mnode.base', module='base-views', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-commons', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-log', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-xmpp', version='0.0.1-SNAPSHOT'),
-    @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT', transitive=false),
+    @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-substance', version='0.0.1-SNAPSHOT'),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
-    @Grab(group='org.apache.xmlgraphics', module='batik-awt-util', version='1.7'),
-    @Grab(group='org.apache.xmlgraphics', module='batik-swing', version='1.7'),
-    @Grab(group='org.apache.xmlgraphics', module='batik-transcoder', version='1.7'),
-    @Grab(group='net.java.dev.datatips', module='datatips', version='20091219'),
-    @Grab(group='org.netbeans.wizard', module='wizard', version='0.998.1'),
+//    @Grab(group='org.apache.xmlgraphics', module='batik-awt-util', version='1.7'),
+//    @Grab(group='org.apache.xmlgraphics', module='batik-swing', version='1.7'),
+//    @Grab(group='org.apache.xmlgraphics', module='batik-transcoder', version='1.7'),
+//    @Grab(group='net.java.dev.datatips', module='datatips', version='20091219'),
+//    @Grab(group='org.netbeans.wizard', module='wizard', version='0.998.1'),
     @Grab(group='javax.jcr', module='jcr', version='2.0'),
     //@Grab(group='org.apache.commons', module='commons-compress', version='1.0'),
     @Grab(group='org.apache.jackrabbit', module='jackrabbit-core', version='2.0.0'),
     //@Grab(group='org.apache.jackrabbit', module='jackrabbit-text-extractors', version='2.0.0'),
     @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
     @Grab(group='net.fortuna.ical4j', module='ical4j-connector', version='0.9'),
-    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
-    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
+//    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
+//    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
     */
 public class Coucou{
      
-    static final Logger log = Logger.getInstance(Coucou.class)
+    static final LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou.class))
+    static final LogEntry init_node = new FormattedLogEntry(Level.Info, 'Initialising %s node..')
+    static final LogEntry delete_enabled = new FormattedLogEntry(Level.Info, 'Enable deletion for: %s')
+    static final LogEntry delete_disabled = new FormattedLogEntry(Level.Info, 'Disable deletion')
+    static final LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
     
     static final def EMPTY_TABLE_MODEL = new DefaultTableModel()
      
@@ -181,29 +195,32 @@ public class Coucou{
         
         def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
         Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
+//        def jcr = new JcrBuilder()
+//        jcr.session = session
+//        jcr.log = log
         
         if (!session.rootNode.hasNode('accounts')) {
-            log.info 'Initialising accounts node..'
+            log.log init_node, 'accounts'
             def accountsNode = session.rootNode.addNode('accounts')
             session.rootNode.save()
         }
         if (!session.rootNode.hasNode('contacts')) {
-            log.info 'Initialising contacts node..'
+            log.log init_node, 'contacts'
             def contactsNode = session.rootNode.addNode('contacts')
             session.rootNode.save()
         }
         if (!session.rootNode.hasNode('history')) {
-            log.info 'Initialising history node..'
+            log.log init_node, 'history'
             def historyNode = session.rootNode.addNode('history')
             session.rootNode.save()
         }
         if (!session.rootNode.hasNode('archive')) {
-            log.info 'Initialising archive node..'
+            log.log init_node, 'archive'
             def archiveNode = session.rootNode.addNode('archive')
             session.rootNode.save()
         }
         if (!session.rootNode.hasNode('presence')) {
-            log.info 'Initialising presence node..'
+            log.log init_node, 'presence'
             def presenceNode = session.rootNode.addNode('presence')
             presenceNode.addNode('Available')
             presenceNode.addNode('Busy')
@@ -288,7 +305,7 @@ public class Coucou{
             swing.edt {
                 def explorerTab = panel(name: 'Repository Explorer', border: emptyBorder(10)) {
                     borderLayout()
-                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200) {
+                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
                         scrollPane(constraints: 'left') {
                             treeTable(id: 'explorerTree')
                             explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
@@ -334,7 +351,7 @@ public class Coucou{
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
              
              frame(title: 'Coucou', id: 'coucouFrame', defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
-                     size: [800, 600], show: false, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
+                     size: [640, 480], show: false, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
                 
                 actions() {
                     action(id: 'busyAction', name: 'Busy', smallIcon: imageIcon('/busy.png'), closure: {})
@@ -440,11 +457,11 @@ public class Coucou{
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
-                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
+                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE') /*, enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
                          if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete item: ${editContext.item}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                              editContext.delete()
                          }
-                     })
+                     })*/
                     
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
@@ -518,6 +535,7 @@ public class Coucou{
                     menu(text: "View", mnemonic: 'V') {
                         checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar')
                         checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
+                        checkBoxMenuItem(text: "Contact Groups", id: 'viewContactGroups')
                     }
                     menu(text: "Action", mnemonic: 'A') {
                         menuItem(replyAction)
@@ -552,9 +570,10 @@ public class Coucou{
                 borderLayout()
                 
                 panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(5)) {
-                    flowLayout(alignment: FlowLayout.LEADING)
+//                    flowLayout(alignment: FlowLayout.LEADING)
+                    borderLayout()
                     
-                    button(id: 'photoButton', icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                    button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
                     photoButton.actionPerformed = {
                             if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
                                 doLater {
@@ -563,12 +582,12 @@ public class Coucou{
                             }
                     }
                     
-                    vbox() {
-                        textField(id: 'nameField', text: '<Enter your name here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 24))
+                    vbox(border: emptyBorder(5)) {
+                        textField(id: 'nameField', text: '<Enter your name here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
                         nameField.focusGained = { nameField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
-                        comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 14))
+                        comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 12))
                         statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
                         //statusField.focusGained = { nameField.selectAll() }
                         
@@ -589,23 +608,16 @@ public class Coucou{
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
                     panel(name: 'Home', id: 'homeTab') {
                          borderLayout()
-                         splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
+                         splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0, continuousLayout: true) {
                              tabbedPane(constraints: 'left', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
                                  panel(name: 'Contacts', border: emptyBorder(10)) {
                                      borderLayout()
                                      
-                                     vbox {
-//                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
-//                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
-                                     
-                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
-                                         
-                                         panel {
-                                         borderLayout()
+//                                     vbox {
                                          
                                          def findFilter = new PatternFilter()
                                      
-                                         def findText = 'Find..'
+                                         def findText = 'Find / add a contact..'
                                          textField(text: findText, id: 'findField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                          findField.focusGained = {
                                              if (findField.text == findText) {
@@ -623,27 +635,37 @@ public class Coucou{
                                              }
                                          }
                                          findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
+                                         
+//                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+//                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
+                                     
+//                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
                                      
                                          scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
 //                                             list(id: 'contactsList')
 //                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
 //                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
 
-                                            def contactIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
-                                            def contactGrid = new JCommandButtonPanel()
-//                                            for (c in ['Tom', 'Dick', 'Harry']) {
-                                                contactGrid.add(new JCommandButton('Tom', contactIcon))
-//                                            }
-                                            widget(contactGrid)
+                                                def contactIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
+                                                def contactGrid = new JCommandButtonPanel(50)
+                                                contactGrid.addButtonGroup('Online')
+                                                contactGrid.addButtonGroup('Offline')
+                                                for (c in ['Tom', 'Dick', 'Harry']) {
+                                                    contactGrid.addButtonToGroup('Online', new JCommandButton(c, contactIcon))
+                                                }
+                                                for (c in ['Huey', 'Louey', 'Duey']) {
+                                                    contactGrid.addButtonToGroup('Offline', new JCommandButton(c, contactIcon))
+                                                }
+                                                widget(contactGrid)
+                                                bind(source: viewContactGroups, sourceProperty:'selected', target: contactGrid, targetProperty: 'toShowGroupLabels')
                                          }
-                                         }
-                                         vglue()
-                                     }
+//                                         vglue()
+//                                     }
                                      
-                                         hbox(constraints: BorderLayout.SOUTH) {
-                                             hglue()
-                                             hyperlink(new JXHyperlink(newContactAction))
-                                         }
+//                                     hbox(constraints: BorderLayout.SOUTH) {
+//                                         hglue()
+//                                         hyperlink(new JXHyperlink(newContactAction))
+//                                     }
                                  }
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
@@ -668,6 +690,12 @@ public class Coucou{
                                          historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
                                          historyTree.cellRenderer = new RepositoryTreeCellRenderer()
                                      }
+                                 }
+                                 panel(name: 'Planner', border: emptyBorder(10)) {
+                                     borderLayout()
+                                     
+                                     def addTaskEventText = 'Add a new task / appointment..'
+                                     textField(text: addTaskEventText, id: 'addTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
@@ -696,27 +724,27 @@ public class Coucou{
                                             if (e.path) {
                                                 editContext.item = e.path.lastPathComponent
                                                 editContext.enabled = true
-                                                log.info "Enable deletion for: ${editContext.item}"
+                                                log.log delete_enabled, editContext.item
                                             }
                                             else {
                                                 editContext.enabled = false
-                                                log.info "Disable deletion"
+                                                log.log delete_disabled
                                             }
                                         }
                                         accountsTree.focusGained = {
                                              if (accountsTree.selectionPath) {
                                                  editContext.item = accountsTree.selectionPath.lastPathComponent
                                                  editContext.enabled = true
-                                                 log.info "Enable deletion for: ${editContext.item}"
+                                                 log.log delete_enabled, editContext.item
                                              }
                                              else {
                                                  editContext.enabled = false
-                                                 log.info "Disable deletion"
+                                                 log.log delete_disabled
                                              }
                                         }
                                         accountsTree.focusLost = {
                                             editContext.enabled = false
-                                            log.info "Disable deletion"
+                                            log.log delete_disabled
                                         }
                                         accountsTree.mouseClicked = { e ->
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
@@ -740,22 +768,45 @@ public class Coucou{
                                      def addFeedText = 'Add a new feed..'
                                      textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                  }
-                                 panel(name: 'Planner', border: emptyBorder(10)) {
-                                     borderLayout()
-                                     
-                                     def addTaskEventText = 'Add a new task / appointment..'
-                                     textField(text: addTaskEventText, id: 'addTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                 }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                              panel(constraints: 'right', border: emptyBorder(10)) {
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                      list(id: 'activity')
-                                     activity.cellRenderer = new ActivityListCellRenderer()
+                                     activity.cellRenderer = new ActivityListCellRenderer(buildActivityString: buildActivityString)
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                     activity.mouseClicked = { e ->
+                                         if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
+                                             if (activity.selectedValue) {
+                                                 def node = activity.selectedValue
+                                                 openNodeTab(tabs, node)
+                                             }
+                                         }
+                                     }
                                      
-                                     def weatherNode = new XmlSlurper().parseText("http://weather.yahooapis.com/forecastrss?w=1103816&u=c".toURL().text)
+                                    if (!session.rootNode.hasNode('feeds')) {
+                                        log.log init_node, 'feeds'
+                                        def feedsNode = session.rootNode.addNode('feeds')
+                                        session.rootNode.save()
+                                    }
+                                     
+                                     def weatherFeed = new XmlSlurper().parseText("http://weather.yahooapis.com/forecastrss?w=1103816&u=c".toURL().text)
+                                     def feedsNode = session.rootNode.getNode('feeds')
+//                                     jcr.parentNode = feedsNode
+//                                     def weatherNode = jcr.weather('url': "http://weather.yahooapis.com/forecastrss?w=1103816&u=c") {
+//                                             item('source': weatherFeed.channel.title,
+//                                              'subject': weatherFeed.channel.item.condition.@text,
+//                                              'date': Date.parse('EEE, dd MMM yyyy h:mm a', weatherFeed.channel.item.condition.@date.toString().split(' ')[0..-2].join(' '))) {}
+//                                         }
+//                                     }
+                                     def weatherNode = feedsNode.addNode('weather')
+                                     weatherNode.setProperty('type', 'feed')
+                                     weatherNode.setProperty('source', weatherFeed.channel.title.toString())
+                                     weatherNode.setProperty('subject', weatherFeed.channel.item.condition.@text.toString())
+                                     def calendar = Calendar.instance
+                                     calendar.setTime(Date.parse('EEE, dd MMM yyyy h:mm a', weatherFeed.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))
+                                     weatherNode.setProperty('date', calendar)
                                      
                                      def activityModel = new DefaultListModel()
                                      
@@ -765,13 +816,22 @@ public class Coucou{
                                      def coucouFeed = new SyndFeedInput().build(new XmlReader(new URL("http://coucou.im/feed")))
                                      for (entry in coucouFeed.entries) {
                                          entry.source = coucouFeed
-                                         activityModel.addElement(new FeedMessage(feedEntry: entry, buildActivityString: buildActivityString))
+//                                         activityModel.addElement(new FeedMessage(feedEntry: entry, buildActivityString: buildActivityString))
+                                         def blogNode = feedsNode.addNode('blog')
+                                         blogNode.setProperty('type', 'feed')
+                                         blogNode.setProperty('source', entry.source.title)
+                                         blogNode.setProperty('subject', entry.title)
+                                         calendar = Calendar.instance
+                                         calendar.setTime(entry.publishedDate)
+                                         blogNode.setProperty('date', calendar)
+                                         activityModel.addElement(blogNode)
                                      }
-                                     activityModel.addElement(new WeatherMessage(weatherNode: weatherNode, buildActivityString: buildActivityString))
-                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
-                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
-                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
-                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
+//                                     activityModel.addElement(new WeatherMessage(weatherNode: weatherNode, buildActivityString: buildActivityString))
+                                     activityModel.addElement(weatherNode)
+//                                     activityModel.addElement(new ImMessage('Coucou', 'test@example.com', new Date()))
+//                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
+//                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
+//                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      activity.model = activityModel
                                  }
                              }
@@ -897,7 +957,7 @@ class XmppAccount {
             connection.connect();
             connection.login("test", "!password");
         } catch (XMPPException ex) {
-            log.error ex;
+            log.log unexpected_error, ex
         }
     }
 }
@@ -1158,6 +1218,7 @@ class ActivityListCellRenderer extends DefaultListCellRenderer {
     def mailIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/mail.svg'), iconSize)
     def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
     def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+    def buildActivityString
     
     public ActivityListCellRenderer() {
         iconTextGap = 10
@@ -1169,16 +1230,20 @@ class ActivityListCellRenderer extends DefaultListCellRenderer {
     
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-        if (value instanceof ImMessage) {
+        
+        text = buildActivityString(value.getProperty('source').string, value.getProperty('subject').string, value.getProperty('date').date.time)
+        
+        def activityType = value.getProperty('type').string
+        if (activityType == 'im') {
             setIcon(imIcon)
         }
-        else if (value instanceof MailMessage) {
+        else if (activityType == 'mail') {
             setIcon(mailIcon)
         }
-        else if (value instanceof EventMessage) {
+        else if (activityType == 'event') {
             setIcon(eventIcon)
         }
-        else if (value instanceof TaskMessage) {
+        else if (activityType == 'task') {
             setIcon(taskIcon)
         }
         else {
@@ -1433,7 +1498,7 @@ class RepositoryComboBoxModel extends RepositoryListModel implements ComboBoxMod
 
 class EditContext {
     
-    @Bindable boolean enabled
+    @Bindable Boolean enabled
     
     def item
     
