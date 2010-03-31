@@ -124,7 +124,7 @@ import org.slf4j.LoggerFactory
  /*
 @Grapes([
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
-    @Grab(group='rome', module='rome', version='1.0'),
+//    @Grab(group='rome', module='rome', version='1.0'),
 //    @Grab(group='rome', module='rome-fetcher', version='1.0'),
 //    @Grab(group='jdom', module='jdom', version='1.0'),
     @Grab(group='org.mnode.coucou', module='coucou', version='0.0.1-SNAPSHOT', transitive=false),
@@ -139,6 +139,7 @@ import org.slf4j.LoggerFactory
     @Grab(group='org.mnode.base', module='base-xmpp', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-substance', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-feed', version='0.0.1-SNAPSHOT'),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
@@ -569,7 +570,7 @@ public class Coucou{
                 
                 borderLayout()
                 
-                panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(5)) {
+                panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(10)) {
 //                    flowLayout(alignment: FlowLayout.LEADING)
                     borderLayout()
                     
