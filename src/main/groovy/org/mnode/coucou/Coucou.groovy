@@ -45,6 +45,7 @@ import java.util.regex.Pattern
 import javax.swing.table.AbstractTableModel
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JFrame
+import javax.swing.JTextField
 import javax.swing.JFileChooser
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
@@ -337,7 +338,7 @@ public class Coucou{
                 tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
         }
-        
+        /*
         def buildActivityString = { author, title, time ->
 //            StringBuilder builder = new StringBuilder()
             "<html><table width=100%>" \
@@ -345,6 +346,7 @@ public class Coucou{
                 + "<tr><td style='font-size:1em;text-align:left'>${title}</td></tr>" \
                 + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
         }
+        */
         
          swing.edt {
              lookAndFeel('substance5', 'system')
@@ -534,7 +536,7 @@ public class Coucou{
                         menuItem(text: "Preferences", icon: imageIcon('/preferences.png'))
                     }
                     menu(text: "View", mnemonic: 'V') {
-                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar')
+                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar', state: true)
                         checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
                         checkBoxMenuItem(text: "Contact Groups", id: 'viewContactGroups')
                     }
@@ -584,7 +586,7 @@ public class Coucou{
                     }
                     
                     vbox(border: emptyBorder(5)) {
-                        textField(id: 'nameField', text: '<Enter your name here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
+                        textField(id: 'nameField', text: System.getProperty('user.name', '<Enter your name here>'), border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
                         nameField.focusGained = { nameField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
@@ -615,10 +617,10 @@ public class Coucou{
                                      borderLayout()
                                      
 //                                     vbox {
-                                         
+                                         /*
                                          def findFilter = new PatternFilter()
                                      
-                                         def findText = 'Find / add a contact..'
+                                         def findText = 'Find a contact..'
                                          textField(text: findText, id: 'findField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                          findField.focusGained = {
                                              if (findField.text == findText) {
@@ -636,6 +638,9 @@ public class Coucou{
                                              }
                                          }
                                          findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
+                                         */
+                                         textField(new FindField(defaultText: 'Filter contacts..'), id: 'findField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                         findField.toolTipText = '<CTRL> + Enter to create a new contact'
                                          
 //                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
 //                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
@@ -695,12 +700,21 @@ public class Coucou{
                                  panel(name: 'Planner', border: emptyBorder(10)) {
                                      borderLayout()
                                      
-                                     def addTaskEventText = 'Add a new task / appointment..'
-                                     textField(text: addTaskEventText, id: 'addTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+//                                     def addTaskEventText = 'Find a task / appointment..'
+//                                     textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     textField(new FindField(defaultText: 'Filter tasks / appointments..'), id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'Accounts', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                     vbox(constraints: BorderLayout.NORTH) {
+//                                         def findAccountText = 'Find an account..'
+                                         label(text: 'Accounts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                         //searchPanel(fieldName: 'Filter accounts', id: 'findAccountField')
+//                                         textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                         textField(new FindField(defaultText: 'Filter accounts..'), id: 'findAccountField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5))
+                                         findAccountField.toolTipText = '<CTRL> + Enter to create a new account'
+                                     }
                                      scrollPane(border: null) {
                                          tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
                                          /*
@@ -766,8 +780,9 @@ public class Coucou{
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
                                      borderLayout()
                                      
-                                     def addFeedText = 'Add a new feed..'
-                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+//                                     def addFeedText = 'Add a new feed..'
+//                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
                                  }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
@@ -775,7 +790,7 @@ public class Coucou{
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                      list(id: 'activity')
-                                     activity.cellRenderer = new ActivityListCellRenderer(buildActivityString: buildActivityString)
+                                     activity.cellRenderer = new ActivityListCellRenderer()
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      activity.mouseClicked = { e ->
                                          if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
@@ -1055,17 +1070,6 @@ class VetoableTabCloseListenerImpl implements VetoableTabCloseListener {
     public void tabClosed(JTabbedPane tabbedPane, Component tabComponent) {}
 }
 
-class ImageFileFilter extends javax.swing.filechooser.FileFilter {
-    
-    boolean accept(File file) {
-        return file.directory || file.name =~ /\.(gif|jpg|png|bmp)$/
-    }
-    
-    String getDescription() {
-        return 'All Image Files'
-    }
-}
-
 class FindFilterUpdater implements DocumentListener {
 
     def findField
@@ -1211,7 +1215,7 @@ class FeedMessage {
         return buildActivityString(feedEntry.source.title, feedEntry.title, feedEntry.publishedDate)
     }
 }
-
+/*
 class ActivityListCellRenderer extends DefaultListCellRenderer {
 
     def iconSize = new Dimension(32, 32)
@@ -1219,6 +1223,7 @@ class ActivityListCellRenderer extends DefaultListCellRenderer {
     def mailIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/mail.svg'), iconSize)
     def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
     def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+    def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
     def buildActivityString
     
     public ActivityListCellRenderer() {
@@ -1247,13 +1252,16 @@ class ActivityListCellRenderer extends DefaultListCellRenderer {
         else if (activityType == 'task') {
             setIcon(taskIcon)
         }
+        else if (activityType == 'feed') {
+            setIcon(feedIcon)
+        }
         else {
             setIcon(null)
         }
         return this
     }
 }
-
+*/
 class WizardPageImpl extends WizardPage {
     
 //    static String description
@@ -1652,5 +1660,31 @@ class PropertiesTableModel extends AbstractTableModel {
                 break
         }
         return value
+    }
+}
+
+class FindField extends JTextField {
+
+    def patternFilter
+    def defaultText
+    
+    FindField() {
+        patternFilter = new PatternFilter()
+        focusGained = {
+            if (text == defaultText) {
+                text = null
+            }
+        }
+        focusLost = {
+            if (!text) {
+                text = defaultText
+            }
+        }
+        keyPressed = { e ->
+            if (e.keyCode == KeyEvent.VK_ESCAPE) {
+                text = null
+            }
+        }
+        document.addDocumentListener(new FindFilterUpdater(this, patternFilter))
     }
 }
