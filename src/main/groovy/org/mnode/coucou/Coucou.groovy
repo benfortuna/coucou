@@ -338,15 +338,6 @@ public class Coucou{
                 tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
         }
-        /*
-        def buildActivityString = { author, title, time ->
-//            StringBuilder builder = new StringBuilder()
-            "<html><table width=100%>" \
-                + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${author}</td></tr>" \
-                + "<tr><td style='font-size:1em;text-align:left'>${title}</td></tr>" \
-                + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
-        }
-        */
         
          swing.edt {
              lookAndFeel('substance5', 'system')
@@ -1215,53 +1206,7 @@ class FeedMessage {
         return buildActivityString(feedEntry.source.title, feedEntry.title, feedEntry.publishedDate)
     }
 }
-/*
-class ActivityListCellRenderer extends DefaultListCellRenderer {
 
-    def iconSize = new Dimension(32, 32)
-    def imIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), iconSize)
-    def mailIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/mail.svg'), iconSize)
-    def eventIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/event.svg'), iconSize)
-    def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
-    def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
-    def buildActivityString
-    
-    public ActivityListCellRenderer() {
-        iconTextGap = 10
-        verticalAlignment = CENTER
-        //alignmentY = 0.5
-        verticalTextPosition = TOP
-//        border = BorderFactory.createEmptyBorder(2, 5, 2, 0)
-    }
-    
-    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-        
-        text = buildActivityString(value.getProperty('source').string, value.getProperty('subject').string, value.getProperty('date').date.time)
-        
-        def activityType = value.getProperty('type').string
-        if (activityType == 'im') {
-            setIcon(imIcon)
-        }
-        else if (activityType == 'mail') {
-            setIcon(mailIcon)
-        }
-        else if (activityType == 'event') {
-            setIcon(eventIcon)
-        }
-        else if (activityType == 'task') {
-            setIcon(taskIcon)
-        }
-        else if (activityType == 'feed') {
-            setIcon(feedIcon)
-        }
-        else {
-            setIcon(null)
-        }
-        return this
-    }
-}
-*/
 class WizardPageImpl extends WizardPage {
     
 //    static String description
