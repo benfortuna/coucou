@@ -1224,23 +1224,6 @@ class CreateAccountProducer implements WizardResultProducer {
     }
 }
 
-class SessionLogout extends Thread {
-
-    static def log = Logger.getInstance(SessionLogout.class)
-    
-    def session
-    
-    SessionLogout(def session) {
-        this.session = session
-    }
-    
-    void run() {
-        log.info 'Logging out session..'
-        session.logout()
-        log.info 'Session logged out.'
-    }
-}
-
 class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observation.EventListener {
 
     static def log = Logger.getInstance(RepositoryTreeModel.class)
@@ -1393,14 +1376,6 @@ class EditContext {
     void cut() {}
     
     void paste() {}
-}
-
-class TabPreviewPainterImpl extends DefaultTabPreviewPainter {
-
-    TabOverviewKind getOverviewKind(JTabbedPane tabPane) {
-        //return TabOverviewKind.MENU_CAROUSEL
-        return TabOverviewKind.ROUND_CAROUSEL
-    }
 }
 
 class RepositoryTreeTableModel extends AbstractTreeTableModel {
