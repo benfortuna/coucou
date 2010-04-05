@@ -117,6 +117,8 @@ import org.mnode.base.log.FormattedLogEntry
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.slf4j.LoggerFactory
+import org.mnode.base.substance.TabCloseCallbackImpl
+import org.mnode.base.substance.VetoableMultipleTabCloseListenerImpl
 
 /**
  * @author fortuna
@@ -982,83 +984,6 @@ class Contact {
             return "<New contact>"
         }
     }
-}
-
-class TabCloseCallbackImpl implements TabCloseCallback {
-
-      public TabCloseKind onAreaClick(JTabbedPane tabbedPane, int tabIndex, MouseEvent mouseEvent) {
-        if (mouseEvent.getButton() != MouseEvent.BUTTON2)
-          return TabCloseKind.NONE;
-        if (mouseEvent.isShiftDown()) {
-          return TabCloseKind.ALL;
-        }
-        return TabCloseKind.THIS;
-      }
-
-      public TabCloseKind onCloseButtonClick(JTabbedPane tabbedPane,
-          int tabIndex, MouseEvent mouseEvent) {
-        if (mouseEvent.isAltDown()) {
-          return TabCloseKind.ALL_BUT_THIS;
-        }
-        if (mouseEvent.isShiftDown()) {
-          return TabCloseKind.ALL;
-        }
-        return TabCloseKind.THIS;
-      }
-
-      public String getAreaTooltip(JTabbedPane tabbedPane, int tabIndex) {
-        return null;
-      }
-
-      public String getCloseButtonTooltip(JTabbedPane tabbedPane,
-          int tabIndex) {
-        StringBuffer result = new StringBuffer();
-        result.append("<html><body>");
-        result.append("Mouse click closes <b>"
-            + tabbedPane.getTitleAt(tabIndex) + "</b> tab");
-        result
-            .append("<br><b>Alt</b>-Mouse click closes all tabs but <b>"
-                + tabbedPane.getTitleAt(tabIndex) + "</b> tab");
-        result.append("<br><b>Shift</b>-Mouse click closes all tabs");
-        result.append("</body></html>");
-        return result.toString();
-      }
-}
-
-class VetoableMultipleTabCloseListenerImpl implements VetoableMultipleTabCloseListener {
-    
-    def vetoedTabs
-    
-    public VetoableMultipleTabCloseListenerImpl(def tabs) {
-        this.vetoedTabs = tabs
-    }
-    
-    public boolean vetoTabsClosing(JTabbedPane tabbedPane, Set<Component> tabComponents) {
-        tabComponents.removeAll(vetoedTabs)
-        return false
-    }
-    
-    public void tabsClosing(JTabbedPane tabbedPane, Set<Component> tabComponents) {}
-    
-    public void tabsClosed(JTabbedPane tabbedPane, Set<Component> tabComponents) {}
-}
-
-
-class VetoableTabCloseListenerImpl implements VetoableTabCloseListener {
-    
-    def vetoedTab
-    
-    public VetoableTabCloseListenerImpl(def tab) {
-        this.vetoedTab = tab
-    }
-    
-    public boolean vetoTabClosing(JTabbedPane tabbedPane, Component tabComponent) {
-        return tabComponent == vetoedTab
-    }
-    
-    public void tabClosing(JTabbedPane tabbedPane, Component tabComponent) {}
-    
-    public void tabClosed(JTabbedPane tabbedPane, Component tabComponent) {}
 }
 
 class FindFilterUpdater implements DocumentListener {
