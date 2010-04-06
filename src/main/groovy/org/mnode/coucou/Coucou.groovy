@@ -87,6 +87,7 @@ import javax.jcr.PropertyType
 import javax.jcr.SimpleCredentials
 import javax.jcr.observation.*
 import org.apache.jackrabbit.core.TransientRepository
+import org.apache.jackrabbit.util.Text
 import net.miginfocom.swing.MigLayout
 import org.mnode.base.desktop.AbstractTreeModel
 import javax.swing.tree.TreePath
@@ -104,7 +105,7 @@ import com.ocpsoft.pretty.time.PrettyTime
 import javax.swing.table.DefaultTableModel
 import javax.swing.ListSelectionModel
 import org.mnode.base.desktop.PaddedIcon
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jivesoftware.smackx.packet.VCardimport javax.swing.ImageIconimport org.jivesoftware.smack.ConnectionConfigurationimport org.jivesoftware.smack.SASLAuthentication//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -179,7 +180,7 @@ public class Coucou{
             frame.visible = false
         }
     }
-     
+    
     static void main(def args) {
 //         System.setProperty("java.net.useSystemProxies", "true");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -231,7 +232,14 @@ public class Coucou{
             presenceNode.addNode('Away')
             session.rootNode.save()
         }
-        
+
+        def getNode = { path ->
+            if (!session.nodeExists(path)) {
+                return session.rootNode.addNode(path[1..-1])
+            }
+            return session.getNode(path)
+        }
+                
         def editContext = new EditContext()
         
         def swing = new SwingXBuilder()
@@ -288,7 +296,20 @@ public class Coucou{
             }
             
             swing.edt {
-                def newTab = panel(name: node.name)
+                def newTab = panel(name: node.name, border: emptyBorder(10)) {
+                    borderLayout()
+                    if (node.hasNodes()) {
+                        splitPane(continuousLayout: true) {
+                            scrollPane(constraints: 'left') {
+                                list(id: 'entryList')
+                                entryList.model = new RepositoryListModel(node)
+                                entryList.cellRenderer = new RepositoryListCellRenderer()
+                            }
+                            scrollPane(constraints: 'right') {
+                            }
+                        }
+                    }
+                }
                 newTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 newTab.putClientProperty('coucou.node', node)
                 tabs.add newTab
@@ -649,6 +670,34 @@ public class Coucou{
                                                 def contactGrid = new JCommandButtonPanel(50)
                                                 contactGrid.addButtonGroup('Online')
                                                 contactGrid.addButtonGroup('Offline')
+                                                
+                                                try {
+//                                                    final XMPPConnection connection = new XMPPConnection(new ConnectionConfiguration("talk.google.com", 5222, "gmail.com"))
+                                                    final XMPPConnection connection = new XMPPConnection("basepatterns.org");
+                                                    connection.connect();
+                                                    SASLAuthentication.supportSASLMechanism("PLAIN", 0)
+//                                                    connection.login("user@gmail.com", "password");
+                                                    connection.login("test", "!password");
+                                                    
+                                                    for (group in connection.roster.groups) {
+                                                        for (entry in group.entries) {
+                                                            println "${group.name}: ${entry.name}"
+                                                            Icon icon = null
+//                                                            try {
+//                                                                VCard card = new VCard()
+//                                                                card.load(connection, entry.user)
+//                                                                icon = new ImageIcon(card.avatar)
+//                                                            }
+//                                                            catch (Exception e) {
+//                                                                log.log unexpected_error, e
+//                                                            }
+                                                            contactGrid.addButtonToGroup(group.name, button(text: entry.name, icon: icon))
+                                                        }
+                                                    }
+                                                } catch (XMPPException ex) {
+                                                    log.log unexpected_error, ex
+                                                }
+                                                
                                                 for (c in ['Tom', 'Dick', 'Harry']) {
                                                     contactGrid.addButtonToGroup('Online', new JCommandButton(c, contactIcon))
                                                 }
@@ -776,6 +825,50 @@ public class Coucou{
 //                                     def addFeedText = 'Add a new feed..'
 //                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                      textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findFeedField.actionPerformed = {
+                                         if (findFeedField.text) {
+                                             def newFeed = new SyndFeedInput().build(new XmlReader(new URL(findFeedField.text)))
+//                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
+                                             def newNode = getNode("/feeds/${Text.escapeIllegalJcrChars(newFeed.title)}")
+                                             newNode.setProperty('title', newFeed.title)
+                                             if (newFeed.link) {
+                                                 newNode.setProperty('url', newFeed.link)
+                                             }
+                                             for (entry in newFeed.entries) {
+                                                 def entryNode = getNode("${newNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                                                 if (newFeed.uri) {
+                                                     entryNode.setProperty('source', newFeed.uri)
+                                                 }
+                                                 entryNode.setProperty('title', entry.title)
+                                                 if (entry.description) {
+                                                     entryNode.setProperty('description', entry.description.value)
+                                                 }
+                                                 if (entry.link) {
+                                                     entryNode.setProperty('url', entry.link)
+                                                 }
+                                                 if (entry.publishedDate) {
+                                                     calendar = Calendar.instance
+                                                     calendar.setTime(entry.publishedDate)
+                                                     entryNode.setProperty('date', calendar)
+                                                 }
+                                             }
+                                             newNode.parent.save()
+                                             findFeedField.text = null
+                                             openNodeTab(tabs, newNode)
+                                         }
+                                     }
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
+                                         list(id: 'feedList')
+                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
+                                         feedList.cellRenderer = new RepositoryListCellRenderer()
+                                         feedList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
+                                                if (feedList.selectedValue) {
+                                                    openNodeTab(tabs, feedList.selectedValue)
+                                                }
+                                            }
+                                         }
+                                     }
                                  }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
@@ -1024,7 +1117,7 @@ class FindFilterUpdater implements DocumentListener {
         }
     }
 }
-
+/*
 class ImMessage {
     
     def sender
@@ -1131,7 +1224,7 @@ class FeedMessage {
         return buildActivityString(feedEntry.source.title, feedEntry.title, feedEntry.publishedDate)
     }
 }
-
+*/
 class WizardPageImpl extends WizardPage {
     
 //    static String description
@@ -1305,12 +1398,13 @@ class RepositoryTreeCellRenderer extends DefaultTreeCellRenderer {
     }
 }
 
-class RepositoryListModel implements ListModel {
+class RepositoryListModel implements ListModel, javax.jcr.observation.EventListener {
 
     def node
     
     RepositoryListModel(def node) {
         this.node = node
+        node.session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, true, null, null, false)
     }
     
     Object getElementAt(int index) {
@@ -1329,6 +1423,10 @@ class RepositoryListModel implements ListModel {
     void addListDataListener(ListDataListener l) {}
 
     void removeListDataListener(ListDataListener l) {}
+    
+    void onEvent(EventIterator events) {
+        fireContentsChanged(this, 0, getSize())
+    }
 }
 
 
