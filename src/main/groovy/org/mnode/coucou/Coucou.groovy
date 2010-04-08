@@ -105,7 +105,11 @@ import com.ocpsoft.pretty.time.PrettyTime
 import javax.swing.table.DefaultTableModel
 import javax.swing.ListSelectionModel
 import org.mnode.base.desktop.PaddedIcon
-import org.jivesoftware.smackx.packet.VCardimport javax.swing.ImageIconimport org.jivesoftware.smack.ConnectionConfigurationimport org.jivesoftware.smack.SASLAuthentication//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jivesoftware.smackx.packet.VCard
+import javax.swing.ImageIcon
+import org.jivesoftware.smack.ConnectionConfiguration
+import org.jivesoftware.smack.SASLAuthentication
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -120,6 +124,8 @@ import org.mnode.base.log.adapter.Slf4jAdapter
 import org.slf4j.LoggerFactory
 import org.mnode.base.substance.TabCloseCallbackImpl
 import org.mnode.base.substance.VetoableMultipleTabCloseListenerImpl
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * @author fortuna
@@ -127,6 +133,7 @@ import org.mnode.base.substance.VetoableMultipleTabCloseListenerImpl
  */
  /*
 @Grapes([
+    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
 //    @Grab(group='rome', module='rome', version='1.0'),
 //    @Grab(group='rome', module='rome-fetcher', version='1.0'),
@@ -285,14 +292,22 @@ public class Coucou{
              }
          }
 
-        def openNodeTab = { tabs, node ->
+        def getTabForNode = { tabs, node ->
             if (tabs.tabCount > 0) {
                 for (i in 0..tabs.tabCount - 1) {
                     if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
-                        tabs.selectedComponent = tabs.getComponentAt(i)
-                        return
+                        return tabs.getComponentAt(i)
                     }
                 }
+            }
+            return null
+        }
+        
+        def openNodeTab = { tabs, node ->
+            def tab = getTabForNode(tabs, node)
+            if (tab) {
+                tabs.selectedComponent = tab
+                return
             }
             
             swing.edt {
@@ -360,6 +375,110 @@ public class Coucou{
                 def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
+        }
+        
+        def openFeedView = { tabs, node ->
+            def tab = getTabForNode(tabs, node)
+            if (tab) {
+                tabs.selectedComponent = tab
+                return
+            }
+            
+            swing.edt {
+                def feedView = panel(name: node.getProperty('title').value.string, border: emptyBorder(10)) {
+                    borderLayout()
+                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
+                        def contentView = null
+                        scrollPane(constraints: 'left') {
+//                            def entryList = list()
+//                            entryList.model = new RepositoryListModel(node)
+//                            entryList.cellRenderer = new FeedViewListCellRenderer()
+                            def entryList = table(showHorizontalLines: false)
+                            entryList.model = new FeedTableModel(node)
+                            entryList.selectionModel.valueChanged = { e ->
+                                if (!e.valueIsAdjusting) {
+//                                if (entryList.selectedValue && entryList.selectedValue.hasProperty('description')) {
+//                                    contentView.text = entryList.selectedValue.getProperty('description').value.string
+                                    if (entryList.selectedRow >= 0) {
+                                        def entries = node.nodes
+                                        entries.skip(entryList.selectedRow)
+                                        def entry = entries.nextNode()
+                                        if (entry.hasProperty('description')) {
+//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
+                                            contentView.text = entry.getProperty('description').value.string
+                                            contentView.caretPosition = 0
+                                        }
+                                        else {
+                                            contentView.text = null
+                                        }
+                                    }
+                                    else {
+                                        contentView.text = null
+                                    }
+                                }
+                            }
+                            entryList.mouseClicked = { e ->
+                                if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && entryList.selectedRow >= 0) {
+//                                    if (entryList.selectedRow >= 0 && entryList.model[entryList.selectedRow].hasProperty('link')) {
+//                                        Desktop.desktop.browse(URI.create(entryList.model[entryList.selectedRow].getProperty('link').value.string))
+//                                    }
+                                    def entries = node.nodes
+                                    entries.skip(entryList.selectedRow)
+                                    def entry = entries.nextNode()
+                                    if (entry.hasProperty('link')) {
+                                        Desktop.desktop.browse(URI.create(entry.getProperty('link').value.string))
+                                    }
+                                }
+                            }
+                        }
+                        scrollPane(constraints: 'right') {
+                            contentView = editorPane(editable: false, contentType: 'text/html')
+                        }
+                    }
+                }
+                feedView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                feedView.putClientProperty('coucou.node', node)
+                tabs.add feedView
+                tabs.selectedComponent = feedView
+            }
+        }
+        
+        def updateFeed = { url ->
+            // rome uses Thread.contextClassLoader..
+            Thread.currentThread().contextClassLoader = Coucou.class.classLoader
+            
+            def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
+//                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
+            def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}")
+            feedNode.setProperty('url', url)
+            feedNode.setProperty('title', feed.title)
+//            if (feed.uri) {
+//                feedNode.setProperty('uri', feed.uri)
+//            }
+            for (entry in feed.entries) {
+                def entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                if (feed.link) {
+                    entryNode.setProperty('source', feed.link)
+                }
+                entryNode.setProperty('title', entry.title)
+                if (entry.description) {
+                    entryNode.setProperty('description', entry.description.value)
+                }
+                if (entry.link) {
+                    entryNode.setProperty('link', entry.link)
+                }
+                if (entry.publishedDate) {
+                    def calendar = Calendar.instance
+                    calendar.setTime(entry.publishedDate)
+                    entryNode.setProperty('date', calendar)
+                }
+            }
+            def parent = feedNode.parent
+            while (parent.isNew()) {
+                parent = parent.parent
+            }
+            parent.save()
+            return feedNode
         }
         
          swing.edt {
@@ -670,7 +789,7 @@ public class Coucou{
                                                 def contactGrid = new JCommandButtonPanel(50)
                                                 contactGrid.addButtonGroup('Online')
                                                 contactGrid.addButtonGroup('Offline')
-                                                
+                                                /*
                                                 try {
 //                                                    final XMPPConnection connection = new XMPPConnection(new ConnectionConfiguration("talk.google.com", 5222, "gmail.com"))
                                                     final XMPPConnection connection = new XMPPConnection("basepatterns.org");
@@ -697,6 +816,7 @@ public class Coucou{
                                                 } catch (XMPPException ex) {
                                                     log.log unexpected_error, ex
                                                 }
+                                                */
                                                 
                                                 for (c in ['Tom', 'Dick', 'Harry']) {
                                                     contactGrid.addButtonToGroup('Online', new JCommandButton(c, contactIcon))
@@ -827,6 +947,7 @@ public class Coucou{
                                      textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
                                      findFeedField.actionPerformed = {
                                          if (findFeedField.text) {
+                                             /*
                                              def newFeed = new SyndFeedInput().build(new XmlReader(new URL(findFeedField.text)))
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
                                              def newNode = getNode("/feeds/${Text.escapeIllegalJcrChars(newFeed.title)}")
@@ -853,18 +974,34 @@ public class Coucou{
                                                  }
                                              }
                                              newNode.parent.save()
+                                             */
+                                             def feedNode = null
+                                             def feedUrl = new URL(findFeedField.text)
+                                             try {
+                                                 feedNode = updateFeed(findFeedField.text)
+                                             }
+                                             catch (Exception e) {
+                                                  html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
+                                                  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
+                                                  println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+                                                  if (!feeds.isEmpty()) {
+                                                      feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+                                                  }
+                                             }
                                              findFeedField.text = null
-                                             openNodeTab(tabs, newNode)
+                                             if (feedNode) {
+                                                 openFeedView(tabs, feedNode)
+                                             }
                                          }
                                      }
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
                                          list(id: 'feedList')
                                          feedList.model = new RepositoryListModel(getNode('/feeds'))
-                                         feedList.cellRenderer = new RepositoryListCellRenderer()
+                                         feedList.cellRenderer = new FeedViewListCellRenderer()
                                          feedList.mouseClicked = { e ->
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
                                                 if (feedList.selectedValue) {
-                                                    openNodeTab(tabs, feedList.selectedValue)
+                                                    openFeedView(tabs, feedList.selectedValue)
                                                 }
                                             }
                                          }
@@ -886,7 +1023,7 @@ public class Coucou{
                                              }
                                          }
                                      }
-                                     
+                                     /*
                                     if (!session.rootNode.hasNode('feeds')) {
                                         log.log init_node, 'feeds'
                                         def feedsNode = session.rootNode.addNode('feeds')
@@ -935,6 +1072,7 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      activity.model = activityModel
+                                     */
                                  }
                              }
                          }
@@ -1032,6 +1170,41 @@ public class Coucou{
                e1.printStackTrace();
            }
            */
+           
+           // scheduled tasks..
+           def feedUpdater = Executors.newSingleThreadScheduledExecutor()
+           feedUpdater.scheduleAtFixedRate({
+               for (feedNode in getNode("/feeds").nodes) {
+                   if (feedNode.hasProperty('url')) {
+                       /*
+                       def feedSource = feedNode.getProperty('url').value.string
+                       def feed = new SyndFeedInput().build(new XmlReader(new URL(feedSource)))
+                        for (entry in feed.entries) {
+                            def entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                            if (feed.uri) {
+                                entryNode.setProperty('source', feed.uri)
+                            }
+                            entryNode.setProperty('title', entry.title)
+                            if (entry.description) {
+                                entryNode.setProperty('description', entry.description.value)
+                            }
+                            if (entry.link) {
+                                entryNode.setProperty('url', entry.link)
+                            }
+                            if (entry.publishedDate) {
+                                calendar = Calendar.instance
+                                calendar.setTime(entry.publishedDate)
+                                entryNode.setProperty('date', calendar)
+                            }
+                        }
+                        */
+                        println "Updating feed: ${feedNode.getProperty('title').value.string}"
+                        updateFeed(feedNode.getProperty('url').value.string)
+                    }
+                }
+//                feedNode.parent.save()
+               
+           } as Runnable, 0, 15, TimeUnit.MINUTES)
            
            coucouFrame.visible = true
         }
@@ -1404,7 +1577,7 @@ class RepositoryListModel implements ListModel, javax.jcr.observation.EventListe
     
     RepositoryListModel(def node) {
         this.node = node
-        node.session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, true, null, null, false)
+        node.session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, false, null, null, false)
     }
     
     Object getElementAt(int index) {
@@ -1425,6 +1598,7 @@ class RepositoryListModel implements ListModel, javax.jcr.observation.EventListe
     void removeListDataListener(ListDataListener l) {}
     
     void onEvent(EventIterator events) {
+        println "Repo changed: ${events}"
         fireContentsChanged(this, 0, getSize())
     }
 }
@@ -1435,6 +1609,20 @@ class RepositoryListCellRenderer extends DefaultListCellRenderer {
     Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
         text = value.name
+        return this
+    }
+}
+
+class FeedViewListCellRenderer extends DefaultListCellRenderer {
+    
+    Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+        if (value.hasProperty('title')) {
+            text = value.getProperty('title').value.string
+        }
+        else {
+            text = value.name
+        }
         return this
     }
 }
@@ -1599,6 +1787,62 @@ class PropertiesTableModel extends AbstractTableModel {
                 }
                 else {
                     value = property.value.string
+                }
+                break
+        }
+        return value
+    }
+}
+
+class FeedTableModel extends AbstractTableModel {
+
+    def node
+    
+    FeedTableModel(def node) {
+        this.node = node
+    }
+    
+    int getRowCount() {
+        return node.nodes.size
+    }
+    
+    int getColumnCount() {
+        return 3
+    }
+    
+    String getColumnName(int column) {
+        def columnName
+        switch(column) {
+            case 0:
+                columnName = 'Title'
+                break
+            case 1:
+                columnName = 'Source'
+                break
+            case 2:
+                columnName = 'Date'
+                break
+        }
+        return columnName
+    }
+    
+    Object getValueAt(int row, int column) {
+        def nodes = node.nodes
+        nodes.skip(row)
+        def node = nodes.nextNode()
+        def value
+        switch(column) {
+            case 0:
+                value = node.getProperty('title').value.string
+                break
+            case 1:
+                if (node.hasProperty('source')) {
+                    value = node.getProperty('source').value.string
+                }
+                break
+            case 2:
+                if (node.hasProperty('date')) {
+                    value = node.getProperty('date').value.date.time
                 }
                 break
         }
