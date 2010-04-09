@@ -31,6 +31,7 @@ import java.awt.Font
 import java.awt.Graphics
 import java.awt.Image
 import java.awt.Insets
+import java.awt.Rectangle
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -126,6 +127,8 @@ import org.mnode.base.substance.TabCloseCallbackImpl
 import org.mnode.base.substance.VetoableMultipleTabCloseListenerImpl
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import javax.swing.event.HyperlinkListener
+import javax.swing.event.HyperlinkEvent
 
 /**
  * @author fortuna
@@ -327,8 +330,14 @@ public class Coucou{
                 }
                 newTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 newTab.putClientProperty('coucou.node', node)
+//                tabs.selectedIndex = tabs.tabCount - 1
                 tabs.add newTab
-                tabs.selectedComponent = newTab
+//                tabs.selectedComponent = newTab
+                doLater {
+//                    tabs.actionMap.get('navigateNext').actionPerformed(new ActionEvent(tabs, ActionEvent.ACTION_PERFORMED, ''))
+                    def tabComponent = tabs.getTabComponentAt(tabs.tabCount - 1)
+                    tabComponent.scrollRectToVisible(new Rectangle(0, 0, tabComponent.width, tabComponent.height))
+                }
             }
         }
         
@@ -359,9 +368,11 @@ public class Coucou{
                                     propertyTable.model = EMPTY_TABLE_MODEL
                                 }
                             }
+                            explorerTree.packAll()
                         }
                         scrollPane(constraints: 'right') {
-                            table(id: 'propertyTable')
+                            table(showHorizontalLines: false, id: 'propertyTable')
+                            propertyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                         }
                     }
                 }
@@ -394,6 +405,7 @@ public class Coucou{
 //                            entryList.model = new RepositoryListModel(node)
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             def entryList = table(showHorizontalLines: false)
+                            entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             entryList.model = new FeedTableModel(node)
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
@@ -401,7 +413,7 @@ public class Coucou{
 //                                    contentView.text = entryList.selectedValue.getProperty('description').value.string
                                     if (entryList.selectedRow >= 0) {
                                         def entries = node.nodes
-                                        entries.skip(entryList.selectedRow)
+                                        entries.skip(entryList.convertRowIndexToModel(entryList.selectedRow))
                                         def entry = entries.nextNode()
                                         if (entry.hasProperty('description')) {
 //                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
@@ -423,16 +435,18 @@ public class Coucou{
 //                                        Desktop.desktop.browse(URI.create(entryList.model[entryList.selectedRow].getProperty('link').value.string))
 //                                    }
                                     def entries = node.nodes
-                                    entries.skip(entryList.selectedRow)
+                                    entries.skip(entryList.convertRowIndexToModel(entryList.selectedRow))
                                     def entry = entries.nextNode()
                                     if (entry.hasProperty('link')) {
                                         Desktop.desktop.browse(URI.create(entry.getProperty('link').value.string))
                                     }
                                 }
                             }
+                            entryList.packAll()
                         }
                         scrollPane(constraints: 'right') {
                             contentView = editorPane(editable: false, contentType: 'text/html')
+                            contentView.addHyperlinkListener(new HyperlinkListenerImpl())
                         }
                     }
                 }
@@ -452,6 +466,9 @@ public class Coucou{
             def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}")
             feedNode.setProperty('url', url)
             feedNode.setProperty('title', feed.title)
+            if (feed.link) {
+                feedNode.setProperty('source', feed.link)
+            }
 //            if (feed.uri) {
 //                feedNode.setProperty('uri', feed.uri)
 //            }
@@ -995,14 +1012,20 @@ public class Coucou{
                                          }
                                      }
                                      scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
-                                         list(id: 'feedList')
-                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
-                                         feedList.cellRenderer = new FeedViewListCellRenderer()
+//                                         list(id: 'feedList')
+//                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
+//                                         feedList.cellRenderer = new FeedViewListCellRenderer()
+                                         table(showHorizontalLines: false, id: 'feedList')
+                                         feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.mouseClicked = { e ->
-                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
-                                                if (feedList.selectedValue) {
-                                                    openFeedView(tabs, feedList.selectedValue)
-                                                }
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
+//                                                if (feedList.selectedValue) {
+                                                def feeds = getNode('/feeds').nodes
+                                                feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
+                                                def feed = feeds.nextNode()
+                                                openFeedView(tabs, feed)
+//                                                }
                                             }
                                          }
                                      }
@@ -1798,6 +1821,8 @@ class FeedTableModel extends AbstractTableModel {
 
     def node
     
+    def df = new PrettyTime()
+    
     FeedTableModel(def node) {
         this.node = node
     }
@@ -1820,7 +1845,7 @@ class FeedTableModel extends AbstractTableModel {
                 columnName = 'Source'
                 break
             case 2:
-                columnName = 'Date'
+                columnName = 'Last Updated'
                 break
         }
         return columnName
@@ -1842,7 +1867,7 @@ class FeedTableModel extends AbstractTableModel {
                 break
             case 2:
                 if (node.hasProperty('date')) {
-                    value = node.getProperty('date').value.date.time
+                    value = df.format(node.getProperty('date').value.date.time)
                 }
                 break
         }
@@ -1874,4 +1899,21 @@ class FindField extends JTextField {
         }
         document.addDocumentListener(new FindFilterUpdater(this, patternFilter))
     }
+}
+
+class HyperlinkListenerImpl implements HyperlinkListener {
+
+    /**
+     * {@inheritDoc}
+     */
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+            try {
+                Desktop.getDesktop().browse(e.getURL().toURI());
+            } catch (Exception ex) {
+                JXErrorPane.showDialog(ex);
+            }
+        }
+    }
+
 }
