@@ -110,7 +110,7 @@ import org.jivesoftware.smackx.packet.VCard
 import javax.swing.ImageIcon
 import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.SASLAuthentication
-import groovy.util.XmlSlurperimport org.jdesktop.swingx.JXErrorPaneimport org.jdesktop.swingx.error.ErrorInfo//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import groovy.util.XmlSlurperimport org.jdesktop.swingx.JXErrorPaneimport org.jdesktop.swingx.error.ErrorInfoimport javax.swing.RowFilter//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -990,6 +990,14 @@ public class Coucou{
 //                                     def addFeedText = 'Add a new feed..'
 //                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                      textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findFeedField.keyReleased = {
+                                         if (findFeedField.text) {
+                                             feedList.rowFilter = RowFilter.regexFilter("\\Q${findFeedField.text}\\E")
+                                         }
+                                         else {
+                                             feedList.rowFilter = null
+                                         }
+                                     }
                                      findFeedField.actionPerformed = {
                                          if (findFeedField.text) {
                                              /*
