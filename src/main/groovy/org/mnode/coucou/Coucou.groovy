@@ -110,7 +110,7 @@ import org.jivesoftware.smackx.packet.VCard
 import javax.swing.ImageIcon
 import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.SASLAuthentication
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import groovy.util.XmlSlurperimport org.jdesktop.swingx.JXErrorPaneimport org.jdesktop.swingx.error.ErrorInfo//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -500,6 +500,7 @@ public class Coucou{
         
          swing.edt {
              lookAndFeel('substance5', 'system')
+             fileChooser(id: 'chooser')
 
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
              
@@ -608,6 +609,33 @@ public class Coucou{
                     action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
                     action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'))
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
+                    
+                    action(id: 'importAction', name: 'Import..', closure: {
+                        if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                            doLater {
+                                def opml = new XmlSlurper().parse(chooser.selectedFile)
+                                def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
+                                println "Feeds: ${feeds}"
+                                for (feed in feeds) {
+                                    try {
+                                        updateFeed(feed)
+                                    }
+                                    catch (Exception e) {
+                                        def error = new ErrorInfo('Import Error', 'An error occurred importing feed',
+                                                '<html><body>Error importing feed: ${feed}</body></html>', null, e, null, ['feed': feed])
+                                        JXErrorPane.showDialog(coucouFrame, error);
+                                    }
+                                }
+                            }
+                               //def tab = newTab(chooser.selectedFile)
+                               //tabs.add(tab)
+                               //tabs.setIconAt(tabs.indexOfComponent(tab), FileSystemView.fileSystemView.getSystemIcon(chooser.selectedFile))
+                               //tabs.selectedComponent = tab
+//                               openTab(tabs, chooser.selectedFile)
+//                            }
+                        }
+                    })
+                    
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
                     action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE') /*, enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
@@ -665,7 +693,7 @@ public class Coucou{
                     separator()
                         menuItem(printAction)
                     separator()
-                        menuItem(text: "Import..")
+                        menuItem(importAction)
                     separator()
                         menuItem(exitAction)
                     }
@@ -1222,7 +1250,12 @@ public class Coucou{
                         }
                         */
                         println "Updating feed: ${feedNode.getProperty('title').value.string}"
-                        updateFeed(feedNode.getProperty('url').value.string)
+                        try {
+                            updateFeed(feedNode.getProperty('url').value.string)
+                        }
+                        catch (Exception e) {
+                            log.log unexpected_error, e
+                        }
                     }
                 }
 //                feedNode.parent.save()
