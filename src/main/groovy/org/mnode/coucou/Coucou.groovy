@@ -1082,7 +1082,8 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'feedList')
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
-                                         feedList.valueChanged = {
+                                         feedList.selectionModel.valueChanged = { e ->
+                                         	if (!e.valueIsAdjusting) {
                                              if (feedList.selectedRow >= 0) {
                                                  def feeds = getNode('/feeds').nodes
                                                  feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
@@ -1095,6 +1096,7 @@ public class Coucou{
                                                  editContext.item = null
                                                  editContext.enabled = false
                                              }
+                                         	}
                                          }
                                          feedList.mouseClicked = { e ->
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
