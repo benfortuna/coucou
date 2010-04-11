@@ -473,7 +473,16 @@ public class Coucou{
 //                feedNode.setProperty('uri', feed.uri)
 //            }
             for (entry in feed.entries) {
-                def entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                def entryNode
+                if (entry.uri) {
+                    entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                }
+                else if (entry.link) {
+                    entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.link)}")
+                }
+                else {
+                    entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.title)}")
+                }
                 if (feed.link) {
                     entryNode.setProperty('source', feed.link)
                 }
@@ -481,14 +490,32 @@ public class Coucou{
                 if (entry.description) {
                     entryNode.setProperty('description', entry.description.value)
                 }
+                
+                // entry link..
+                if (entry.uri) {
+                    try {
+                        new URL(entry.uri)
+                        entryNode.setProperty('link', entry.uri)
+                    }
+                    catch (Exception e) {
+                        // not a valid url..
+                    }
+                }
                 if (entry.link) {
-                    entryNode.setProperty('link', entry.link)
+                    try {
+                        new URL(entry.link)
+                        entryNode.setProperty('link', entry.link)
+                    }
+                    catch (Exception e) {
+                        // not a valid url..
+                    }
                 }
+                
+                def calendar = Calendar.instance
                 if (entry.publishedDate) {
-                    def calendar = Calendar.instance
                     calendar.setTime(entry.publishedDate)
-                    entryNode.setProperty('date', calendar)
                 }
+                entryNode.setProperty('date', calendar)
             }
             def parent = feedNode.parent
             while (parent.isNew()) {
@@ -500,7 +527,6 @@ public class Coucou{
         
          swing.edt {
              lookAndFeel('substance5', 'system')
-             fileChooser(id: 'chooser')
 
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
              
@@ -638,11 +664,11 @@ public class Coucou{
                     
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
-                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE') /*, enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
+                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
                          if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete item: ${editContext.item}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                              editContext.delete()
                          }
-                     })*/
+                     })
                     
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
@@ -675,7 +701,8 @@ public class Coucou{
                     action(id: 'repositoryExplorerAction', name: 'Repository Explorer', closure: { openExplorerTab(tabs, session.rootNode) })
                 }
                 
-                fileChooser(id: 'chooser', fileFilter: new ImageFileFilter())
+                fileChooser(id: 'chooser')
+                fileChooser(id: 'imageChooser', fileFilter: new ImageFileFilter())
                 
                 tipOfTheDay(id: 'tips', model: defaultTipModel(tips: [
                     defaultTip(name: 'test', tip: '<html><em>testing</em>')
@@ -756,9 +783,9 @@ public class Coucou{
                     
                     button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
                     photoButton.actionPerformed = {
-                            if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                            if (imageChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
                                 doLater {
-                                   photoButton.icon = imageIcon(imageIcon(chooser.selectedFile.absolutePath).image.getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                                   photoButton.icon = imageIcon(imageIcon(imageChooser.selectedFile.absolutePath).image.getScaledInstance(50, -1, Image.SCALE_SMOOTH))
                                 }
                             }
                     }
@@ -990,9 +1017,10 @@ public class Coucou{
 //                                     def addFeedText = 'Add a new feed..'
 //                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                      textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findFeedField.focusGained = { findFeedField.selectAll() }
                                      findFeedField.keyReleased = {
                                          if (findFeedField.text) {
-                                             feedList.rowFilter = RowFilter.regexFilter("\\Q${findFeedField.text}\\E")
+                                             feedList.rowFilter = RowFilter.regexFilter("(?i)\\Q${findFeedField.text}\\E")
                                          }
                                          else {
                                              feedList.rowFilter = null
@@ -1054,6 +1082,20 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'feedList')
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
+                                         feedList.valueChanged = {
+                                             if (feedList.selectedRow >= 0) {
+                                                 def feeds = getNode('/feeds').nodes
+                                                 feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
+                                                 def feed = feeds.nextNode()
+                                                 editContext.item = feed
+                                                 editContext.enabled = true
+                                                 log.log delete_enabled, editContext.item
+                                             }
+                                             else {
+                                                 editContext.item = null
+                                                 editContext.enabled = false
+                                             }
+                                         }
                                          feedList.mouseClicked = { e ->
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
 //                                                if (feedList.selectedValue) {
