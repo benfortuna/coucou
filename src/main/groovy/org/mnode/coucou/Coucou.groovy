@@ -110,7 +110,11 @@ import org.jivesoftware.smackx.packet.VCard
 import javax.swing.ImageIcon
 import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.SASLAuthentication
-import groovy.util.XmlSlurperimport org.jdesktop.swingx.JXErrorPaneimport org.jdesktop.swingx.error.ErrorInfoimport javax.swing.RowFilter//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import groovy.util.XmlSlurper
+import org.jdesktop.swingx.JXErrorPane
+import org.jdesktop.swingx.error.ErrorInfo
+import javax.swing.RowFilter
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -245,11 +249,21 @@ public class Coucou{
 
         def getNode = { path ->
             if (!session.nodeExists(path)) {
+//                log.log init_node, path
                 return session.rootNode.addNode(path[1..-1])
             }
             return session.getNode(path)
         }
-                
+        
+        // save a node hierarchy irregardless of it being new..
+        def saveNode = { node ->
+            def parent = node.parent
+            while (parent.isNew()) {
+                parent = parent.parent
+            }
+            parent.save()
+        }
+        
         def editContext = new EditContext()
         
         def swing = new SwingXBuilder()
@@ -517,11 +531,7 @@ public class Coucou{
                 }
                 entryNode.setProperty('date', calendar)
             }
-            def parent = feedNode.parent
-            while (parent.isNew()) {
-                parent = parent.parent
-            }
-            parent.save()
+            saveNode feedNode
             return feedNode
         }
         
@@ -909,9 +919,9 @@ public class Coucou{
                                  }
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
-                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
-                                     scrollPane(border: null) {
-                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
+//                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
+                                     scrollPane() {
+//                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
                                          /*
                                          historyTree.model.root.removeAllChildren()
                                          
@@ -927,8 +937,20 @@ public class Coucou{
                                          historyTree.model.root.add(new TreeNode('Tasks'))
                                          historyTree.model.reload(historyTree.model.root)
                                          */
-                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
-                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
+//                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
+//                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
+                                        treeTable(id: 'historyTree')
+                                        getNode('/history/Inbox')
+                                        getNode('/history/Sent')
+                                        getNode('/history/Templates')
+                                        getNode('/history/Templates/Mail')
+                                        getNode('/history/Templates/Meeting')
+                                        getNode('/history/Templates/Task')
+                                        getNode('/history/Deleted')
+                                        historyTree.treeTableModel = new FolderTreeTableModel(getNode('/history'))
+                                        historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+//                                        historyTree.selectionModel.valueChanged = {
+                                        historyTree.packAll()
                                      }
                                  }
                                  panel(name: 'Planner', border: emptyBorder(10)) {
@@ -943,14 +965,14 @@ public class Coucou{
                                      borderLayout()
                                      vbox(constraints: BorderLayout.NORTH) {
 //                                         def findAccountText = 'Find an account..'
-                                         label(text: 'Accounts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+//                                         label(text: 'Accounts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
                                          //searchPanel(fieldName: 'Filter accounts', id: 'findAccountField')
 //                                         textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
                                          textField(new FindField(defaultText: 'Filter accounts..'), id: 'findAccountField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5))
                                          findAccountField.toolTipText = '<CTRL> + Enter to create a new account'
                                      }
                                      scrollPane(border: null) {
-                                         tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
+//                                         tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
                                          /*
                                          accountsTree.model.root.removeAllChildren()
                                          def accountTypeNodes = session.rootNode.getNode('accounts').getNodes()
@@ -965,10 +987,14 @@ public class Coucou{
                                          }
                                          accountsTree.model.reload(accountsTree.model.root)
                                          */
-                                         accountsTree.model = new RepositoryTreeModel(session.rootNode.getNode('accounts'))
-                                         accountsTree.cellRenderer = new RepositoryTreeCellRenderer()
+//                                         accountsTree.model = new RepositoryTreeModel(session.rootNode.getNode('accounts'))
+//                                         accountsTree.cellRenderer = new RepositoryTreeCellRenderer()
                                          //session.workspace.observationManager.addEventListener(new AccountsUpdateListener(accountsTree), Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
                                          //session.workspace.observationManager.addEventListener(accountsTree.model, Event.NODE_ADDED | Event.NODE_REMOVED, '/accounts/', true, null, null, false)
+                                         table(showHorizontalLines: false, id: 'accountList')
+                                         accountList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         accountList.model = new AccountTableModel(getNode('/accounts'))
+/*
                                         accountsTree.valueChanged = { e ->
                                             if (e.path) {
                                                 editContext.item = e.path.lastPathComponent
@@ -1005,6 +1031,7 @@ public class Coucou{
                                                 }
                                             }
                                         }
+*/
                                      }
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
@@ -1083,7 +1110,7 @@ public class Coucou{
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.selectionModel.valueChanged = { e ->
-                                         	if (!e.valueIsAdjusting) {
+                                             if (!e.valueIsAdjusting) {
                                              if (feedList.selectedRow >= 0) {
                                                  def feeds = getNode('/feeds').nodes
                                                  feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
@@ -1096,7 +1123,7 @@ public class Coucou{
                                                  editContext.item = null
                                                  editContext.enabled = false
                                              }
-                                         	}
+                                             }
                                          }
                                          feedList.mouseClicked = { e ->
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
@@ -1262,6 +1289,17 @@ public class Coucou{
                close(coucouFrame, !SystemTray.isSupported())
            }
            
+           // activity stream..
+/*           session.workspace.observationManager.addEventListener(new javax.jcr.observation.EventListener() {
+               void onEvent(EventIterator events) {
+                   while (events.hasNext()) {
+                       def event = events.nextEvent()
+                       def node = session.getItem(event.path)
+                       println "Node added: ${node.path}"
+                   }
+               }
+           }, Event.NODE_ADDED, session.rootNode.path, true, null, null, false)
+*/           
            // bonjour..
            /*
            try {
@@ -1312,7 +1350,7 @@ public class Coucou{
                 }
 //                feedNode.parent.save()
                
-           } as Runnable, 0, 15, TimeUnit.MINUTES)
+           } as Runnable, 0, 30, TimeUnit.MINUTES)
            
            coucouFrame.visible = true
         }
@@ -2001,4 +2039,124 @@ class HyperlinkListenerImpl implements HyperlinkListener {
         }
     }
 
+}
+
+class FolderTreeTableModel extends AbstractTreeTableModel {
+
+    FolderTreeTableModel(def rootNode) {
+        super(rootNode)
+    }
+    
+    int getColumnCount() {
+        return 3;
+    }
+    
+    String getColumnName(int column) {
+        def columnName
+        switch(column) {
+            case 0:
+                columnName = 'Name'
+                break
+            case 1:
+                columnName = 'Count'
+                break
+            case 2:
+                columnName = 'Last Updated'
+                break
+        }
+        return columnName
+    }
+    
+    Object getValueAt(Object node, int column) {
+        def value
+        switch(column) {
+            case 0:
+                value = node.name
+                break
+            case 1:
+                value = node.nodes.size
+                break
+            case 2:
+                if (node.hasProperty('lastModified')) {
+                    value = node.hasProperty('lastModified').value.date
+                }
+                break
+        }
+        return value
+    }
+    
+    Object getChild(Object parent, int index) {
+        def nodes = parent.nodes
+        if (index >= 0 && index < nodes.size) {
+            nodes.skip(index)
+            return nodes.nextNode()
+        }
+        return null
+    }
+    
+    int getChildCount(Object parent) {
+        return parent.nodes.size
+    }
+    
+    int getIndexOfChild(Object parent, Object child) {
+        def nodes = parent.nodes
+        while (nodes.hasNext()) {
+            if (nodes.nextNode() == child) {
+                return nodes.position
+            }
+        }
+        return -1
+    }
+    
+    boolean isLeaf(Object node) {
+        return !node.hasNodes()
+    }
+}
+
+class AccountTableModel extends AbstractTableModel {
+
+    def node
+    
+    AccountTableModel(def node) {
+        this.node = node
+    }
+    
+    int getRowCount() {
+        return node.nodes.size
+    }
+    
+    int getColumnCount() {
+        return 2
+    }
+    
+    String getColumnName(int column) {
+        def columnName
+        switch(column) {
+            case 0:
+                columnName = 'Account Name'
+                break
+            case 1:
+                columnName = 'Status'
+                break
+        }
+        return columnName
+    }
+    
+    Object getValueAt(int row, int column) {
+        def nodes = node.nodes
+        nodes.skip(row)
+        def node = nodes.nextNode()
+        def value
+        switch(column) {
+            case 0:
+                value = node.getProperty('accountName').value.string
+                break
+            case 1:
+                if (node.hasProperty('status')) {
+                    value = node.getProperty('status').value.string
+                }
+                break
+        }
+        return value
+    }
 }
