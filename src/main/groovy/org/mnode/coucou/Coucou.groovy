@@ -2055,7 +2055,7 @@ class FolderTreeTableModel extends AbstractTreeTableModel {
         def columnName
         switch(column) {
             case 0:
-                columnName = 'Name'
+                columnName = 'Folder Name'
                 break
             case 1:
                 columnName = 'Count'
@@ -2149,7 +2149,12 @@ class AccountTableModel extends AbstractTableModel {
         def value
         switch(column) {
             case 0:
-                value = node.getProperty('accountName').value.string
+                if (node.hasProperty('accountName')) {
+                	value = node.getProperty('accountName').value.string
+                }
+                else {
+                	value = node.name
+                }
                 break
             case 1:
                 if (node.hasProperty('status')) {
