@@ -455,6 +455,10 @@ public class Coucou{
                 feedView.putClientProperty('coucou.node', node)
                 tabs.add feedView
                 tabs.selectedComponent = feedView
+                
+                def iconSize = new Dimension(16, 16)
+                def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/feed.svg'), iconSize)
+                tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
             }
         }
         
