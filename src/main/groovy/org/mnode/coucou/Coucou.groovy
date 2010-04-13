@@ -217,36 +217,23 @@ public class Coucou{
 //        def jcr = new JcrBuilder()
 //        jcr.session = session
 //        jcr.log = log
-        
-        if (!session.rootNode.hasNode('accounts')) {
-            log.log init_node, 'accounts'
-            def accountsNode = session.rootNode.addNode('accounts')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('contacts')) {
-            log.log init_node, 'contacts'
-            def contactsNode = session.rootNode.addNode('contacts')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('history')) {
-            log.log init_node, 'history'
-            def historyNode = session.rootNode.addNode('history')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('archive')) {
-            log.log init_node, 'archive'
-            def archiveNode = session.rootNode.addNode('archive')
-            session.rootNode.save()
-        }
-        if (!session.rootNode.hasNode('presence')) {
-            log.log init_node, 'presence'
-            def presenceNode = session.rootNode.addNode('presence')
-            presenceNode.addNode('Available')
-            presenceNode.addNode('Busy')
-            presenceNode.addNode('Away')
-            session.rootNode.save()
-        }
 
+        def initNode = { name ->
+            if (!session.rootNode.hasNode(name)) {
+                log.log init_node, name
+                session.rootNode.addNode(name)
+                session.rootNode.save()
+            }
+        }
+        
+        initNode('accounts')
+        initNode('contacts')
+        initNode('planner')
+        initNode('history')
+        initNode('archive')
+        initNode('presence')
+        initNode('notes')
+        
         def getNode = { path ->
             if (!session.nodeExists(path)) {
 //                log.log init_node, path
@@ -917,6 +904,28 @@ public class Coucou{
 //                                         hyperlink(new JXHyperlink(newContactAction))
 //                                     }
                                  }
+                                 panel(name: 'Planner', border: emptyBorder(10)) {
+                                     borderLayout()
+                                     
+//                                     def addTaskEventText = 'Find a task / appointment..'
+//                                     textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     textField(new FindField(defaultText: 'Filter tasks / appointments..'), id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
+                                     
+                                     scrollPane() {
+                                        treeTable(id: 'plannerTree')
+                                        getNode('/planner/Today')
+                                        getNode('/planner/Tomorrow')
+                                        getNode('/planner/This Week')
+                                        getNode('/planner/Next Week')
+                                        getNode('/planner/This Month')
+                                        getNode('/planner/Overdue')
+                                        getNode('/planner/Deleted')
+                                        plannerTree.treeTableModel = new PlannerTreeTableModel(getNode('/planner'))
+                                        plannerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+                                        plannerTree.packAll()
+                                     }
+                                 }
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
 //                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
@@ -942,24 +951,132 @@ public class Coucou{
                                         treeTable(id: 'historyTree')
                                         getNode('/history/Inbox')
                                         getNode('/history/Sent')
+                                        getNode('/history/Drafts')
                                         getNode('/history/Templates')
                                         getNode('/history/Templates/Mail')
                                         getNode('/history/Templates/Meeting')
                                         getNode('/history/Templates/Task')
                                         getNode('/history/Deleted')
-                                        historyTree.treeTableModel = new FolderTreeTableModel(getNode('/history'))
+                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
                                         historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
 //                                        historyTree.selectionModel.valueChanged = {
                                         historyTree.packAll()
                                      }
                                  }
-                                 panel(name: 'Planner', border: emptyBorder(10)) {
+                                 panel(name: 'Feeds', border: emptyBorder(10)) {
                                      borderLayout()
                                      
-//                                     def addTaskEventText = 'Find a task / appointment..'
-//                                     textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                     textField(new FindField(defaultText: 'Filter tasks / appointments..'), id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
-                                     findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
+//                                     def addFeedText = 'Add a new feed..'
+//                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+                                     textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     findFeedField.focusGained = { findFeedField.selectAll() }
+                                     findFeedField.keyReleased = {
+                                         if (findFeedField.text) {
+                                             feedList.rowFilter = RowFilter.regexFilter("(?i)\\Q${findFeedField.text}\\E")
+                                         }
+                                         else {
+                                             feedList.rowFilter = null
+                                         }
+                                     }
+                                     findFeedField.actionPerformed = {
+                                         if (findFeedField.text) {
+                                             /*
+                                             def newFeed = new SyndFeedInput().build(new XmlReader(new URL(findFeedField.text)))
+//                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
+                                             def newNode = getNode("/feeds/${Text.escapeIllegalJcrChars(newFeed.title)}")
+                                             newNode.setProperty('title', newFeed.title)
+                                             if (newFeed.link) {
+                                                 newNode.setProperty('url', newFeed.link)
+                                             }
+                                             for (entry in newFeed.entries) {
+                                                 def entryNode = getNode("${newNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
+                                                 if (newFeed.uri) {
+                                                     entryNode.setProperty('source', newFeed.uri)
+                                                 }
+                                                 entryNode.setProperty('title', entry.title)
+                                                 if (entry.description) {
+                                                     entryNode.setProperty('description', entry.description.value)
+                                                 }
+                                                 if (entry.link) {
+                                                     entryNode.setProperty('url', entry.link)
+                                                 }
+                                                 if (entry.publishedDate) {
+                                                     calendar = Calendar.instance
+                                                     calendar.setTime(entry.publishedDate)
+                                                     entryNode.setProperty('date', calendar)
+                                                 }
+                                             }
+                                             newNode.parent.save()
+                                             */
+                                             def feedNode = null
+                                             def feedUrl
+                                             try {
+                                                 feedUrl = new URL(findFeedField.text)
+                                             }
+                                             catch (MalformedURLException e) {
+                                                 try {
+                                                     feedUrl = new URL("http://${findFeedField.text}")
+                                                 }
+                                                 catch (MalformedURLException e1) {
+                                                     JOptionPane.showMessageDialog(coucouFrame, "Invalid URL: ${findFeedField.text}")
+                                                 }
+                                             }
+                                             if (feedUrl) {
+                                                 try {
+                                                     feedNode = updateFeed(findFeedField.text)
+                                                 }
+                                                 catch (Exception e) {
+                                                      html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
+                                                      def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
+                                                      println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+                                                      if (!feeds.isEmpty()) {
+                                                          feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+                                                      }
+                                                      else {
+                                                          JOptionPane.showMessageDialog(coucouFrame, "No feeds found for site: ${findFeedField.text}")
+                                                      }
+                                                 }
+                                             }
+                                             findFeedField.text = null
+                                             if (feedNode) {
+                                                 openFeedView(tabs, feedNode)
+                                             }
+                                         }
+                                     }
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
+//                                         list(id: 'feedList')
+//                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
+//                                         feedList.cellRenderer = new FeedViewListCellRenderer()
+                                         table(showHorizontalLines: false, id: 'feedList')
+                                         feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         feedList.model = new FeedTableModel(getNode('/feeds'))
+                                         feedList.selectionModel.valueChanged = { e ->
+                                             if (!e.valueIsAdjusting) {
+                                             if (feedList.selectedRow >= 0) {
+                                                 def feeds = getNode('/feeds').nodes
+                                                 feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
+                                                 def feed = feeds.nextNode()
+                                                 editContext.item = feed
+                                                 editContext.enabled = true
+                                                 log.log delete_enabled, editContext.item
+                                             }
+                                             else {
+                                                 editContext.item = null
+                                                 editContext.enabled = false
+                                             }
+                                             }
+                                         }
+                                         feedList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
+//                                                if (feedList.selectedValue) {
+                                                def feeds = getNode('/feeds').nodes
+                                                feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
+                                                def feed = feeds.nextNode()
+                                                openFeedView(tabs, feed)
+//                                                }
+                                            }
+                                         }
+                                     }
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
@@ -1038,105 +1155,29 @@ public class Coucou{
                                          hyperlink(new JXHyperlink(newAccountAction))
                                      }
                                  }
-                                 panel(name: 'Feeds', border: emptyBorder(10)) {
+                                 panel(name: 'Notes', border: emptyBorder(10)) {
                                      borderLayout()
-                                     
-//                                     def addFeedText = 'Add a new feed..'
-//                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                     textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
-                                     findFeedField.focusGained = { findFeedField.selectAll() }
-                                     findFeedField.keyReleased = {
-                                         if (findFeedField.text) {
-                                             feedList.rowFilter = RowFilter.regexFilter("(?i)\\Q${findFeedField.text}\\E")
+                                     textField(new FindField(defaultText: 'Filter notes..'), id: 'notesFilterField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     notesFilterField.focusGained = { notesFilterField.selectAll() }
+                                     notesFilterField.keyReleased = {
+                                         if (notesFilterField.text) {
+                                             noteList.rowFilter = RowFilter.regexFilter("(?i)\\Q${notesFilterField.text}\\E")
                                          }
                                          else {
-                                             feedList.rowFilter = null
+                                             noteList.rowFilter = null
                                          }
                                      }
-                                     findFeedField.actionPerformed = {
-                                         if (findFeedField.text) {
-                                             /*
-                                             def newFeed = new SyndFeedInput().build(new XmlReader(new URL(findFeedField.text)))
-//                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
-                                             def newNode = getNode("/feeds/${Text.escapeIllegalJcrChars(newFeed.title)}")
-                                             newNode.setProperty('title', newFeed.title)
-                                             if (newFeed.link) {
-                                                 newNode.setProperty('url', newFeed.link)
-                                             }
-                                             for (entry in newFeed.entries) {
-                                                 def entryNode = getNode("${newNode.path}/${Text.escapeIllegalJcrChars(entry.uri)}")
-                                                 if (newFeed.uri) {
-                                                     entryNode.setProperty('source', newFeed.uri)
-                                                 }
-                                                 entryNode.setProperty('title', entry.title)
-                                                 if (entry.description) {
-                                                     entryNode.setProperty('description', entry.description.value)
-                                                 }
-                                                 if (entry.link) {
-                                                     entryNode.setProperty('url', entry.link)
-                                                 }
-                                                 if (entry.publishedDate) {
-                                                     calendar = Calendar.instance
-                                                     calendar.setTime(entry.publishedDate)
-                                                     entryNode.setProperty('date', calendar)
-                                                 }
-                                             }
-                                             newNode.parent.save()
-                                             */
-                                             def feedNode = null
-                                             def feedUrl = new URL(findFeedField.text)
-                                             try {
-                                                 feedNode = updateFeed(findFeedField.text)
-                                             }
-                                             catch (Exception e) {
-                                                  html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
-                                                  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
-                                                  println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
-                                                  if (!feeds.isEmpty()) {
-                                                      feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
-                                                  }
-                                             }
-                                             findFeedField.text = null
-                                             if (feedNode) {
-                                                 openFeedView(tabs, feedNode)
-                                             }
+                                     notesFilterField.actionPerformed = {
+                                         if (notesFilterField.text) {
+                                             // create a new note here..
                                          }
                                      }
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
-//                                         list(id: 'feedList')
-//                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
-//                                         feedList.cellRenderer = new FeedViewListCellRenderer()
-                                         table(showHorizontalLines: false, id: 'feedList')
-                                         feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         feedList.model = new FeedTableModel(getNode('/feeds'))
-                                         feedList.selectionModel.valueChanged = { e ->
-                                             if (!e.valueIsAdjusting) {
-                                             if (feedList.selectedRow >= 0) {
-                                                 def feeds = getNode('/feeds').nodes
-                                                 feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
-                                                 def feed = feeds.nextNode()
-                                                 editContext.item = feed
-                                                 editContext.enabled = true
-                                                 log.log delete_enabled, editContext.item
-                                             }
-                                             else {
-                                                 editContext.item = null
-                                                 editContext.enabled = false
-                                             }
-                                             }
-                                         }
-                                         feedList.mouseClicked = { e ->
-                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && feedList.selectedRow >= 0) {
-//                                                if (feedList.selectedValue) {
-                                                def feeds = getNode('/feeds').nodes
-                                                feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
-                                                def feed = feeds.nextNode()
-                                                openFeedView(tabs, feed)
-//                                                }
-                                            }
-                                         }
+                                     scrollPane(border: null) {
+                                         table(showHorizontalLines: false, id: 'noteList')
+                                         noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         noteList.model = new NoteTableModel(getNode('/notes'))
                                      }
-                                 }
+                                 }                                 
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                              panel(constraints: 'right', border: emptyBorder(10)) {
@@ -1810,30 +1851,10 @@ class EditContext {
     void paste() {}
 }
 
-class RepositoryTreeTableModel extends AbstractTreeTableModel {
+class RepositoryTreeTableModel extends AbstractNodeTreeTableModel {
 
-    RepositoryTreeTableModel(def rootNode) {
-        super(rootNode)
-    }
-    
-    int getColumnCount() {
-        return 3;
-    }
-    
-    String getColumnName(int column) {
-        def columnName
-        switch(column) {
-            case 0:
-                columnName = 'Name'
-                break
-            case 1:
-                columnName = 'Type'
-                break
-            case 2:
-                columnName = 'State'
-                break
-        }
-        return columnName
+    RepositoryTreeTableModel(def node) {
+        super(node, (String[]) ['Name', 'Type', 'State'])
     }
     
     Object getValueAt(Object node, int column) {
@@ -1851,88 +1872,50 @@ class RepositoryTreeTableModel extends AbstractTreeTableModel {
         }
         return value
     }
-    
-    Object getChild(Object parent, int index) {
-        def nodes = parent.nodes
-        if (index >= 0 && index < nodes.size) {
-            nodes.skip(index)
-            return nodes.nextNode()
-        }
-        return null
-    }
-    
-    int getChildCount(Object parent) {
-        return parent.nodes.size
-    }
-    
-    int getIndexOfChild(Object parent, Object child) {
-        def nodes = parent.nodes
-        while (nodes.hasNext()) {
-            if (nodes.nextNode() == child) {
-                return nodes.position
-            }
-        }
-        return -1
-    }
-    
-    boolean isLeaf(Object node) {
-        return !node.hasNodes()
-    }
 }
 
 class PropertiesTableModel extends AbstractTableModel {
-
+    
     def node
+    def columnNames = ['Property Name', 'Type', 'Value']
     
     PropertiesTableModel(def node) {
         this.node = node
     }
-    
+
     int getRowCount() {
         return node.properties.size
     }
     
     int getColumnCount() {
-        return 3
+        return columnNames.size
     }
     
     String getColumnName(int column) {
-        def columnName
-        switch(column) {
-            case 0:
-                columnName = 'Property Name'
-                break
-            case 1:
-                columnName = 'Type'
-                break
-            case 2:
-                columnName = 'Value'
-                break
-        }
-        return columnName
+        return columnNames[column]
     }
     
     Object getValueAt(int row, int column) {
-        def properties = node.properties
-        properties.skip(row)
-        def property = properties.nextProperty()
+        def props = node.properties
+        props.skip(row)
+        def prop = props.nextProperty()
         def value
         switch(column) {
             case 0:
-                value = property.name
+                value = prop.name
                 break
             case 1:
-                if (property.isMultiple()) {
+                if (prop.isMultiple()) {
                 }
                 else {
-                    value = PropertyType.nameFromValue(property.value.type)
+                    value = PropertyType.nameFromValue(prop.value.type)
                 }
                 break
             case 2:
-                if (property.isMultiple()) {
+                if (prop.isMultiple()) {
                 }
                 else {
-                    value = property.value.string
+                    value = prop.value.string
                 }
                 break
         }
@@ -1940,44 +1923,16 @@ class PropertiesTableModel extends AbstractTableModel {
     }
 }
 
-class FeedTableModel extends AbstractTableModel {
-
-    def node
+class FeedTableModel extends AbstractNodeTableModel {
     
     def df = new PrettyTime()
     
     FeedTableModel(def node) {
-        this.node = node
-    }
-    
-    int getRowCount() {
-        return node.nodes.size
-    }
-    
-    int getColumnCount() {
-        return 3
-    }
-    
-    String getColumnName(int column) {
-        def columnName
-        switch(column) {
-            case 0:
-                columnName = 'Title'
-                break
-            case 1:
-                columnName = 'Source'
-                break
-            case 2:
-                columnName = 'Last Updated'
-                break
-        }
-        return columnName
+        super(node, (String[]) ['Title', 'Source', 'Last Updated'])
     }
     
     Object getValueAt(int row, int column) {
-        def nodes = node.nodes
-        nodes.skip(row)
-        def node = nodes.nextNode()
+        def node = getNodeAt(row)
         def value
         switch(column) {
             case 0:
@@ -2041,30 +1996,10 @@ class HyperlinkListenerImpl implements HyperlinkListener {
 
 }
 
-class FolderTreeTableModel extends AbstractTreeTableModel {
+class HistoryTreeTableModel extends AbstractNodeTreeTableModel {
 
-    FolderTreeTableModel(def rootNode) {
-        super(rootNode)
-    }
-    
-    int getColumnCount() {
-        return 3;
-    }
-    
-    String getColumnName(int column) {
-        def columnName
-        switch(column) {
-            case 0:
-                columnName = 'Folder Name'
-                break
-            case 1:
-                columnName = 'Count'
-                break
-            case 2:
-                columnName = 'Last Updated'
-                break
-        }
-        return columnName
+    HistoryTreeTableModel(def node) {
+        super(node, (String[]) ['Subject', 'From', 'Count', 'Last Updated'])
     }
     
     Object getValueAt(Object node, int column) {
@@ -2074,6 +2009,11 @@ class FolderTreeTableModel extends AbstractTreeTableModel {
                 value = node.name
                 break
             case 1:
+                if (node.hasProperty('from')) {
+                    value = node.hasProperty('from').value.string
+                }
+                break
+            case 2:
                 value = node.nodes.size
                 break
             case 2:
@@ -2084,81 +2024,84 @@ class FolderTreeTableModel extends AbstractTreeTableModel {
         }
         return value
     }
-    
-    Object getChild(Object parent, int index) {
-        def nodes = parent.nodes
-        if (index >= 0 && index < nodes.size) {
-            nodes.skip(index)
-            return nodes.nextNode()
-        }
-        return null
-    }
-    
-    int getChildCount(Object parent) {
-        return parent.nodes.size
-    }
-    
-    int getIndexOfChild(Object parent, Object child) {
-        def nodes = parent.nodes
-        while (nodes.hasNext()) {
-            if (nodes.nextNode() == child) {
-                return nodes.position
-            }
-        }
-        return -1
-    }
-    
-    boolean isLeaf(Object node) {
-        return !node.hasNodes()
-    }
 }
 
-class AccountTableModel extends AbstractTableModel {
-
-    def node
+class AccountTableModel extends AbstractNodeTableModel {
     
     AccountTableModel(def node) {
-        this.node = node
-    }
-    
-    int getRowCount() {
-        return node.nodes.size
-    }
-    
-    int getColumnCount() {
-        return 2
-    }
-    
-    String getColumnName(int column) {
-        def columnName
-        switch(column) {
-            case 0:
-                columnName = 'Account Name'
-                break
-            case 1:
-                columnName = 'Status'
-                break
-        }
-        return columnName
+        super(node, (String[]) ['Account Name', 'Status'])
     }
     
     Object getValueAt(int row, int column) {
-        def nodes = node.nodes
-        nodes.skip(row)
-        def node = nodes.nextNode()
+        def node = getNodeAt(row)
         def value
         switch(column) {
             case 0:
                 if (node.hasProperty('accountName')) {
-                	value = node.getProperty('accountName').value.string
+                    value = node.getProperty('accountName').value.string
                 }
                 else {
-                	value = node.name
+                    value = node.name
                 }
                 break
             case 1:
                 if (node.hasProperty('status')) {
                     value = node.getProperty('status').value.string
+                }
+                break
+        }
+        return value
+    }
+}
+
+class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
+
+    PlannerTreeTableModel(def node) {
+        super(node, (String[]) ['Summary', 'Participants', 'Categories', 'Due'])
+    }
+    
+    Object getValueAt(Object node, int column) {
+        def value
+        switch(column) {
+            case 0:
+                value = node.name
+                break
+            case 1:
+                if (node.hasProperty('organiser')) {
+                    value = node.hasProperty('organiser').value.string
+                }
+                break
+            case 1:
+                if (node.hasProperty('categories')) {
+                    value = node.hasProperty('categories').value.date
+                }
+                break
+            case 2:
+                if (node.hasProperty('due')) {
+                    value = node.hasProperty('due').value.date
+                }
+                break
+        }
+        return value
+    }
+}
+
+class NoteTableModel extends AbstractNodeTableModel {
+    
+    NoteTableModel(def node) {
+        super(node, (String[]) ['Subject', 'Last Modified'])
+    }
+    
+    Object getValueAt(int row, int column) {
+        def node = getNodeAt(row)
+        def value
+        switch(column) {
+            case 0:
+                value = node.name
+                break
+            case 1:
+                if (node.hasProperty('lastModified')) {
+                    value = node.getProperty('lastModified').value.date
                 }
                 break
         }
