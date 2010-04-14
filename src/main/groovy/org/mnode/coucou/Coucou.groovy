@@ -1270,7 +1270,7 @@ public class Coucou{
                                      activity.model = activityModel
            
                                      // activity stream..
-                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(model: activityModel, session: session), Event.NODE_ADDED, '/', true, null, null, false)
+                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(model: activityModel, session: session, swing: swing), Event.NODE_ADDED, '/', true, null, null, false)
                                  }
                              }
                          }
@@ -2129,6 +2129,7 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
 
     def session
     def model
+    def swing
 
     void onEvent(EventIterator events) {
         println "Events fired: ${events.size}"
@@ -2136,7 +2137,9 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
             def event = events.nextEvent()
             println "Node added: ${event.path}"
             def node = session.getItem(event.path)
-            model.addElement node
+            swing.edt {
+            	model.addElement node
+            }
         }
     }
 }
