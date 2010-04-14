@@ -140,7 +140,7 @@ import javax.swing.event.HyperlinkEvent
  */
  /*
 @Grapes([
-    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
+//    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
 //    @Grab(group='rome', module='rome', version='1.0'),
 //    @Grab(group='rome', module='rome-fetcher', version='1.0'),
@@ -418,7 +418,8 @@ public class Coucou{
                                         def entry = entries.nextNode()
                                         if (entry.hasProperty('description')) {
 //                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-                                            contentView.text = entry.getProperty('description').value.string
+                                            def content = entry.getProperty('description').value.string.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+                                            contentView.text = content
                                             contentView.caretPosition = 0
                                         }
                                         else {
@@ -917,7 +918,7 @@ public class Coucou{
                                      findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
                                      
                                      scrollPane() {
-                                        treeTable(id: 'plannerTree')
+                                        treeTable(id: 'plannerTree', columnControlVisible: true)
                                         getNode('/planner/Today')
                                         getNode('/planner/Tomorrow')
                                         getNode('/planner/This Week')
@@ -952,7 +953,7 @@ public class Coucou{
                                          */
 //                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
 //                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
-                                        treeTable(id: 'historyTree')
+                                        treeTable(id: 'historyTree', columnControlVisible: true)
                                         getNode('/history/Inbox')
                                         getNode('/history/Sent')
                                         getNode('/history/Drafts')
@@ -1047,11 +1048,11 @@ public class Coucou{
                                              }
                                          }
                                      }
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
+                                     scrollPane(border: null) {
 //                                         list(id: 'feedList')
 //                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
 //                                         feedList.cellRenderer = new FeedViewListCellRenderer()
-                                         table(showHorizontalLines: false, id: 'feedList')
+                                         table(showHorizontalLines: false, id: 'feedList', columnControlVisible: true)
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.selectionModel.valueChanged = { e ->
@@ -1182,6 +1183,24 @@ public class Coucou{
                                          noteList.model = new NoteTableModel(getNode('/notes'))
                                      }
                                  }                                 
+                                 panel(name: 'Files', border: emptyBorder(10)) {
+                                     borderLayout()
+                                     textField(new FindField(defaultText: 'Filter files..'), id: 'fileFilterField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                     fileFilterField.focusGained = { fileFilterField.selectAll() }
+                                     fileFilterField.keyReleased = {
+                                         if (fileFilterField.text) {
+                                             fileList.rowFilter = RowFilter.regexFilter("(?i)\\Q${fileFilterField.text}\\E")
+                                         }
+                                         else {
+                                             fileList.rowFilter = null
+                                         }
+                                     }
+                                     scrollPane(border: null) {
+                                         table(showHorizontalLines: false, id: 'fileList')
+                                         fileList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+//                                         fileList.model = new FileTableModel(getNode('/files'))
+                                     }
+                                 }
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                              panel(constraints: 'right', border: emptyBorder(10)) {
@@ -1246,8 +1265,12 @@ public class Coucou{
 //                                     activityModel.addElement(new MailMessage('Intro to Coucou', 'test@example.com', new Date(System.currentTimeMillis() - 10000), 3))
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
-                                     activity.model = activityModel
                                      */
+                                     def activityModel = new DefaultListModel()
+                                     activity.model = activityModel
+           
+                                     // activity stream..
+                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(model: activityModel, session: session), Event.NODE_ADDED, '/', true, null, null, false)
                                  }
                              }
                          }
@@ -1334,17 +1357,6 @@ public class Coucou{
                close(coucouFrame, !SystemTray.isSupported())
            }
            
-           // activity stream..
-/*           session.workspace.observationManager.addEventListener(new javax.jcr.observation.EventListener() {
-               void onEvent(EventIterator events) {
-                   while (events.hasNext()) {
-                       def event = events.nextEvent()
-                       def node = session.getItem(event.path)
-                       println "Node added: ${node.path}"
-                   }
-               }
-           }, Event.NODE_ADDED, session.rootNode.path, true, null, null, false)
-*/           
            // bonjour..
            /*
            try {
@@ -2110,5 +2122,21 @@ class NoteTableModel extends AbstractNodeTableModel {
                 break
         }
         return value
+    }
+}
+
+class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
+
+    def session
+    def model
+
+    void onEvent(EventIterator events) {
+        println "Events fired: ${events.size}"
+        while (events.hasNext()) {
+            def event = events.nextEvent()
+            println "Node added: ${event.path}"
+            def node = session.getItem(event.path)
+            model.addElement node
+        }
     }
 }
