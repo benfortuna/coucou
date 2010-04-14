@@ -55,11 +55,14 @@ public class ActivityStringBuilder {
     public String build() {
         StringBuilder b = new StringBuilder().append("<html><table width=100%>")
         .append("<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>")
-        .append(author).append("</td></tr>")
-        .append("<tr><td style='font-size:1em;text-align:left'>")
-        .append(subject).append("</td></tr>")
-        .append("<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>")
-        .append(timeFormatter.format(time)).append("</td></tr></table></html>");
+//        .append(author).append("</td></tr>")
+        .append(author).append("</td>")
+        .append("<td style='font-size:1em;font-style:italic;color:silver;text-align:right'>")
+        .append(timeFormatter.format(time)).append("</td></tr>")
+        .append("<tr><td colspan='2' style='font-size:1em;text-align:left'>")
+        .append(subject).append("</td></tr></table></html>");
+//        .append("<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>")
+//        .append(timeFormatter.format(time)).append("</td></tr></table></html>");
     
         return b.toString();
     }

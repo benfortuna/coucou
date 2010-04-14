@@ -20,6 +20,7 @@
 package org.mnode.coucou;
 
 import java.awt.Component;
+import java.util.Date;
 
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -53,9 +54,32 @@ public class ActivityListCellRenderer extends DefaultListCellRenderer {
         
         Node node = (Node) value;
         try {
-            setText(new ActivityStringBuilder().author(node.getProperty("source").getString())
-                    .subject(node.getProperty("subject").getString())
-                    .time(node.getProperty("date").getDate().getTime()).build());
+            ActivityStringBuilder b = new ActivityStringBuilder();
+            if (node.hasProperty("source")) {
+                b.author(node.getProperty("source").getString());
+            }
+            else {
+                b.author("");
+            }
+            
+            if (node.hasProperty("subject")) {
+                b.subject(node.getProperty("subject").getString());
+            }
+            else if (node.hasProperty("title")) {
+                b.subject(node.getProperty("title").getString());
+            }
+            else {
+                b.subject("");
+            }
+            
+            if (node.hasProperty("date")) {
+                b.time(node.getProperty("date").getDate().getTime());
+            }
+            else {
+                b.time(new Date());
+            }
+            setText(b.build());
+            
         } catch (ValueFormatException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
