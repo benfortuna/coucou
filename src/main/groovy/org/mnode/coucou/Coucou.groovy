@@ -133,6 +133,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.swing.event.HyperlinkListener
 import javax.swing.event.HyperlinkEvent
+import groovyx.gpars.Asynchronizer
 
 /**
  * @author fortuna
@@ -140,6 +141,7 @@ import javax.swing.event.HyperlinkEvent
  */
  /*
 @Grapes([
+      @Grab(group='org.codehaus.gpars', module='gpars', version='0.9'),
 //    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
 //    @Grab(group='rome', module='rome', version='1.0'),
@@ -297,14 +299,15 @@ public class Coucou{
          }
 
         def getTabForNode = { tabs, node ->
+            def tab
             if (tabs.tabCount > 0) {
                 for (i in 0..tabs.tabCount - 1) {
                     if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
-                        return tabs.getComponentAt(i)
+                        tab = tabs.getComponentAt(i)
                     }
                 }
             }
-            return null
+            return tab
         }
         
         def openNodeTab = { tabs, node ->
@@ -321,7 +324,7 @@ public class Coucou{
                         splitPane(continuousLayout: true) {
                             scrollPane(constraints: 'left') {
                                 list(id: 'entryList')
-                                entryList.model = new RepositoryListModel(node)
+                                entryList.model = new RepositoryListModel(node, swing: swing)
                                 entryList.cellRenderer = new RepositoryListCellRenderer()
                             }
                             scrollPane(constraints: 'right') {
@@ -331,14 +334,16 @@ public class Coucou{
                 }
                 newTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 newTab.putClientProperty('coucou.node', node)
-//                tabs.selectedIndex = tabs.tabCount - 1
+                doOutside {
+                    tabs.selectedIndex = tabs.tabCount - 1
+                }
                 tabs.add newTab
 //                tabs.selectedComponent = newTab
-                doLater {
+//                doLater {
 //                    tabs.actionMap.get('navigateNext').actionPerformed(new ActionEvent(tabs, ActionEvent.ACTION_PERFORMED, ''))
-                    def tabComponent = tabs.getTabComponentAt(tabs.tabCount - 1)
-                    tabComponent.scrollRectToVisible(new Rectangle(0, 0, tabComponent.width, tabComponent.height))
-                }
+//                    def tabComponent = tabs.getTabComponentAt(tabs.tabCount - 1)
+//                    tabComponent.scrollRectToVisible(new Rectangle(0, 0, tabComponent.width, tabComponent.height))
+//                }
             }
         }
         
@@ -666,11 +671,8 @@ public class Coucou{
                     
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
-                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'enabled'), closure: {
-                         if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete item: ${editContext.item}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                             editContext.delete()
-                         }
-                     })
+//                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'delete'), closure: { editContext.delete() })
+                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind { editContext.enabled }, closure: { editContext.delete() })
                     
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
@@ -1061,12 +1063,21 @@ public class Coucou{
                                                  def feeds = getNode('/feeds').nodes
                                                  feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
                                                  def feed = feeds.nextNode()
-                                                 editContext.item = feed
+                                                 editContext.delete = {
+                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete feed: ${feed}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                         println "Deleting feed: ${feed}"
+                                                         feed.remove()
+//                                                         feed.parent.save()
+                                                         swing.edt {
+                                                             feedList.model.fireTableDataChanged()
+                                                         }
+                                                     }
+                                                 }
                                                  editContext.enabled = true
-                                                 log.log delete_enabled, editContext.item
+                                                 log.log delete_enabled, feed
                                              }
                                              else {
-                                                 editContext.item = null
+                                                 editContext.delete = null
                                                  editContext.enabled = false
                                              }
                                              }
@@ -1182,7 +1193,8 @@ public class Coucou{
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
                                      }
-                                 }                                 
+                                 }
+/*
                                  panel(name: 'Files', border: emptyBorder(10)) {
                                      borderLayout()
                                      textField(new FindField(defaultText: 'Filter files..'), id: 'fileFilterField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
@@ -1201,6 +1213,7 @@ public class Coucou{
 //                                         fileList.model = new FileTableModel(getNode('/files'))
                                      }
                                  }
+*/
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                              panel(constraints: 'right', border: emptyBorder(10)) {
@@ -1398,7 +1411,9 @@ public class Coucou{
                         */
                         println "Updating feed: ${feedNode.getProperty('title').value.string}"
                         try {
-                            updateFeed(feedNode.getProperty('url').value.string)
+                            Asynchronizer.doParallel(5) {
+                                updateFeed.callAsync(feedNode.getProperty('url').value.string)
+                            }
                         }
                         catch (Exception e) {
                             log.log unexpected_error, e
@@ -1777,6 +1792,7 @@ class RepositoryTreeCellRenderer extends DefaultTreeCellRenderer {
 class RepositoryListModel implements ListModel, javax.jcr.observation.EventListener {
 
     def node
+    def swing
     
     RepositoryListModel(def node) {
         this.node = node
@@ -1802,7 +1818,9 @@ class RepositoryListModel implements ListModel, javax.jcr.observation.EventListe
     
     void onEvent(EventIterator events) {
         println "Repo changed: ${events}"
-        fireContentsChanged(this, 0, getSize())
+        swing.edt {
+            fireContentsChanged(this, 0, getSize())
+        }
     }
 }
 
@@ -1851,14 +1869,7 @@ class EditContext {
     
     @Bindable Boolean enabled
     
-    def item
-    
-    void delete() {
-        if (item instanceof Node) {
-            item.remove()
-            item.parent.save()
-        }
-    }
+    Closure delete
     
     void copy() {}
     
@@ -2138,7 +2149,7 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
             println "Node added: ${event.path}"
             def node = session.getItem(event.path)
             swing.edt {
-            	model.addElement node
+                model.insertElementAt node, 0
             }
         }
     }

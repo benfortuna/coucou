@@ -37,6 +37,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<id>jboss-releases</id>
+			<name>JBoss Maven Repository</name>
+			<url>http://repository.jboss.com/maven2/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -116,6 +124,11 @@
         	<artifactId>checkers</artifactId>
         	<version>1.0</version>
         </dependency>
+		<dependency>
+			<groupId>org.codehaus.gpars</groupId>
+			<artifactId>gpars</artifactId>
+			<version>0.9</version>
+		</dependency>
 		<!--
 		<dependency>
 			<groupId>jgoodies</groupId>
