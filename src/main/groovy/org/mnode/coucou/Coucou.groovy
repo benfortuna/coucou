@@ -134,6 +134,8 @@ import java.util.concurrent.TimeUnit
 import javax.swing.event.HyperlinkListener
 import javax.swing.event.HyperlinkEvent
 import groovyx.gpars.Asynchronizer
+import javax.swing.JTable
+import javax.swing.table.DefaultTableCellRenderer
 
 /**
  * @author fortuna
@@ -412,6 +414,7 @@ public class Coucou{
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             def entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                            entryList.setDefaultRenderer(Object.class, new DateCellRenderer())
                             entryList.model = new FeedTableModel(node)
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
@@ -956,13 +959,17 @@ public class Coucou{
 //                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
 //                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
                                         treeTable(id: 'historyTree', columnControlVisible: true)
+                                        // email..
                                         getNode('/history/Inbox')
+                                        getNode('/history/Outbox')
                                         getNode('/history/Sent')
                                         getNode('/history/Drafts')
                                         getNode('/history/Templates')
                                         getNode('/history/Templates/Mail')
                                         getNode('/history/Templates/Meeting')
                                         getNode('/history/Templates/Task')
+                                        // chat..
+                                        getNode('/history/Conversations')
                                         getNode('/history/Deleted')
                                         historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
                                         historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
@@ -1056,6 +1063,7 @@ public class Coucou{
 //                                         feedList.cellRenderer = new FeedViewListCellRenderer()
                                          table(showHorizontalLines: false, id: 'feedList', columnControlVisible: true)
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         feedList.setDefaultRenderer(Object.class, new DateCellRenderer())
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
@@ -1216,7 +1224,7 @@ public class Coucou{
 */
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
-                             panel(constraints: 'right', border: emptyBorder(10)) {
+                             panel(constraints: 'right', border: emptyBorder(10), backgroundPainter: glossPainter()) {
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                      list(id: 'activity')
@@ -1952,10 +1960,10 @@ class PropertiesTableModel extends AbstractTableModel {
 
 class FeedTableModel extends AbstractNodeTableModel {
     
-    def df = new PrettyTime()
+//    def df = new PrettyTime()
     
     FeedTableModel(def node) {
-        super(node, (String[]) ['Title', 'Source', 'Last Updated'])
+        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String.class, String.class, Date.class])
     }
     
     Object getValueAt(int row, int column) {
@@ -1972,7 +1980,8 @@ class FeedTableModel extends AbstractNodeTableModel {
                 break
             case 2:
                 if (node.hasProperty('date')) {
-                    value = df.format(node.getProperty('date').value.date.time)
+//                    value = df.format(node.getProperty('date').value.date.time)
+                    value = node.getProperty('date').value.date.time
                 }
                 break
         }

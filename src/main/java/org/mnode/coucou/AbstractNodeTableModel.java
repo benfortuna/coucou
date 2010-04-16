@@ -44,9 +44,16 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel {
     
     private final String[] columnNames;
     
+    private final Class<?>[] columnClasses;
+
     public AbstractNodeTableModel(Node node, String[] columns) {
+        this(node, columns, null);
+    }
+
+    public AbstractNodeTableModel(Node node, String[] columns, Class<?>[] classes) {
         this.node = node;
         this.columnNames = columns;
+        this.columnClasses = classes;
     }
     
     /**
@@ -60,6 +67,14 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         return columnNames[column];
+    }
+    
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        if (columnClasses != null && columnIndex < columnClasses.length) {
+            return columnClasses[columnIndex];
+        }
+        return super.getColumnClass(columnIndex);
     }
     
     /**
