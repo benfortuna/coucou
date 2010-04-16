@@ -414,7 +414,7 @@ public class Coucou{
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             def entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                            entryList.setDefaultRenderer(Object.class, new DateCellRenderer())
+                            entryList.setDefaultRenderer(Date.class, new DateCellRenderer())
                             entryList.model = new FeedTableModel(node)
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
@@ -1063,7 +1063,7 @@ public class Coucou{
 //                                         feedList.cellRenderer = new FeedViewListCellRenderer()
                                          table(showHorizontalLines: false, id: 'feedList', columnControlVisible: true)
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         feedList.setDefaultRenderer(Object.class, new DateCellRenderer())
+                                         feedList.setDefaultRenderer(Date.class, new DateCellRenderer())
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
