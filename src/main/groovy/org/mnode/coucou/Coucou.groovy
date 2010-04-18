@@ -114,7 +114,7 @@ import groovy.util.XmlSlurper
 import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import javax.swing.RowFilter
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import javax.swing.SortOrder//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -136,6 +136,7 @@ import javax.swing.event.HyperlinkEvent
 import groovyx.gpars.Asynchronizer
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
+import javax.imageio.ImageIO
 
 /**
  * @author fortuna
@@ -182,7 +183,7 @@ import javax.swing.table.DefaultTableCellRenderer
     */
 public class Coucou{
      
-    static final LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou.class))
+    static final LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
     static final LogEntry init_node = new FormattedLogEntry(Level.Info, 'Initialising %s node..')
     static final LogEntry delete_enabled = new FormattedLogEntry(Level.Info, 'Enable deletion for: %s')
     static final LogEntry delete_disabled = new FormattedLogEntry(Level.Info, 'Disable deletion')
@@ -213,7 +214,7 @@ public class Coucou{
         //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
-        def repoConfig = RepositoryConfig.create(Coucou.class.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+        def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         def repository = new TransientRepository(repoConfig)
         
         def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
@@ -391,7 +392,7 @@ public class Coucou{
                 tabs.selectedComponent = explorerTab
                 
                 def iconSize = new Dimension(16, 16)
-                def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/task.svg'), iconSize)
+                def taskIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/task.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(explorerTab), taskIcon)
             }
         }
@@ -414,8 +415,10 @@ public class Coucou{
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             def entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                            entryList.setDefaultRenderer(Date.class, new DateCellRenderer())
+                            entryList.setDefaultRenderer(Date, new DateCellRenderer())
                             entryList.model = new FeedTableModel(node)
+                            entryList.setSortOrder(2, SortOrder.DESCENDING)
+                            entryList.sortsOnUpdates = true
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
 //                                if (entryList.selectedValue && entryList.selectedValue.hasProperty('description')) {
@@ -466,14 +469,14 @@ public class Coucou{
                 tabs.selectedComponent = feedView
                 
                 def iconSize = new Dimension(16, 16)
-                def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/feed.svg'), iconSize)
+                def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/feed.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
             }
         }
         
         def updateFeed = { url ->
             // rome uses Thread.contextClassLoader..
-            Thread.currentThread().contextClassLoader = Coucou.class.classLoader
+            Thread.currentThread().contextClassLoader = Coucou.classLoader
             
             def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
@@ -486,6 +489,9 @@ public class Coucou{
 //            if (feed.uri) {
 //                feedNode.setProperty('uri', feed.uri)
 //            }
+
+            def now = Calendar.instance
+            
             for (entry in feed.entries) {
                 def entryNode
                 if (entry.uri) {
@@ -525,11 +531,18 @@ public class Coucou{
                     }
                 }
                 
-                def calendar = Calendar.instance
-                if (entry.publishedDate) {
-                    calendar.setTime(entry.publishedDate)
+                if (entryNode.isNew()) {
+                    feedNode.setProperty('date', now)
                 }
-                entryNode.setProperty('date', calendar)
+                
+                if (entry.publishedDate) {
+                    def publishedDate = Calendar.instance
+                    publishedDate.setTime(entry.publishedDate)
+                    entryNode.setProperty('date', publishedDate)
+                }
+                else if (entryNode.isNew()) {
+                    entryNode.setProperty('date', now)
+                }
             }
             saveNode feedNode
             return feedNode
@@ -788,11 +801,11 @@ public class Coucou{
 //                    flowLayout(alignment: FlowLayout.LEADING)
                     borderLayout()
                     
-                    button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(imageIcon('/avatar.png').image.getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                    button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(ImageIO.read(Coucou.getResource('/avatar.png')).getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
                     photoButton.actionPerformed = {
                             if (imageChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
                                 doLater {
-                                   photoButton.icon = imageIcon(imageIcon(imageChooser.selectedFile.absolutePath).image.getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                                   photoButton.icon = imageIcon(ImageIO.read(Coucou.getResource(imageChooser.selectedFile.absolutePath)).getScaledInstance(50, -1, Image.SCALE_SMOOTH))
                                 }
                             }
                     }
@@ -864,7 +877,7 @@ public class Coucou{
 //                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
 //                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
 
-                                                def contactIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
+                                                def contactIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/im.svg'), new java.awt.Dimension(20, 20))
                                                 def contactGrid = new JCommandButtonPanel(50)
                                                 contactGrid.addButtonGroup('Online')
                                                 contactGrid.addButtonGroup('Offline')
@@ -1063,8 +1076,10 @@ public class Coucou{
 //                                         feedList.cellRenderer = new FeedViewListCellRenderer()
                                          table(showHorizontalLines: false, id: 'feedList', columnControlVisible: true)
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         feedList.setDefaultRenderer(Date.class, new DateCellRenderer())
+                                         feedList.setDefaultRenderer(Date, new DateCellRenderer())
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
+                                         feedList.setSortOrder(2, SortOrder.DESCENDING)
+                                         feedList.sortsOnUpdates = true
                                          feedList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
                                              if (feedList.selectedRow >= 0) {
@@ -1224,10 +1239,10 @@ public class Coucou{
 */
                              }
                              navTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
-                             panel(constraints: 'right', border: emptyBorder(10), backgroundPainter: glossPainter()) {
+                             panel(constraints: 'right', border: emptyBorder(10), opaque: true, backgroundPainter: imagePainter(image: ImageIO.read(Coucou.getResource('/avatar.png')))) {
                                  borderLayout()
                                  scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                     list(id: 'activity')
+                                     list(opaque: false, id: 'activity')
                                      activity.cellRenderer = new ActivityListCellRenderer()
                                      activity.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                      activity.mouseClicked = { e ->
@@ -1344,7 +1359,7 @@ public class Coucou{
              }
 
              if (SystemTray.isSupported()) {
-                 TrayIcon trayIcon = new TrayIcon(imageIcon('/logo-14.png').image, 'Coucou')
+                 TrayIcon trayIcon = new TrayIcon(ImageIO.read(Coucou.getResource('/logo-14.png')), 'Coucou')
                  trayIcon.imageAutoSize = false
                  trayIcon.mousePressed = { event ->
                      if (event.button == MouseEvent.BUTTON1) {
@@ -1418,9 +1433,17 @@ public class Coucou{
                         }
                         */
                         println "Updating feed: ${feedNode.getProperty('title').value.string}"
+//                        def entryCount = feedNode.nodes.size
+                        
                         try {
                             Asynchronizer.doParallel(5) {
-                                updateFeed.callAsync(feedNode.getProperty('url').value.string)
+                                def future = updateFeed.callAsync(feedNode.getProperty('url').value.string)
+//                                if (feedNode.nodes.size != entryCount) {
+//                                }
+                                future.get()
+                                swing.edt {
+                                    feedList.model.fireTableDataChanged()
+                                }
                             }
                         }
                         catch (Exception e) {
@@ -1718,7 +1741,7 @@ class CreateAccountProducer implements WizardResultProducer {
 
 class RepositoryTreeModel extends AbstractTreeModel implements javax.jcr.observation.EventListener {
 
-    static def log = Logger.getInstance(RepositoryTreeModel.class)
+    static def log = Logger.getInstance(RepositoryTreeModel)
     
     def root
     
@@ -1963,7 +1986,7 @@ class FeedTableModel extends AbstractNodeTableModel {
 //    def df = new PrettyTime()
     
     FeedTableModel(def node) {
-        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String.class, String.class, Date.class])
+        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String, String, Date])
     }
     
     Object getValueAt(int row, int column) {

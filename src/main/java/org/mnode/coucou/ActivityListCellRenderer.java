@@ -19,6 +19,7 @@
 
 package org.mnode.coucou;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.util.Date;
 
@@ -38,12 +39,18 @@ public class ActivityListCellRenderer extends DefaultListCellRenderer {
 
     private static final long serialVersionUID = 1L;
 
+    private final Color defaultBackground;
+    
     public ActivityListCellRenderer() {
         setIconTextGap(10);
         setVerticalAlignment(SwingConstants.CENTER);
         //alignmentY = 0.5
         setVerticalTextPosition(SwingConstants.TOP);
 //        border = BorderFactory.createEmptyBorder(2, 5, 2, 0)
+        int r = getBackground().getRed();
+        int g = getBackground().getGreen();
+        int b = getBackground().getBlue();
+        defaultBackground = new Color(r, g, b, 128);
     }
     
     @Override
@@ -51,6 +58,10 @@ public class ActivityListCellRenderer extends DefaultListCellRenderer {
             boolean cellHasFocus) {
 
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        
+        if (!isSelected) {
+            setBackground(defaultBackground);
+        }
         
         Node node = (Node) value;
         try {
