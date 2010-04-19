@@ -114,7 +114,8 @@ import groovy.util.XmlSlurper
 import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import javax.swing.RowFilter
-import javax.swing.SortOrder//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import javax.swing.SortOrder
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -305,7 +306,7 @@ public class Coucou{
             def tab
             if (tabs.tabCount > 0) {
                 for (i in 0..tabs.tabCount - 1) {
-                    if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
+                    if (tabs.getComponentAt(i).getClientProperty('coucou.node')?.path == node.path) {
                         tab = tabs.getComponentAt(i)
                     }
                 }
@@ -353,7 +354,7 @@ public class Coucou{
         def openExplorerTab = { tabs, node ->
             if (tabs.tabCount > 0) {
                 for (i in 0..tabs.tabCount - 1) {
-                    if (tabs.getComponentAt(i).getClientProperty('coucou.node') == node) {
+                    if (tabs.getComponentAt(i).getClientProperty('coucou.node')?.path == node.path) {
                         tabs.selectedComponent = tabs.getComponentAt(i)
                         return
                     }
@@ -452,6 +453,8 @@ public class Coucou{
                                     def entry = entries.nextNode()
                                     if (entry.hasProperty('link')) {
                                         Desktop.desktop.browse(URI.create(entry.getProperty('link').value.string))
+                                        entry.setProperty('seen', true)
+                                        entry.save()
                                     }
                                 }
                             }
@@ -947,6 +950,9 @@ public class Coucou{
                                         plannerTree.treeTableModel = new PlannerTreeTableModel(getNode('/planner'))
                                         plannerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                                         plannerTree.packAll()
+                                        plannerTree.focusLost = {
+                                            plannerTree.clearSelection()
+                                        }
                                      }
                                  }
                                  panel(name: 'History', border: emptyBorder(10)) {
@@ -988,6 +994,9 @@ public class Coucou{
                                         historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
 //                                        historyTree.selectionModel.valueChanged = {
                                         historyTree.packAll()
+                                        historyTree.focusLost = {
+                                            historyTree.clearSelection()
+                                        }
                                      }
                                  }
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
@@ -1065,6 +1074,7 @@ public class Coucou{
                                                  }
                                              }
                                              findFeedField.text = null
+                                             feedList.rowFilter = null
                                              if (feedNode) {
                                                  openFeedView(tabs, feedNode)
                                              }
@@ -1115,6 +1125,9 @@ public class Coucou{
 //                                                }
                                             }
                                          }
+                                         feedList.focusLost = {
+                                             feedList.clearSelection()
+                                         }
                                      }
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
@@ -1150,6 +1163,9 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'accountList')
                                          accountList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          accountList.model = new AccountTableModel(getNode('/accounts'))
+                                         accountList.focusLost = {
+                                             accountList.clearSelection()
+                                         }
 /*
                                         accountsTree.valueChanged = { e ->
                                             if (e.path) {
@@ -1215,6 +1231,9 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'noteList')
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
+                                         noteList.focusLost = {
+                                             noteList.clearSelection()
+                                         }
                                      }
                                  }
 /*
@@ -1249,9 +1268,12 @@ public class Coucou{
                                          if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
                                              if (activity.selectedValue) {
                                                  def node = activity.selectedValue
-                                                 openNodeTab(tabs, node)
+                                                 openFeedView(tabs, node.parent)
                                              }
                                          }
+                                     }
+                                     activity.focusLost = {
+                                         activity.clearSelection()
                                      }
                                      /*
                                     if (!session.rootNode.hasNode('feeds')) {
