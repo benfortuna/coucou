@@ -65,6 +65,10 @@ import org.jvnet.lafwidget.LafWidget
 import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter
 import org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind
 import org.jvnet.flamingo.svg.SvgBatikResizableIcon
+import org.jvnet.flamingo.common.JCommandButton
+import org.jvnet.flamingo.common.JCommandMenuButton
+import org.jvnet.flamingo.common.JCommandButtonStrip
+import org.jvnet.flamingo.common.CommandButtonDisplayState
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
@@ -224,6 +228,8 @@ public class Coucou{
 //        jcr.session = session
 //        jcr.log = log
 
+        def filterableLists = []
+        
         def initNode = { name ->
             if (!session.rootNode.hasNode(name)) {
                 log.log init_node, name
@@ -420,6 +426,8 @@ public class Coucou{
                             entryList.model = new FeedTableModel(node)
                             entryList.setSortOrder(2, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
+                            // XXX: need to remove from filterableLists on tab close..
+                            filterableLists << entryList
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
 //                                if (entryList.selectedValue && entryList.selectedValue.hasProperty('description')) {
@@ -549,6 +557,47 @@ public class Coucou{
             }
             saveNode feedNode
             return feedNode
+        }
+        
+        def addFeed = { url ->
+            swing.edt {
+                                             def feedNode = null
+                                             def feedUrl
+                                             try {
+                                                 feedUrl = new URL(url)
+                                             }
+                                             catch (MalformedURLException e) {
+                                                 try {
+                                                     feedUrl = new URL("http://${url}")
+                                                 }
+                                                 catch (MalformedURLException e1) {
+                                                     JOptionPane.showMessageDialog(coucouFrame, "Invalid URL: ${url}")
+                                                 }
+                                             }
+                                             if (feedUrl) {
+                                                 try {
+                                                     feedNode = updateFeed(url)
+                                                 }
+                                                 catch (Exception e) {
+                                                      html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
+                                                      def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
+                                                      println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+                                                      if (!feeds.isEmpty()) {
+                                                          feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+                                                      }
+                                                      else {
+                                                          JOptionPane.showMessageDialog(coucouFrame, "No feeds found for site: ${url}")
+                                                      }
+                                                 }
+                                             }
+                                             filterField.text = null
+                                             for (list in filterableLists) {
+                                                 list.rowFilter = null
+                                             }
+                                             if (feedNode) {
+                                                 openFeedView(tabs, feedNode)
+                                             }
+            }
         }
         
          swing.edt {
@@ -717,6 +766,9 @@ public class Coucou{
                          }
                      })
                     
+                    action(id: 'markAsReadAction', name: 'Mark as Read', accelerator: 'R', enabled: false)
+                    action(id: 'markAllReadAction', name: 'Mark All Read', accelerator: shortcut('alt R'), enabled: false)
+                    action(id: 'markAsUnreadAction', name: 'Mark as Unread', accelerator: 'U', enabled: false)
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
@@ -764,11 +816,15 @@ public class Coucou{
                         menuItem(text: "Preferences", icon: imageIcon('/preferences.png'))
                     }
                     menu(text: "View", mnemonic: 'V') {
-                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar', state: true)
+                        checkBoxMenuItem(text: "Presence Bar", id: 'viewPresenceBar', state: false)
                         checkBoxMenuItem(text: "Status Bar", id: 'viewStatusBar')
                         checkBoxMenuItem(text: "Contact Groups", id: 'viewContactGroups')
                     }
                     menu(text: "Action", mnemonic: 'A') {
+                        menuItem(markAsReadAction)
+                        menuItem(markAllReadAction)
+                        menuItem(markAsUnreadAction)
+                        separator()
                         menuItem(replyAction)
                         menuItem(replyAllAction)
                         menuItem(forwardAction)
@@ -781,6 +837,10 @@ public class Coucou{
                         menuItem(text: "Annotate")
                     }
                     menu(text: "Tools", mnemonic: 'T') {
+                        menu(text: "Activity Stream") {
+                            menuItem(text: "Clear Selected")
+                            menuItem(text: "Clear All")
+                        }
                         menu(text: "Search") {
                             menuItem(text: "New Search..")
                         }
@@ -800,7 +860,51 @@ public class Coucou{
                 
                 borderLayout()
                 
-                panel(id: 'presencePane', constraints: BorderLayout.NORTH, border: emptyBorder(10)) {
+                vbox(constraints: BorderLayout.NORTH) {
+                
+                    hbox(border: emptyBorder([10, 20, 5, 10])) {
+                        def navButtonSize = new java.awt.Dimension(20, 20)
+                        def navButtons = new JCommandButtonStrip()
+                        navButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
+                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/back.svg'), navButtonSize)))
+                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/forward.svg'), navButtonSize)))
+                        widget(navButtons)
+                        hstrut(5)
+
+                        def actionButtonSize = new java.awt.Dimension(16, 16)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/reload.svg'), actionButtonSize)))
+                        hstrut(3)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/path.svg'), actionButtonSize)))
+                        hstrut(3)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize)), actionPerformed: { tabs.selectedIndex = 0} )
+                        hstrut(3)
+                        
+                        textField(new FindField(defaultText: 'Search Contacts, Feeds and History..', defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: emptyBorder(5))
+                        filterField.focusGained = { filterField.selectAll() }
+                        filterField.keyReleased = {
+                            if (filterField.text) {
+                                def filter = RowFilter.regexFilter("(?i)\\Q${filterField.text}\\E")
+                                for (list in filterableLists) {
+                                    list.rowFilter = filter
+                                }
+                            }
+                            else {
+                                for (list in filterableLists) {
+                                    list.rowFilter = null
+                                }
+                            }
+                        }
+                        filterField.actionPerformed = {
+                            if (filterField.text) {
+                                addFeed(filterField.text)
+                            }
+                        }
+                        
+                        hstrut(3)
+                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
+                    }
+                    
+                panel(id: 'presencePane', border: emptyBorder([10, 20, 5, 10])) {
 //                    flowLayout(alignment: FlowLayout.LEADING)
                     borderLayout()
                     
@@ -834,6 +938,7 @@ public class Coucou{
                     }
                 }
                 bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
+                }
                 
 //                splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
                 tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
@@ -935,8 +1040,8 @@ public class Coucou{
                                      
 //                                     def addTaskEventText = 'Find a task / appointment..'
 //                                     textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                     textField(new FindField(defaultText: 'Filter tasks / appointments..'), id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
-                                     findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
+//                                     textField(new FindField(defaultText: 'Filter tasks / appointments..'), id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+//                                     findTaskField.toolTipText = '<CTRL> + Enter to create a new task / appointment'
                                      
                                      scrollPane() {
                                         treeTable(id: 'plannerTree', columnControlVisible: true)
@@ -1004,6 +1109,7 @@ public class Coucou{
                                      
 //                                     def addFeedText = 'Add a new feed..'
 //                                     textField(text: addFeedText, id: 'addFeedField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
+/*
                                      textField(new FindField(defaultText: 'Filter feeds..'), id: 'findFeedField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
                                      findFeedField.focusGained = { findFeedField.selectAll() }
                                      findFeedField.keyReleased = {
@@ -1043,7 +1149,7 @@ public class Coucou{
                                                  }
                                              }
                                              newNode.parent.save()
-                                             */
+                                             *
                                              def feedNode = null
                                              def feedUrl
                                              try {
@@ -1080,6 +1186,7 @@ public class Coucou{
                                              }
                                          }
                                      }
+*/
                                      scrollPane(border: null) {
 //                                         list(id: 'feedList')
 //                                         feedList.model = new RepositoryListModel(getNode('/feeds'))
@@ -1090,6 +1197,7 @@ public class Coucou{
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.setSortOrder(2, SortOrder.DESCENDING)
                                          feedList.sortsOnUpdates = true
+                                         filterableLists << feedList
                                          feedList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
                                              if (feedList.selectedRow >= 0) {
@@ -1132,14 +1240,14 @@ public class Coucou{
                                  }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
-                                     vbox(constraints: BorderLayout.NORTH) {
+//                                     vbox(constraints: BorderLayout.NORTH) {
 //                                         def findAccountText = 'Find an account..'
 //                                         label(text: 'Accounts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
                                          //searchPanel(fieldName: 'Filter accounts', id: 'findAccountField')
 //                                         textField(text: addTaskEventText, id: 'findTaskField', foreground: Color.LIGHT_GRAY, border: null, constraints: BorderLayout.NORTH)
-                                         textField(new FindField(defaultText: 'Filter accounts..'), id: 'findAccountField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5))
-                                         findAccountField.toolTipText = '<CTRL> + Enter to create a new account'
-                                     }
+//                                         textField(new FindField(defaultText: 'Filter accounts..'), id: 'findAccountField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5))
+//                                         findAccountField.toolTipText = '<CTRL> + Enter to create a new account'
+//                                     }
                                      scrollPane(border: null) {
 //                                         tree(id: 'accountsTree', rootVisible: false, showsRootHandles: true)
                                          /*
@@ -1212,6 +1320,7 @@ public class Coucou{
                                  }
                                  panel(name: 'Notes', border: emptyBorder(10)) {
                                      borderLayout()
+/*
                                      textField(new FindField(defaultText: 'Filter notes..'), id: 'notesFilterField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
                                      notesFilterField.focusGained = { notesFilterField.selectAll() }
                                      notesFilterField.keyReleased = {
@@ -1227,10 +1336,12 @@ public class Coucou{
                                              // create a new note here..
                                          }
                                      }
+*/
                                      scrollPane(border: null) {
                                          table(showHorizontalLines: false, id: 'noteList')
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
+                                         filterableLists << noteList
                                          noteList.focusLost = {
                                              noteList.clearSelection()
                                          }
@@ -1269,6 +1380,7 @@ public class Coucou{
                                              if (activity.selectedValue) {
                                                  def node = activity.selectedValue
                                                  openFeedView(tabs, node.parent)
+                                                 activity.model.removeElement(node)
                                              }
                                          }
                                      }
@@ -1326,9 +1438,10 @@ public class Coucou{
                                      */
                                      def activityModel = new DefaultListModel()
                                      activity.model = activityModel
-           
+//                                     filterableLists << activity
+
                                      // activity stream..
-                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(model: activityModel, session: session, swing: swing), Event.NODE_ADDED, '/', true, null, null, false)
+                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(activityStream: activity, session: session, swing: swing), Event.NODE_ADDED, '/', true, null, null, false)
                                  }
                              }
                          }
@@ -2038,17 +2151,39 @@ class FindField extends JTextField {
 
     def patternFilter
     def defaultText
+    def defaultFont
+    def defaultForeground
+    
+    def f
+    def fg
     
     FindField() {
+        f = font
+        fg = foreground
+        
+        // test..
+        defaultFont = f.deriveFont(Font.ITALIC)
         patternFilter = new PatternFilter()
         focusGained = {
             if (text == defaultText) {
                 text = null
+                if (f) {
+                    font = f
+                }
+                if (fg) {
+                    foreground = fg
+                }
             }
         }
         focusLost = {
             if (!text) {
                 text = defaultText
+                if (defaultFont) {
+                    font = defaultFont
+                }
+                if (defaultForeground) {
+                    foreground = defaultForeground
+                }
             }
         }
         keyPressed = { e ->
@@ -2193,7 +2328,7 @@ class NoteTableModel extends AbstractNodeTableModel {
 class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
 
     def session
-    def model
+    def activityStream
     def swing
 
     void onEvent(EventIterator events) {
@@ -2203,7 +2338,9 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
             println "Node added: ${event.path}"
             def node = session.getItem(event.path)
             swing.edt {
-                model.insertElementAt node, 0
+                activityStream.model.insertElementAt node, 0
+                activityStream.clearSelection()
+                activityStream.ensureIndexIsVisible(0)
             }
         }
     }
