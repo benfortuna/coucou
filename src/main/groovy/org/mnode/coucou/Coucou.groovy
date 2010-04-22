@@ -937,7 +937,7 @@ public class Coucou{
                         hstrut(3)
                         
                         def searchText = 'Search Contacts, Feeds, History, etc.'
-                        textField(new FindField(text: searchText, defaultText: searchText, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+                        textField(new FindField(text: searchText, defaultText: searchText, foreground: Color.LIGHT_GRAY, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
                         filterField.focusGained = { filterField.selectAll() }
                         filterField.keyReleased = {
                             if (filterField.text) {
@@ -2190,6 +2190,8 @@ class FindField extends JTextField {
         
         // test..
         defaultFont = f.deriveFont(Font.ITALIC)
+        font = defaultFont
+        
         patternFilter = new PatternFilter()
         focusGained = {
             if (text == defaultText) {
