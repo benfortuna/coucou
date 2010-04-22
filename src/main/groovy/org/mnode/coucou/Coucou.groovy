@@ -425,7 +425,7 @@ public class Coucou{
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             entryList.setDefaultRenderer(Date, new DateCellRenderer())
                             entryList.model = new FeedTableModel(node)
-                            entryList.setSortOrder(2, SortOrder.DESCENDING)
+                            entryList.setSortOrder(3, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
                             // XXX: need to remove from filterableLists on tab close..
                             filterableLists << entryList
@@ -931,12 +931,13 @@ public class Coucou{
                         def actionButtonSize = new java.awt.Dimension(16, 16)
                         widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/reload.svg'), actionButtonSize)))
                         hstrut(3)
-                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/path.svg'), actionButtonSize)))
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/cancel.svg'), actionButtonSize)))
                         hstrut(3)
-                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize)), actionPerformed: { tabs.selectedIndex = 0} )
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), actionButtonSize)), actionPerformed: { tabs.selectedIndex = 0} )
                         hstrut(3)
                         
-                        textField(new FindField(defaultText: 'Search Contacts, Feeds and History..', defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+                        def searchText = 'Search Contacts, Feeds, History, etc.'
+                        textField(new FindField(text: searchText, defaultText: searchText, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
                         filterField.focusGained = { filterField.selectAll() }
                         filterField.keyReleased = {
                             if (filterField.text) {
@@ -958,7 +959,7 @@ public class Coucou{
                         }
                         
                         hstrut(3)
-                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
+                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/add.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
                     }
                 }
                 
@@ -1217,7 +1218,7 @@ public class Coucou{
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.setDefaultRenderer(Date, new DateCellRenderer())
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
-                                         feedList.setSortOrder(2, SortOrder.DESCENDING)
+                                         feedList.setSortOrder(3, SortOrder.DESCENDING)
                                          feedList.sortsOnUpdates = true
                                          filterableLists << feedList
                                          feedList.selectionModel.valueChanged = { e ->
@@ -2144,7 +2145,7 @@ class FeedTableModel extends AbstractNodeTableModel {
 //    def df = new PrettyTime()
     
     FeedTableModel(def node) {
-        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String, String, Date])
+        super(node, (String[]) ['Title', 'Source', 'Count', 'Last Updated'], (Class[]) [String, String, Integer, Date])
     }
     
     Object getValueAt(int row, int column) {
@@ -2160,6 +2161,9 @@ class FeedTableModel extends AbstractNodeTableModel {
                 }
                 break
             case 2:
+                value = node.nodes.size
+                break
+            case 3:
                 if (node.hasProperty('date')) {
 //                    value = df.format(node.getProperty('date').value.date.time)
                     value = node.getProperty('date').value.date.time
