@@ -55,6 +55,7 @@ import javax.swing.SwingConstants
 import javax.swing.event.DocumentListener
 import javax.swing.event.DocumentEvent
 import javax.swing.tree.DefaultMutableTreeNode as TreeNode
+import javax.swing.text.html.HTMLEditorKit
 import org.jvnet.substance.SubstanceLookAndFeel
 import org.jvnet.substance.api.SubstanceConstants
 import org.jvnet.substance.api.SubstanceConstants.TabCloseKind
@@ -469,7 +470,14 @@ public class Coucou{
                             entryList.packAll()
                         }
                         scrollPane(constraints: 'right') {
-                            contentView = editorPane(editable: false, contentType: 'text/html')
+                            def editorKit = new HTMLEditorKit()
+                            def styleSheet = editorKit.getStyleSheet()
+                            styleSheet.addRule("body {color:#000; font-family:verdana,sans-serif; margin:4px; }")
+//                            styleSheet.addRule("a {text-decoration:none; color:orange; }")
+//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+                            styleSheet.addRule("img {border:0; }")
+                            
+                            contentView = editorPane(editorKit: editorKit, editable: false, contentType: 'text/html', opaque: true)
                             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
                         }
                     }
@@ -772,6 +780,20 @@ public class Coucou{
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
+                    
+                    action(id: 'activityClearAction', name: 'Clear Selected', accelerator: 'C', closure: {
+                        def selectedIndex = activity.selectedIndex
+                        activity.model.removeElement(activity.selectedValue)
+                        for (index in selectedIndex..0) {
+                            if (index < activity.model.size) {
+                                activity.selectedIndex = index
+                                break;
+                            }
+                        }
+                    })
+                    action(id: 'activityClearAllAction', name: 'Clear All', accelerator: shortcut('alt C'), closure: {activity.model.removeAllElements() })
+//                    bind(source: coucouFrame, sourceProperty: 'focusOwner', target: activityClearAllAction, targetProperty: 'enabled', converter: { activity.hasFocus() })
+                    
                     action(id: 'logoutAction', name: 'Logout', closure: { session.logout() })
                     action(id: 'repositoryExplorerAction', name: 'Repository Explorer', closure: { openExplorerTab(tabs, session.rootNode) })
                 }
@@ -838,8 +860,8 @@ public class Coucou{
                     }
                     menu(text: "Tools", mnemonic: 'T') {
                         menu(text: "Activity Stream") {
-                            menuItem(text: "Clear Selected")
-                            menuItem(text: "Clear All")
+                            menuItem(activityClearAction)
+                            menuItem(activityClearAllAction)
                         }
                         menu(text: "Search") {
                             menuItem(text: "New Search..")
@@ -861,48 +883,6 @@ public class Coucou{
                 borderLayout()
                 
                 vbox(constraints: BorderLayout.NORTH) {
-                
-                    hbox(border: emptyBorder([10, 20, 5, 10])) {
-                        def navButtonSize = new java.awt.Dimension(20, 20)
-                        def navButtons = new JCommandButtonStrip()
-                        navButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
-                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/back.svg'), navButtonSize)))
-                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/forward.svg'), navButtonSize)))
-                        widget(navButtons)
-                        hstrut(5)
-
-                        def actionButtonSize = new java.awt.Dimension(16, 16)
-                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/reload.svg'), actionButtonSize)))
-                        hstrut(3)
-                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/path.svg'), actionButtonSize)))
-                        hstrut(3)
-                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize)), actionPerformed: { tabs.selectedIndex = 0} )
-                        hstrut(3)
-                        
-                        textField(new FindField(defaultText: 'Search Contacts, Feeds and History..', defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: emptyBorder(5))
-                        filterField.focusGained = { filterField.selectAll() }
-                        filterField.keyReleased = {
-                            if (filterField.text) {
-                                def filter = RowFilter.regexFilter("(?i)\\Q${filterField.text}\\E")
-                                for (list in filterableLists) {
-                                    list.rowFilter = filter
-                                }
-                            }
-                            else {
-                                for (list in filterableLists) {
-                                    list.rowFilter = null
-                                }
-                            }
-                        }
-                        filterField.actionPerformed = {
-                            if (filterField.text) {
-                                addFeed(filterField.text)
-                            }
-                        }
-                        
-                        hstrut(3)
-                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
-                    }
                     
                 panel(id: 'presencePane', border: emptyBorder([10, 20, 5, 10])) {
 //                    flowLayout(alignment: FlowLayout.LEADING)
@@ -938,6 +918,48 @@ public class Coucou{
                     }
                 }
                 bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
+                
+                    hbox(border: emptyBorder([10, 20, 5, 10])) {
+                        def navButtonSize = new java.awt.Dimension(20, 20)
+                        def navButtons = new JCommandButtonStrip()
+                        navButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
+                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/back.svg'), navButtonSize)))
+                        navButtons.add(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/forward.svg'), navButtonSize)))
+                        widget(navButtons)
+                        hstrut(5)
+
+                        def actionButtonSize = new java.awt.Dimension(16, 16)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/reload.svg'), actionButtonSize)))
+                        hstrut(3)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/path.svg'), actionButtonSize)))
+                        hstrut(3)
+                        widget(new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize)), actionPerformed: { tabs.selectedIndex = 0} )
+                        hstrut(3)
+                        
+                        textField(new FindField(defaultText: 'Search Contacts, Feeds and History..', defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+                        filterField.focusGained = { filterField.selectAll() }
+                        filterField.keyReleased = {
+                            if (filterField.text) {
+                                def filter = RowFilter.regexFilter("(?i)\\Q${filterField.text}\\E")
+                                for (list in filterableLists) {
+                                    list.rowFilter = filter
+                                }
+                            }
+                            else {
+                                for (list in filterableLists) {
+                                    list.rowFilter = null
+                                }
+                            }
+                        }
+                        filterField.actionPerformed = {
+                            if (filterField.text) {
+                                addFeed(filterField.text)
+                            }
+                        }
+                        
+                        hstrut(3)
+                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/task.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
+                    }
                 }
                 
 //                splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0) {
@@ -972,7 +994,7 @@ public class Coucou{
                                          }
                                          findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
                                          */
-                                         textField(new FindField(defaultText: 'Filter contacts..'), id: 'findField', foreground: Color.LIGHT_GRAY, border: emptyBorder(5), constraints: BorderLayout.NORTH)
+                                         textField(new FindField(defaultText: 'Filter contacts..'), id: 'findField', foreground: Color.LIGHT_GRAY, border: lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), constraints: BorderLayout.NORTH)
                                          findField.toolTipText = '<CTRL> + Enter to create a new contact'
                                          
 //                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
@@ -1387,6 +1409,7 @@ public class Coucou{
                                      activity.focusLost = {
                                          activity.clearSelection()
                                      }
+                                     bind(source: activity.selectionModel, sourceEvent: 'valueChanged', sourceValue: {activity.selectedValue != null}, target: activityClearAction, targetProperty: 'enabled')
                                      /*
                                     if (!session.rootNode.hasNode('feeds')) {
                                         log.log init_node, 'feeds'
@@ -2178,6 +2201,7 @@ class FindField extends JTextField {
         focusLost = {
             if (!text) {
                 text = defaultText
+                caretPosition = 0
                 if (defaultFont) {
                     font = defaultFont
                 }
