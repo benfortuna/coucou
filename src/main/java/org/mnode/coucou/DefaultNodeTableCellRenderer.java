@@ -20,29 +20,44 @@
 package org.mnode.coucou;
 
 import java.awt.Component;
-import java.util.Date;
+import java.awt.Font;
 
+import javax.jcr.Node;
 import javax.swing.JTable;
-
-import com.ocpsoft.pretty.time.PrettyTime;
+import javax.swing.table.DefaultTableCellRenderer;
 
 /**
  * @author Ben
  *
  */
-public class DateCellRenderer extends DefaultNodeTableCellRenderer {
+public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6498301743998728522L;
     
-    private final PrettyTime df = new PrettyTime();
+    private final Font defaultFont;
+    private final Font unreadFont;
+    
+    public DefaultNodeTableCellRenderer() {
+        defaultFont = getFont();
+        unreadFont = getFont().deriveFont(Font.BOLD);
+    }
     
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
-
+        
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        if (value instanceof Date) {
-            setText(df.format((Date) value));
+        try {
+            Node node = ((AbstractNodeTableModel) table.getModel()).getNodeAt(table.convertRowIndexToModel(row));
+            if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
+                setFont(unreadFont);
+            }
+            else {
+                setFont(defaultFont);
+            }
+        }
+        catch (Exception e) {
+            setFont(defaultFont);
         }
         return this;
     }

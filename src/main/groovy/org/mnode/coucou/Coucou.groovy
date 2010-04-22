@@ -423,9 +423,10 @@ public class Coucou{
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             def entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                            entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer())
                             entryList.setDefaultRenderer(Date, new DateCellRenderer())
-                            entryList.model = new FeedTableModel(node)
-                            entryList.setSortOrder(3, SortOrder.DESCENDING)
+                            entryList.model = new FeedEntryTableModel(node)
+                            entryList.setSortOrder(2, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
                             // XXX: need to remove from filterableLists on tab close..
                             filterableLists << entryList
@@ -552,6 +553,7 @@ public class Coucou{
                 
                 if (entryNode.isNew()) {
                     feedNode.setProperty('date', now)
+                    entryNode.setProperty('seen', false)
                 }
                 
                 if (entry.publishedDate) {
@@ -613,8 +615,10 @@ public class Coucou{
 
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/im.svg'), new java.awt.Dimension(20, 20))
              
+             imageIcon('/logo.png', id: 'logoIcon')
+             
              frame(title: 'Coucou', id: 'coucouFrame', defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
-                     size: [640, 480], show: false, locationRelativeTo: null, iconImage: imageIcon('/logo.png', id: 'logoIcon').image) {
+                     size: [640, 480], show: false, locationRelativeTo: null, iconImage: ImageIO.read(Coucou.getResource('/happy.png'))) {
                 
                 actions() {
                     action(id: 'busyAction', name: 'Busy', smallIcon: imageIcon('/busy.png'), closure: {})
@@ -1518,7 +1522,7 @@ public class Coucou{
              }
 
              if (SystemTray.isSupported()) {
-                 TrayIcon trayIcon = new TrayIcon(ImageIO.read(Coucou.getResource('/logo-14.png')), 'Coucou')
+                 TrayIcon trayIcon = new TrayIcon(ImageIO.read(Coucou.getResource('/happy-14.png')), 'Coucou')
                  trayIcon.imageAutoSize = false
                  trayIcon.mousePressed = { event ->
                      if (event.button == MouseEvent.BUTTON1) {
@@ -2166,6 +2170,34 @@ class FeedTableModel extends AbstractNodeTableModel {
             case 3:
                 if (node.hasProperty('date')) {
 //                    value = df.format(node.getProperty('date').value.date.time)
+                    value = node.getProperty('date').value.date.time
+                }
+                break
+        }
+        return value
+    }
+}
+
+class FeedEntryTableModel extends AbstractNodeTableModel {
+    
+    FeedEntryTableModel(def node) {
+        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String, String, Date])
+    }
+    
+    Object getValueAt(int row, int column) {
+        def node = getNodeAt(row)
+        def value
+        switch(column) {
+            case 0:
+                value = node.getProperty('title').value.string
+                break
+            case 1:
+                if (node.hasProperty('source')) {
+                    value = node.getProperty('source').value.string
+                }
+                break
+            case 2:
+                if (node.hasProperty('date')) {
                     value = node.getProperty('date').value.date.time
                 }
                 break
