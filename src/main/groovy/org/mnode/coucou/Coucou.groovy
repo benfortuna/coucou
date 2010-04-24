@@ -122,7 +122,7 @@ import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import javax.swing.RowFilter
 import javax.swing.SortOrder
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jvnet.flamingo.common.icon.EmptyResizableIconimport javax.swing.text.html.StyleSheet//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -516,14 +516,14 @@ public class Coucou{
                             entryList.packAll()
                         }
                         scrollPane(constraints: 'right') {
-                            def editorKit = new HTMLEditorKit()
-                            def styleSheet = editorKit.getStyleSheet()
-                            styleSheet.addRule("body {color:#000; font-family:verdana,sans-serif; margin:4px; }")
-//                            styleSheet.addRule("a {text-decoration:none; color:orange; }")
+                            def styleSheet = new StyleSheet()
+                            styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+                            styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 //                            styleSheet.addRule("a:hover {text-decoration:underline; }")
-                            styleSheet.addRule("img {border:0; }")
+                            styleSheet.addRule("img {border-width:0; }")
+                            def editorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
                             
-                            contentView = editorPane(editorKit: editorKit, editable: false, contentType: 'text/html', opaque: true)
+                            contentView = editorPane(editorKit: editorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
                             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
                             contentView.focusLost = { e ->
                                 if (e.oppositeComponent != entryList) {
@@ -938,28 +938,28 @@ public class Coucou{
                 
                 borderLayout()
                 
-                vbox(constraints: BorderLayout.NORTH) {
+                vbox(constraints: BorderLayout.NORTH, border: emptyBorder([10, 20, 5, 10])) {
                     
-                panel(id: 'presencePane', border: emptyBorder([10, 20, 5, 10])) {
+                    panel(id: 'presencePane', border: emptyBorder([0, 0, 10, 0])) {
 //                    flowLayout(alignment: FlowLayout.LEADING)
-                    borderLayout()
+                        borderLayout()
                     
-                    button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(ImageIO.read(Coucou.getResource('/avatar.png')).getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
-                    photoButton.actionPerformed = {
+                        button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(ImageIO.read(Coucou.getResource('/avatar.png')).getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                        photoButton.actionPerformed = {
                             if (imageChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
                                 doLater {
-                                   photoButton.icon = imageIcon(ImageIO.read(Coucou.getResource(imageChooser.selectedFile.absolutePath)).getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                                   photoButton.icon = imageIcon(ImageIO.read(imageChooser.selectedFile).getScaledInstance(50, -1, Image.SCALE_SMOOTH))
                                 }
                             }
-                    }
+                        }
                     
-                    vbox(border: emptyBorder(5)) {
-                        textField(id: 'nameField', text: System.getProperty('user.name', '<Enter your name here>'), border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
-                        nameField.focusGained = { nameField.selectAll() }
+                        vbox(border: emptyBorder(5)) {
+                            textField(id: 'nameField', text: System.getProperty('user.name', '<Enter your name here>'), border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
+                            nameField.focusGained = { nameField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
-                        comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 12))
-                        statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
+                            comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 12))
+                            statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
                         //statusField.focusGained = { nameField.selectAll() }
                         
                         /*
@@ -969,13 +969,13 @@ public class Coucou{
                         statusModel.addElement('Away')
                         statusField.model = statusModel
                         */
-                        statusField.model = new RepositoryComboBoxModel(session.rootNode.getNode('presence'))
-                        statusField.renderer = new RepositoryListCellRenderer()
+                            statusField.model = new RepositoryComboBoxModel(session.rootNode.getNode('presence'))
+                            statusField.renderer = new RepositoryListCellRenderer()
+                        }
                     }
-                }
-                bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
+                    bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
                 
-                    hbox(border: emptyBorder([10, 20, 5, 10])) {
+                    hbox {
                         def navButtonSize = new java.awt.Dimension(20, 20)
                         def navButtons = new JCommandButtonStrip()
                         navButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
@@ -1024,14 +1024,14 @@ public class Coucou{
                         
                         hstrut(3)
                         def addButtonPopup = new JCommandPopupMenu()
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('Compose Email', null))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Appointment', null))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Task', null))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Note', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Compose Email', new EmptyResizableIcon(16)))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Appointment', new EmptyResizableIcon(16)))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Task', new EmptyResizableIcon(16)))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Note', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuSeparator()
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Feed', null))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Contact..', null))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Account..', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Feed', new EmptyResizableIcon(16)))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Contact..', new EmptyResizableIcon(16)))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Account..', new EmptyResizableIcon(16)))
                         def addButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/add.svg'), actionButtonSize)) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
                         addButton.commandButtonKind = JCommandButton.CommandButtonKind.ACTION_AND_POPUP_MAIN_POPUP
                         addButton.displayState = CommandButtonDisplayState.SMALL
@@ -1072,8 +1072,8 @@ public class Coucou{
                                          }
                                          findField.document.addDocumentListener(new FindFilterUpdater(findField, findFilter))
                                          */
-                                         textField(new FindField(defaultText: 'Filter contacts..'), id: 'findField', foreground: Color.LIGHT_GRAY, border: lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), constraints: BorderLayout.NORTH)
-                                         findField.toolTipText = '<CTRL> + Enter to create a new contact'
+//                                         textField(new FindField(defaultText: 'Filter contacts..'), id: 'findField', foreground: Color.LIGHT_GRAY, border: lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), constraints: BorderLayout.NORTH)
+//                                         findField.toolTipText = '<CTRL> + Enter to create a new contact'
                                          
 //                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
 //                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
