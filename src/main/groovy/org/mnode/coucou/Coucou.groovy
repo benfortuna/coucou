@@ -70,6 +70,8 @@ import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandMenuButton
 import org.jvnet.flamingo.common.JCommandButtonStrip
 import org.jvnet.flamingo.common.CommandButtonDisplayState
+import org.jvnet.flamingo.common.popup.PopupPanelCallback
+import org.jvnet.flamingo.common.popup.JCommandPopupMenu
 import org.jdesktop.swingx.JXHyperlink
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.JXStatusBar.Constraint
@@ -405,6 +407,20 @@ public class Coucou{
             }
         }
         
+        def markNodeRead = { node, read ->
+            // e.g. feed
+            if (node.hasNodes()) {
+                for (child in node.nodes) {
+                    child.setProperty('seen', read)
+                }
+            }
+            // e.g. feed entry
+            else {
+                node.setProperty('seen', read)
+            }
+            node.save()
+        }
+        
         def openFeedView = { tabs, node ->
             def tab = getTabForNode(tabs, node)
             if (tab) {
@@ -416,12 +432,13 @@ public class Coucou{
                 def feedView = panel(name: node.getProperty('title').value.string, border: emptyBorder(10)) {
                     borderLayout()
                     splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
-                        def contentView = null
+                        def entryList
+                        def contentView
                         scrollPane(constraints: 'left') {
 //                            def entryList = list()
 //                            entryList.model = new RepositoryListModel(node)
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
-                            def entryList = table(showHorizontalLines: false)
+                            entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer())
                             entryList.setDefaultRenderer(Date, new DateCellRenderer())
@@ -447,9 +464,32 @@ public class Coucou{
                                         else {
                                             contentView.text = null
                                         }
+                                        editContext.markAsRead = {
+                                            markNodeRead(entry, true)
+                                            if (entryList.selectedRow < entryList.rowCount - 1) {
+                                                entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                            }
+                                        }
+                                        editContext.markAsUnread = {
+                                            markNodeRead(entry, false)
+                                            if (entryList.selectedRow < entryList.rowCount - 1) {
+                                                entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                            }
+                                        }
+                                        editContext.markAllRead = {
+                                            markNodeRead(node, true)
+                                            swing.edt {
+                                                entryList.model.fireTableDataChanged()
+                                            }
+                                        }
+                                        editContext.markAsReadEnabled = true
                                     }
                                     else {
                                         contentView.text = null
+                                        editContext.markAsReadEnabled = false
+                                        editContext.markAsRead = null
+                                        editContext.markAsUnread = null
+                                        editContext.markAllRead = null
                                     }
                                 }
                             }
@@ -468,6 +508,11 @@ public class Coucou{
                                     }
                                 }
                             }
+                            entryList.focusLost = { e ->
+                                if (e.oppositeComponent != contentView) {
+                                    entryList.clearSelection()
+                                }
+                            }
                             entryList.packAll()
                         }
                         scrollPane(constraints: 'right') {
@@ -480,6 +525,11 @@ public class Coucou{
                             
                             contentView = editorPane(editorKit: editorKit, editable: false, contentType: 'text/html', opaque: true)
                             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                            contentView.focusLost = { e ->
+                                if (e.oppositeComponent != entryList) {
+                                    entryList.clearSelection()
+                                }
+                            }
                         }
                     }
                 }
@@ -778,16 +828,18 @@ public class Coucou{
                          }
                      })
                     
-                    action(id: 'markAsReadAction', name: 'Mark as Read', accelerator: 'R', enabled: false)
-                    action(id: 'markAllReadAction', name: 'Mark All Read', accelerator: shortcut('alt R'), enabled: false)
-                    action(id: 'markAsUnreadAction', name: 'Mark as Unread', accelerator: 'U', enabled: false)
+                    action(id: 'markAsReadAction', name: 'Mark as Read', accelerator: 'R', enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAsRead?.call() })
+                    action(id: 'markAllReadAction', name: 'Mark All Read', accelerator: shortcut('alt R'), enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAllRead?.call() })
+                    action(id: 'markAsUnreadAction', name: 'Mark as Unread', accelerator: 'U', enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAsUnread?.call() })
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
                     
                     action(id: 'activityClearAction', name: 'Clear Selected', accelerator: 'C', closure: {
                         def selectedIndex = activity.selectedIndex
-                        activity.model.removeElement(activity.selectedValue)
+                        for (selectedValue in activity.selectedValues) {
+                            activity.model.removeElement(selectedValue)
+                        }
                         for (index in selectedIndex..0) {
                             if (index < activity.model.size) {
                                 activity.selectedIndex = index
@@ -943,18 +995,26 @@ public class Coucou{
                         def searchText = 'Search Contacts, Feeds, History, etc.'
                         textField(new FindField(text: searchText, defaultText: searchText, foreground: Color.LIGHT_GRAY, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
                         filterField.focusGained = { filterField.selectAll() }
+                        
+                        def filterUpdater = Executors.newSingleThreadScheduledExecutor()
+                        def filterFuture
                         filterField.keyReleased = {
-                            if (filterField.text) {
-                                def filter = RowFilter.regexFilter("(?i)\\Q${filterField.text}\\E")
-                                for (list in filterableLists) {
-                                    list.rowFilter = filter
-                                }
+                            if (filterFuture) {
+                                filterFuture.cancel(false)
                             }
-                            else {
-                                for (list in filterableLists) {
-                                    list.rowFilter = null
+                            filterFuture = filterUpdater.schedule({
+                                if (filterField.text) {
+                                    def filter = RowFilter.regexFilter("(?i)\\Q${filterField.text}\\E")
+                                    for (list in filterableLists) {
+                                        list.rowFilter = filter
+                                    }
                                 }
-                            }
+                                else {
+                                    for (list in filterableLists) {
+                                        list.rowFilter = null
+                                    }
+                                }
+                            } as Runnable, 200, TimeUnit.MILLISECONDS)
                         }
                         filterField.actionPerformed = {
                             if (filterField.text) {
@@ -963,7 +1023,20 @@ public class Coucou{
                         }
                         
                         hstrut(3)
-                        widget(new JCommandMenuButton(null, SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/add.svg'), actionButtonSize))) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
+                        def addButtonPopup = new JCommandPopupMenu()
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Compose Email', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Appointment', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Task', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Note', null))
+                        addButtonPopup.addMenuSeparator()
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Feed', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Contact..', null))
+                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Account..', null))
+                        def addButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/add.svg'), actionButtonSize)) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
+                        addButton.commandButtonKind = JCommandButton.CommandButtonKind.ACTION_AND_POPUP_MAIN_POPUP
+                        addButton.displayState = CommandButtonDisplayState.SMALL
+                        addButton.popupCallback = { addButtonPopup } as PopupPanelCallback
+                        widget(addButton)
                     }
                 }
                 
@@ -2063,7 +2136,15 @@ class EditContext {
     
     @Bindable Boolean enabled
     
+    @Bindable Boolean markAsReadEnabled
+    
     Closure delete
+    
+    Closure markAsRead
+    
+    Closure markAllRead
+    
+    Closure markAsUnread
     
     void copy() {}
     
