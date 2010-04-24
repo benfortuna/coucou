@@ -122,7 +122,7 @@ import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import javax.swing.RowFilter
 import javax.swing.SortOrder
-import org.jvnet.flamingo.common.icon.EmptyResizableIconimport javax.swing.text.html.StyleSheet//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jvnet.flamingo.common.icon.EmptyResizableIconimport javax.swing.text.html.StyleSheetimport java.awt.event.ActionListenerimport org.mnode.base.desktop.JTextFieldExtimport org.mnode.base.desktop.HyperlinkListenerImpl//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -993,7 +993,18 @@ public class Coucou{
                         hstrut(3)
                         
                         def searchText = 'Search Contacts, Feeds, History, etc.'
-                        textField(new FindField(text: searchText, defaultText: searchText, foreground: Color.LIGHT_GRAY, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+//                        textField(new FindField(text: searchText, defaultText: searchText, foreground: Color.LIGHT_GRAY, defaultForeground: Color.LIGHT_GRAY), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+                        textField(new JTextFieldExt(promptText: searchText, promptColour: Color.LIGHT_GRAY, promptFontStyle: Font.ITALIC), id: 'filterField', border: compoundBorder([emptyBorder(2), lineBorder(color: Color.LIGHT_GRAY, roundedCorners: true), emptyBorder(3)]))
+//                        filterField.document.addDocumentListener(new FindFilterUpdater(filterField, new PatternFilter()))
+//                        filterField.document.addDocumentListener({
+//                            if (filterField.text) {
+//                                findFilter.setPattern("\\Q${filterField.text}\\E", Pattern.CASE_INSENSITIVE)
+//                            }
+//                            else {
+//                                findFilter.pattern = null
+//                            }
+//                        } as DocumentListener)
+                        
                         filterField.focusGained = { filterField.selectAll() }
                         
                         def filterUpdater = Executors.newSingleThreadScheduledExecutor()
@@ -1016,11 +1027,11 @@ public class Coucou{
                                 }
                             } as Runnable, 200, TimeUnit.MILLISECONDS)
                         }
-                        filterField.actionPerformed = {
-                            if (filterField.text) {
-                                addFeed(filterField.text)
-                            }
-                        }
+//                        filterField.actionPerformed = {
+//                            if (filterField.text) {
+//                                addFeed(filterField.text)
+//                            }
+//                        }
                         
                         hstrut(3)
                         def addButtonPopup = new JCommandPopupMenu()
@@ -1029,7 +1040,15 @@ public class Coucou{
                         addButtonPopup.addMenuButton(new JCommandMenuButton('New Task', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuButton(new JCommandMenuButton('New Note', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuSeparator()
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('Add Feed', new EmptyResizableIcon(16)))
+                        
+                        def addFeedButton = new JCommandMenuButton('Add Feed', new EmptyResizableIcon(16))
+                        addFeedButton.addActionListener({
+                            if (filterField.text) {
+                                addFeed(filterField.text)
+                            }
+                        } as ActionListener)
+                        
+                        addButtonPopup.addMenuButton(addFeedButton)
                         addButtonPopup.addMenuButton(new JCommandMenuButton('Add Contact..', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuButton(new JCommandMenuButton('Add Account..', new EmptyResizableIcon(16)))
                         def addButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/add.svg'), actionButtonSize)) //, displayState: CommandButtonDisplayState.FIT_TO_ICON)
@@ -1736,7 +1755,7 @@ class Contact {
         }
     }
 }
-
+/*
 class FindFilterUpdater implements DocumentListener {
 
     def findField
@@ -1773,113 +1792,6 @@ class FindFilterUpdater implements DocumentListener {
         else {
             findFilter.pattern = null
         }
-    }
-}
-/*
-class ImMessage {
-    
-    def sender
-    def text
-    def time
-    
-    public ImMessage(def text, def sender, def time) {
-        this.text = text
-        this.sender = sender
-        this.time = time
-    }
-    
-    String toString() {
-        return "<html><table width=100%>" \
-            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
-            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
-            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
-    }
-}
-
-class MailMessage {
-    
-    def sender
-    def text
-    def time
-    def count
-    
-    public MailMessage(def text, def sender, def time, def count) {
-        this.text = text
-        this.sender = sender
-        this.time = time
-        this.count = count
-    }
-    
-    String toString() {
-        return "<html><table width=100%>" \
-            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td><td style='font-size:1em;color:silver;text-align:right'>${count} Messages</td></tr>" \
-            + "<tr><td colspan=2 style='font-size:1em;text-align:left'>${text}</td></tr>" \
-            + "<tr><td colspan=2 style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
-    }
-}
-
-class EventMessage {
-    
-    def sender
-    def text
-    def time
-    
-    public EventMessage(def text, def sender, def time) {
-        this.text = text
-        this.sender = sender
-        this.time = time
-    }
-    
-    String toString() {
-        return "<html><table width=100%>" \
-            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
-            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
-            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
-    }
-}
-
-class TaskMessage {
-    
-    def sender
-    def text
-    def time
-    
-    public TaskMessage(def text, def sender, def time) {
-        this.text = text
-        this.sender = sender
-        this.time = time
-    }
-    
-    String toString() {
-        return "<html><table width=100%>" \
-            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${sender}</td></tr>" \
-            + "<tr><td style='font-size:1em;text-align:left'>${text}</td></tr>" \
-            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(time)}</td></tr></table></html>"
-    }
-}
-
-class WeatherMessage {
-    
-    def weatherNode
-    def buildActivityString
-    
-    String toString() {
-//        return "<html><table width=100%>" \
-//            + "<tr><td style='font-size:1em;font-weight:bold;color:silver;text-align:left'>${weatherNode.channel.title}</td></tr>" \
-//            + "<tr><td style='font-size:1em;text-align:left'>${weatherNode.channel.item.condition.@text}</td></tr>" \
-//            + "<tr><td style='font-size:1em;font-style:italic;color:silver;text-align:left'>${new PrettyTime().format(Date.parse('EEE, dd MMM yyyy h:mm a', weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))}</td></tr></table></html>"
-        return buildActivityString(weatherNode.channel.title,
-             weatherNode.channel.item.condition.@text, Date.parse('EEE, dd MMM yyyy h:mm a',
-             weatherNode.channel.item.condition.@date.toString().split(' ')[0..-2].join(' ')))
-    }
-}
-
-class FeedMessage {
-    def feedEntry
-    def buildActivityString
-    
-    String toString() {
-        return buildActivityString(feedEntry.source.title, feedEntry.title, feedEntry.publishedDate)
     }
 }
 */
@@ -2285,74 +2197,6 @@ class FeedEntryTableModel extends AbstractNodeTableModel {
         }
         return value
     }
-}
-
-class FindField extends JTextField {
-
-    def patternFilter
-    def defaultText
-    def defaultFont
-    def defaultForeground
-    
-    def f
-    def fg
-    
-    FindField() {
-        f = font
-        fg = foreground
-        
-        // test..
-        defaultFont = f.deriveFont(Font.ITALIC)
-        font = defaultFont
-        
-        patternFilter = new PatternFilter()
-        focusGained = {
-            if (text == defaultText) {
-                text = null
-                if (f) {
-                    font = f
-                }
-                if (fg) {
-                    foreground = fg
-                }
-            }
-        }
-        focusLost = {
-            if (!text) {
-                text = defaultText
-                caretPosition = 0
-                if (defaultFont) {
-                    font = defaultFont
-                }
-                if (defaultForeground) {
-                    foreground = defaultForeground
-                }
-            }
-        }
-        keyPressed = { e ->
-            if (e.keyCode == KeyEvent.VK_ESCAPE) {
-                text = null
-            }
-        }
-        document.addDocumentListener(new FindFilterUpdater(this, patternFilter))
-    }
-}
-
-class HyperlinkListenerImpl implements HyperlinkListener {
-
-    /**
-     * {@inheritDoc}
-     */
-    public void hyperlinkUpdate(HyperlinkEvent e) {
-        if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-            try {
-                Desktop.getDesktop().browse(e.getURL().toURI());
-            } catch (Exception ex) {
-                JXErrorPane.showDialog(ex);
-            }
-        }
-    }
-
 }
 
 class HistoryTreeTableModel extends AbstractNodeTreeTableModel {
