@@ -1112,6 +1112,7 @@ public class Coucou{
                                                 def contactGrid = new JCommandButtonPanel(50)
                                                 contactGrid.addButtonGroup('Online')
                                                 contactGrid.addButtonGroup('Offline')
+                                                /*
                                                 def executor = Executors.newSingleThreadExecutor()
                                                 executor.execute({
                                                 try {
@@ -1145,7 +1146,7 @@ public class Coucou{
                                                     log.log unexpected_error, ex
                                                 }
                                                 })
-                                                
+                                                */
                                                 for (c in ['Tom', 'Dick', 'Harry']) {
                                                     contactGrid.addButtonToGroup('Online', new JCommandButton(c, contactIcon))
                                                 }
