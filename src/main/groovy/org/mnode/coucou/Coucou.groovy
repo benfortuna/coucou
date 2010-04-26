@@ -1119,7 +1119,7 @@ public class Coucou{
 //                                                    final XMPPConnection connection = new XMPPConnection("basepatterns.org");
                                                     connection.connect();
                                                     SASLAuthentication.supportSASLMechanism("PLAIN", 0)
-                                                    connection.login("benfortuna@gmail.com", "!ne01!pmp");
+                                                    connection.login("user@gmail.com", "password");
 //                                                    connection.login("test", "!password");
                                                     
                                                     for (group in connection.roster.groups) {
