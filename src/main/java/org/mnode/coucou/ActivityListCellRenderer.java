@@ -25,6 +25,8 @@ import java.util.Date;
 
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
 import javax.swing.DefaultListCellRenderer;
@@ -67,7 +69,13 @@ public class ActivityListCellRenderer extends DefaultListCellRenderer {
         try {
             ActivityStringBuilder b = new ActivityStringBuilder();
             if (node.hasProperty("source")) {
-                b.author(node.getProperty("source").getString());
+                Property source = node.getProperty("source");
+                if (source.getType() == PropertyType.REFERENCE || source.getType() == PropertyType.WEAKREFERENCE) {
+                    b.author(source.getNode().getProperty("title").getString());
+                }
+                else {
+                    b.author(source.getString());
+                }
             }
             else {
                 b.author("");

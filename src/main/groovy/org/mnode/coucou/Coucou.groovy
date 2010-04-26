@@ -249,10 +249,13 @@ public class Coucou{
         initNode('presence')
         initNode('notes')
         
-        def getNode = { path ->
+        def getNode = { path, referenceable = false ->
             if (!session.nodeExists(path)) {
 //                log.log init_node, path
-                return session.rootNode.addNode(path[1..-1])
+                def node = session.rootNode.addNode(path[1..-1])
+                if (referenceable) {
+                    node.addMixin('mix:referenceable')
+                }
             }
             return session.getNode(path)
         }
@@ -550,7 +553,7 @@ public class Coucou{
             
             def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
-            def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}")
+            def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}", true)
             feedNode.setProperty('url', url)
             feedNode.setProperty('title', feed.title)
             if (feed.link) {
@@ -574,7 +577,7 @@ public class Coucou{
                     entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.title)}")
                 }
                 if (feed.link) {
-                    entryNode.setProperty('source', feed.link)
+                    entryNode.setProperty('source', feedNode)
                 }
                 entryNode.setProperty('title', entry.title)
                 if (entry.description) {
@@ -792,19 +795,30 @@ public class Coucou{
                     
                     action(id: 'importAction', name: 'Import..', closure: {
                         if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
-                            doLater {
+                            doOutside {
                                 def opml = new XmlSlurper().parse(chooser.selectedFile)
                                 def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
                                 println "Feeds: ${feeds}"
+                                def errorMap = [:]
                                 for (feed in feeds) {
                                     try {
-                                        updateFeed(feed)
+                                        Asynchronizer.doParallel {
+                                            def future = updateFeed.callAsync(feed)
+                                            future.get()
+                                            swing.edt {
+                                                feedList.model.fireTableDataChanged()
+                                            }
+                                        }
                                     }
-                                    catch (Exception e) {
-                                        def error = new ErrorInfo('Import Error', 'An error occurred importing feed',
-                                                '<html><body>Error importing feed: ${feed}</body></html>', null, e, null, ['feed': feed])
-                                        JXErrorPane.showDialog(coucouFrame, error);
+                                    catch (Exception ex) {
+                                        log.log unexpected_error, ex
+                                        errorMap.put(feed, ex)
                                     }
+                                }
+                                if (!errorMap.isEmpty()) {
+                                    def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
+                                            "<html><body>Error importing feeds: ${errorMap}</body></html>", null, null, null, null)
+                                    JXErrorPane.showDialog(coucouFrame, error);
                                 }
                             }
                                //def tab = newTab(chooser.selectedFile)
@@ -1040,7 +1054,7 @@ public class Coucou{
                                         list.rowFilter = null
                                     }
                                 }
-                            } as Runnable, 200, TimeUnit.MILLISECONDS)
+                            }, 200, TimeUnit.MILLISECONDS)
                         }
                         filterField.actionPerformed = {
                             if (filterField.text) {
@@ -1063,6 +1077,7 @@ public class Coucou{
                                 addFeed(filterField.text)
                             }
                         } as ActionListener)
+                        bind(source: filterField, sourceProperty: 'text', target: addFeedButton, targetProperty: 'enabled', converter: {it != null})
                         
                         addButtonPopup.addMenuButton(addFeedButton)
                         addButtonPopup.addMenuButton(new JCommandMenuButton('Add Contact..', new EmptyResizableIcon(16)))
@@ -1097,19 +1112,23 @@ public class Coucou{
                                                 def contactGrid = new JCommandButtonPanel(50)
                                                 contactGrid.addButtonGroup('Online')
                                                 contactGrid.addButtonGroup('Offline')
-                                                /*
+                                                def executor = Executors.newSingleThreadExecutor()
+                                                executor.execute({
                                                 try {
-//                                                    final XMPPConnection connection = new XMPPConnection(new ConnectionConfiguration("talk.google.com", 5222, "gmail.com"))
-                                                    final XMPPConnection connection = new XMPPConnection("basepatterns.org");
+                                                    final XMPPConnection connection = new XMPPConnection(new ConnectionConfiguration("talk.google.com", 5222, "gmail.com"))
+//                                                    final XMPPConnection connection = new XMPPConnection("basepatterns.org");
                                                     connection.connect();
                                                     SASLAuthentication.supportSASLMechanism("PLAIN", 0)
-//                                                    connection.login("user@gmail.com", "password");
-                                                    connection.login("test", "!password");
+                                                    connection.login("benfortuna@gmail.com", "!ne01!pmp");
+//                                                    connection.login("test", "!password");
                                                     
                                                     for (group in connection.roster.groups) {
-                                                        for (entry in group.entries) {
-                                                            println "${group.name}: ${entry.name}"
-                                                            Icon icon = null
+                                                        swing.edt {
+                                                            contactGrid.addButtonGroup(group.name)
+                                                            for (entry in group.entries) {
+                                                                def name = (entry.name) ? entry.name : entry.user.find(/^.+(?=@)/)
+                                                                    println "${group.name}: ${name}"
+                                                                    Icon icon = null
 //                                                            try {
 //                                                                VCard card = new VCard()
 //                                                                card.load(connection, entry.user)
@@ -1118,13 +1137,14 @@ public class Coucou{
 //                                                            catch (Exception e) {
 //                                                                log.log unexpected_error, e
 //                                                            }
-                                                            contactGrid.addButtonToGroup(group.name, button(text: entry.name, icon: icon))
+                                                                contactGrid.addButtonToGroup(group.name, new JCommandButton(name, contactIcon))
+                                                            }
                                                         }
                                                     }
                                                 } catch (XMPPException ex) {
                                                     log.log unexpected_error, ex
                                                 }
-                                                */
+                                                })
                                                 
                                                 for (c in ['Tom', 'Dick', 'Harry']) {
                                                     contactGrid.addButtonToGroup('Online', new JCommandButton(c, contactIcon))
@@ -1582,7 +1602,7 @@ public class Coucou{
                 }
 //                feedNode.parent.save()
                
-           } as Runnable, 0, 30, TimeUnit.MINUTES)
+           }, 0, 30, TimeUnit.MINUTES)
            
            coucouFrame.visible = true
         }
@@ -1985,11 +2005,11 @@ class FeedTableModel extends AbstractNodeTableModel {
         def value
         switch(column) {
             case 0:
-                value = node.getProperty('title').value.string
+                value = node.getProperty('title').string
                 break
             case 1:
                 if (node.hasProperty('source')) {
-                    value = node.getProperty('source').value.string
+                    value = node.getProperty('source').string
                 }
                 break
             case 2:
@@ -1998,7 +2018,7 @@ class FeedTableModel extends AbstractNodeTableModel {
             case 3:
                 if (node.hasProperty('date')) {
 //                    value = df.format(node.getProperty('date').value.date.time)
-                    value = node.getProperty('date').value.date.time
+                    value = node.getProperty('date').date.time
                 }
                 break
         }
@@ -2017,16 +2037,16 @@ class FeedEntryTableModel extends AbstractNodeTableModel {
         def value
         switch(column) {
             case 0:
-                value = node.getProperty('title').value.string
+                value = node.getProperty('title').string
                 break
             case 1:
                 if (node.hasProperty('source')) {
-                    value = node.getProperty('source').value.string
+                    value = node.getProperty('source').getNode().getProperty('title').string
                 }
                 break
             case 2:
                 if (node.hasProperty('date')) {
-                    value = node.getProperty('date').value.date.time
+                    value = node.getProperty('date').date.time
                 }
                 break
         }
