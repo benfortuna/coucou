@@ -122,7 +122,14 @@ import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import javax.swing.RowFilter
 import javax.swing.SortOrder
-import org.jvnet.flamingo.common.icon.EmptyResizableIconimport javax.swing.text.html.StyleSheetimport java.awt.event.ActionListenerimport org.mnode.base.desktop.JTextFieldExtimport org.mnode.base.desktop.HyperlinkListenerImplimport java.awt.event.InputEventimport javax.swing.KeyStroke//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jvnet.flamingo.common.icon.EmptyResizableIcon
+import javax.swing.text.html.StyleSheet
+import java.awt.event.ActionListener
+import org.mnode.base.desktop.JTextFieldExt
+import org.mnode.base.desktop.HyperlinkListenerImpl
+import java.awt.event.InputEvent
+import javax.swing.KeyStroke
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -145,6 +152,8 @@ import groovyx.gpars.Asynchronizer
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import javax.imageio.ImageIO
+import ca.odell.glazedlists.swing.EventListModel
+import ca.odell.glazedlists.BasicEventList
 
 /**
  * @author fortuna
@@ -152,6 +161,7 @@ import javax.imageio.ImageIO
  */
  /*
 @Grapes([
+      @Grab(group='net.java.dev.glazedlists', module='glazedlists_java15', version='1.8.0'),
       @Grab(group='org.codehaus.gpars', module='gpars', version='0.9'),
 //    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
@@ -232,6 +242,8 @@ public class Coucou{
 //        jcr.log = log
 
         def filterableLists = []
+        
+        def activityList = new BasicEventList()
         
         def initNode = { name ->
             if (!session.rootNode.hasNode(name)) {
@@ -350,9 +362,9 @@ public class Coucou{
                 }
                 newTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 newTab.putClientProperty('coucou.node', node)
-                doOutside {
-                    tabs.selectedIndex = tabs.tabCount - 1
-                }
+//                doOutside {
+                tabs.selectedIndex = tabs.tabCount - 1
+//                }
                 tabs.add newTab
 //                tabs.selectedComponent = newTab
 //                doLater {
@@ -623,7 +635,7 @@ public class Coucou{
         }
         
         def addFeed = { url ->
-            swing.edt {
+            swing.doOutside {
                  def feedNode = null
                  def feedUrl
                  try {
@@ -634,7 +646,9 @@ public class Coucou{
                          feedUrl = new URL("http://${url}")
                      }
                      catch (MalformedURLException e1) {
-                         JOptionPane.showMessageDialog(coucouFrame, "Invalid URL: ${url}")
+                         doLater {
+                             JOptionPane.showMessageDialog(coucouFrame, "Invalid URL: ${url}")
+                         }
                      }
                  }
                  if (feedUrl) {
@@ -642,24 +656,39 @@ public class Coucou{
                          feedNode = updateFeed(url)
                      }
                      catch (Exception e) {
-                          html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
-                          def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
-                          println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
-                          if (!feeds.isEmpty()) {
-                              feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+                          try {
+                              html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
+                              def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
+                              println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+                              if (!feeds.isEmpty()) {
+                                  feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+                              }
+                              else {
+                                  doLater {
+                                      JOptionPane.showMessageDialog(coucouFrame, "No feeds found for site: ${url}")
+                                  }
+                              }
                           }
-                          else {
-                              JOptionPane.showMessageDialog(coucouFrame, "No feeds found for site: ${url}")
+                          catch (Exception e2) {
+                              doLater {
+                                  JXErrorPane.showDialog(e2);
+//                                  JOptionPane.showMessageDialog(coucouFrame, "Error analysing site: ${url}")
+                              }
                           }
                      }
                  }
-                 filterField.text = null
-                 for (list in filterableLists) {
-                     list.rowFilter = null
+                 doLater {
+                     if (feedNode) {
+                         feedList.model.fireTableDataChanged()
+                         openFeedView(tabs, feedNode)
+                     }
                  }
-                 if (feedNode) {
-                     openFeedView(tabs, feedNode)
-                 }
+            }
+            swing.edt {
+                filterField.text = null
+                for (list in filterableLists) {
+                    list.rowFilter = null
+                }
             }
         }
         
@@ -798,6 +827,9 @@ public class Coucou{
                             doOutside {
                                 def opml = new XmlSlurper().parse(chooser.selectedFile)
                                 def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
+                                if (feeds.isEmpty()) {
+                                    feeds = opml.body.outline.collect { it.@xmlUrl.text() }
+                                }
                                 println "Feeds: ${feeds}"
                                 def errorMap = [:]
                                 for (feed in feeds) {
@@ -805,7 +837,7 @@ public class Coucou{
                                         Asynchronizer.doParallel {
                                             def future = updateFeed.callAsync(feed)
                                             future.get()
-                                            swing.edt {
+                                            doLater {
                                                 feedList.model.fireTableDataChanged()
                                             }
                                         }
@@ -816,9 +848,11 @@ public class Coucou{
                                     }
                                 }
                                 if (!errorMap.isEmpty()) {
-                                    def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
+                                    doLater {
+                                        def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
                                             "<html><body>Error importing feeds: ${errorMap}</body></html>", null, null, null, null)
-                                    JXErrorPane.showDialog(coucouFrame, error);
+                                        JXErrorPane.showDialog(coucouFrame, error);
+                                    }
                                 }
                             }
                                //def tab = newTab(chooser.selectedFile)
@@ -870,8 +904,16 @@ public class Coucou{
                     
                     action(id: 'activityClearAction', name: 'Clear Selected', accelerator: 'C', closure: {
                         def selectedIndex = activity.selectedIndex
-                        for (selectedValue in activity.selectedValues) {
-                            activity.model.removeElement(selectedValue)
+                        try {
+                            // lock for list modification..
+                            activityList.readWriteLock.writeLock().lock()
+                            for (selectedValue in activity.selectedValues) {
+                                activityList.remove(selectedValue)
+                            }
+                        }
+                        finally {
+                            // unlock post-list modification..
+                            activityList.readWriteLock.writeLock().unlock()
                         }
                         for (index in selectedIndex..0) {
                             if (index < activity.model.size) {
@@ -880,7 +922,17 @@ public class Coucou{
                             }
                         }
                     })
-                    action(id: 'activityClearAllAction', name: 'Clear All', accelerator: shortcut('alt C'), closure: {activity.model.removeAllElements() })
+                    action(id: 'activityClearAllAction', name: 'Clear All', accelerator: shortcut('alt C'), closure: {
+                        try {
+                            // lock for list modification..
+                            activityList.readWriteLock.writeLock().lock()
+                            activityList.clear()
+                        }
+                        finally {
+                            // unlock post-list modification..
+                            activityList.readWriteLock.writeLock().unlock()
+                        }
+                    })
 //                    bind(source: coucouFrame, sourceProperty: 'focusOwner', target: activityClearAllAction, targetProperty: 'enabled', converter: { activity.hasFocus() })
                     
                     action(id: 'logoutAction', name: 'Logout', closure: { session.logout() })
@@ -1401,7 +1453,15 @@ public class Coucou{
                                              if (activity.selectedValue) {
                                                  def node = activity.selectedValue
                                                  openFeedView(tabs, node.parent)
-                                                 activity.model.removeElement(node)
+                                                 try {
+                                                     // lock for list modification..
+                                                     activityList.readWriteLock.writeLock().lock()
+                                                     activityList.remove(node)
+                                                 }
+                                                 finally {
+                                                     // unlock post-list modification..
+                                                     activityList.readWriteLock.writeLock().unlock()
+                                                 }
                                              }
                                          }
                                      }
@@ -1458,12 +1518,12 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      */
-                                     def activityModel = new DefaultListModel()
+                                     def activityModel = new EventListModel(activityList)
                                      activity.model = activityModel
 //                                     filterableLists << activity
 
                                      // activity stream..
-                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(activityStream: activity, session: session, swing: swing), Event.NODE_ADDED, '/', true, null, null, false)
+                                     session.workspace.observationManager.addEventListener(new ActivityStreamUpdater(activityList: activityList, activityStream: activity, session: session, swing: swing), Event.NODE_ADDED, '/', true, null, null, false)
                                      /*
                                      session.workspace.observationManager.addEventListener({ events ->
                                          println "Events fired: ${events.size}"
@@ -2171,6 +2231,7 @@ class NoteTableModel extends AbstractNodeTableModel {
 class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
 
     def session
+    def activityList
     def activityStream
     def swing
 
@@ -2181,7 +2242,15 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
             println "Node added: ${event.path}"
             def node = session.getItem(event.path)
             swing.edt {
-                activityStream.model.insertElementAt node, 0
+                try {
+                    // lock for list modification..
+                    activityList.readWriteLock.writeLock().lock()
+                    activityList.add 0, node
+                }
+                finally {
+                    // unlock post-list modification..
+                    activityList.readWriteLock.writeLock().unlock()
+                }
                 activityStream.clearSelection()
                 activityStream.ensureIndexIsVisible(0)
             }
