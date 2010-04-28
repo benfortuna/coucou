@@ -714,8 +714,6 @@ public class Coucou{
         
         def openSearchView = { tabs, searchTerms ->
             swing.doOutside {
-                filterField.text = null
-                
                 Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
                 def nodes = q.execute().nodes
 //                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
@@ -1160,6 +1158,8 @@ public class Coucou{
                             if (filterField.text) {
 //                                addFeed(filterField.text)
                                 openSearchView(tabs, filterField.text)
+                                filterField.text = null
+                                filterField.transferFocus()
                             }
                         }
                         
