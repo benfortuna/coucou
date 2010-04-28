@@ -94,6 +94,7 @@ import javax.jcr.ItemNotFoundException
 import javax.jcr.PropertyType
 import javax.jcr.SimpleCredentials
 import javax.jcr.observation.*
+import javax.jcr.query.Query
 import org.apache.jackrabbit.core.TransientRepository
 import org.apache.jackrabbit.util.Text
 import net.miginfocom.swing.MigLayout
@@ -161,7 +162,7 @@ import ca.odell.glazedlists.BasicEventList
  */
  /*
 @Grapes([
-      @Grab(group='net.java.dev.glazedlists', module='glazedlists_java15', version='1.8.0'),
+//      @Grab(group='net.java.dev.glazedlists', module='glazedlists_java15', version='1.8.0'),
       @Grab(group='org.codehaus.gpars', module='gpars', version='0.9'),
 //    @Grab(group='com.sun.phobos', module='tagsoup', version='1.2'),
 //    @Grab(group='ch.bluepenguin.groovy', module='ocmgroovy', version='0.1-SNAPSHOT'),
@@ -397,9 +398,23 @@ public class Coucou{
                                 def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
                                 if (selectedPath) {
                                     propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
+                                    editContext.delete = {
+                                        if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                            explorerTree.clearSelection()
+                                            def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
+//                                            selectedPath.lastPathComponent.remove()
+                                            println removedIndices
+                                            swing.edt {
+                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
+                                            }
+                                        }
+                                    }
+                                    editContext.enabled = true
                                 }
                                 else {
                                     propertyTable.model = EMPTY_TABLE_MODEL
+                                    editContext.enabled = false
+                                    editContext.delete = null
                                 }
                             }
                             explorerTree.packAll()
@@ -567,7 +582,12 @@ public class Coucou{
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
             def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}", true)
             feedNode.setProperty('url', url)
-            feedNode.setProperty('title', feed.title)
+            if (feed.title) {
+                feedNode.setProperty('title', feed.title)
+            }
+//            else {
+//                feedNode.setProperty('title', feed.title)
+//            }
             if (feed.link) {
                 feedNode.setProperty('source', feed.link)
             }
@@ -692,20 +712,48 @@ public class Coucou{
             }
         }
         
-        def openSearchView = { tabs, query ->
-            swing.edt {
+        def openSearchView = { tabs, searchTerms ->
+            swing.doOutside {
                 filterField.text = null
-                def searchView = panel(name: query, border: emptyBorder(10)) {
-                    
-                }
-                searchView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
-                searchView.putClientProperty('coucou.query', query)
-                tabs.add searchView
-                tabs.selectedComponent = searchView
                 
-                def iconSize = new Dimension(16, 16)
-                def searchIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/search.svg'), iconSize)
-                tabs.setIconAt(tabs.indexOfComponent(searchView), searchIcon)
+                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
+                def nodes = q.execute().nodes
+//                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
+                
+                def searchModel = new DefaultListModel()
+                for (node in nodes) {
+                    searchModel.addElement node
+                }
+                doLater {
+                    def searchView = panel(name: searchTerms, border: emptyBorder(10)) {
+                        borderLayout()
+                        scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                            list(opaque: false, id: 'searchList')
+                            searchList.cellRenderer = new ActivityListCellRenderer()
+                            searchList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                            searchList.mouseClicked = { e ->
+                                if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
+                                    if (searchList.selectedValue) {
+                                        def node = searchList.selectedValue
+                                        openFeedView(tabs, node.parent)
+                                    }
+                                }
+                            }
+                            searchList.focusLost = {
+                                searchList.clearSelection()
+                            }
+                            searchList.model = searchModel
+                        }
+                    }
+                    searchView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                    searchView.putClientProperty('coucou.query', searchTerms)
+                    tabs.add searchView
+                    tabs.selectedComponent = searchView
+                
+                    def iconSize = new Dimension(16, 16)
+                    def searchIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/search.svg'), iconSize)
+                    tabs.setIconAt(tabs.indexOfComponent(searchView), searchIcon)
+                }
             }
         }
         
@@ -1008,7 +1056,7 @@ public class Coucou{
                             menuItem(activityClearAllAction)
                         }
                         menu(text: "Search") {
-                            menuItem(text: "New Search..")
+                            menuItem(text: "Advanced..")
                         }
                         separator()
                         checkBoxMenuItem(workOfflineAction, selectedIcon: imageIcon('/offline_selected.png', id: 'offlineSelectedIcon'),
