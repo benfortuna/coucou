@@ -791,22 +791,29 @@ public class Coucou{
         def editNote = { parent = getNode('/notes'), nodeName = null ->
             def noteNode
             def title = 'Untitled Note'
+            def format = 'Plain Text'
             if (nodeName) {
                 noteNode = parent.getNode(nodeName)
                 if (noteNode.hasProperty('title')) {
                     title = noteNode.getProperty('title').string
                 }
+                if (noteNode.hasProperty('markupLanguage')) {
+                    format = noteNode.getProperty('markupLanguage').string
+                }
+                else if ('text/html' == noteNode.getProperty('contentType').string) {
+                    format = 'HTML'
+                }
             }
             swing.edt {
-                frame(title: title, size: [320, 240], show: true, locationRelativeTo: coucouFrame, id: 'noteEditorFrame') {
+                frame(title: title, size: [430, 400], show: true, locationRelativeTo: coucouFrame, id: 'noteEditorFrame') {
                     actions() {
                         action(id: 'saveNoteAction', name: 'Save', accelerator: shortcut('S'), closure: {
-                                title = noteEditor.viewport.view.text.find(/(?m)\A.*$/).replaceAll(/^[\s]+|[\s]+$/, '')
-                                if (title) {
+//                                title = noteEditor.viewport.view.text.find(/(?m)\A.*$/).replaceAll(/^[\s]+|[\s]+$/, '')
+                                if (titleField.text) {
                                     if (!noteNode) {
-                                        noteNode = parent.addNode(Text.escapeIllegalJcrChars(title))
+                                        noteNode = parent.addNode(Text.escapeIllegalJcrChars(titleField.text))
                                     }
-                                    noteNode.setProperty('title', title)
+                                    noteNode.setProperty('title', titleField.text)
                                     noteNode.setProperty('content', noteEditor.viewport.view.text)
                                     noteNode.setProperty('lastModified', Calendar.instance)
                                     if (formatCombo.selectedIndex == 0) {
@@ -823,7 +830,7 @@ public class Coucou{
                                     noteList.model.fireTableDataChanged()
                                 }
                                 else {
-                                    JOptionPane.showMessageDialog(noteEditorFrame, "No content specified")
+                                    JOptionPane.showMessageDialog(noteEditorFrame, "No title specified")
                                 }
                         })
                         action(id: 'cancelEditAction', name: 'Cancel', accelerator: 'ESCAPE', closure: {noteEditorFrame.dispose()})
@@ -845,11 +852,14 @@ public class Coucou{
                             label(text: 'Title')
                             hstrut(5)
                             textField(text: title, id: 'titleField')
+                            titleField.focusGained = {
+                                titleField.selectAll()
+                            }
                             hstrut(15)
                             label(text: 'Format')
                             hstrut(5)
                             def textFormats = ['Plain Text', 'HTML', 'Confluence', 'MediaWiki']
-                            comboBox(model: new DefaultComboBoxModel(textFormats as Object[]), id: 'formatCombo')
+                            comboBox(model: new DefaultComboBoxModel(textFormats as Object[]), id: 'formatCombo', selectedItem: format)
                             formatCombo.itemStateChanged = {
                                 if ('HTML' == formatCombo.selectedItem) {
                                     editor.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_HTML
@@ -882,6 +892,7 @@ public class Coucou{
                         }
                     }
                 }
+                titleField.requestFocus()
             }
         }
 
@@ -925,7 +936,7 @@ public class Coucou{
                     hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
                         button(text: 'Revisions..')
                         hglue()
-                        button(text: 'Edit')
+                        button(text: 'Edit', actionPerformed: {editNote(node.parent, node.name)})
                     }
                 }
                 noteView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
