@@ -2383,8 +2383,8 @@ class FeedTableModel extends AbstractNodeTableModel {
 
 class FeedEntryTableModel extends AbstractNodeTableModel implements javax.jcr.observation.EventListener {
     
-    FeedEntryTableModel(def node, def session = null) {
-        super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String, String, Date])
+    FeedEntryTableModel(def node, def session) {
+        super(node, ['Title', 'Source', 'Last Updated'] as String[], [String, String, Date] as Class[])
         if (session) {
             session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, true, null, null, false)
         }
