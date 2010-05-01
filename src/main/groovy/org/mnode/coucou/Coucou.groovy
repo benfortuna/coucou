@@ -155,6 +155,8 @@ import javax.swing.table.DefaultTableCellRenderer
 import javax.imageio.ImageIO
 import ca.odell.glazedlists.swing.EventListModel
 import ca.odell.glazedlists.BasicEventList
+import org.fife.ui.rtextarea.RTextScrollPane
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 
 /**
  * @author fortuna
@@ -245,6 +247,13 @@ public class Coucou{
         def filterableLists = []
         
         def activityList = new BasicEventList()
+        
+        def styleSheet = new StyleSheet()
+        styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+        styleSheet.addRule("img {border-width:0; }")
+        def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
         
         def initNode = { name ->
             if (!session.rootNode.hasNode(name)) {
@@ -376,6 +385,30 @@ public class Coucou{
             }
         }
         
+        def closeCurrentTab = { tabs ->
+            if (tabs.selectedIndex > 0) {
+                tabs.removeTabAt tabs.selectedIndex
+            }
+        }
+        
+        def closeOtherTabs = { tabs ->
+            if (tabs.tabCount > 1) {
+                for (index in (tabs.tabCount - 1)..1) {
+                    if (index != tabs.selectedIndex) {
+                        tabs.removeTabAt index
+                    }
+                }
+            }
+        }
+        
+        def closeAllTabs = { tabs ->
+            if (tabs.tabCount > 1) {
+                for (index in (tabs.tabCount - 1)..1) {
+                    tabs.removeTabAt index
+                }
+            }
+        }
+        
         def openExplorerTab = { tabs, node ->
             if (tabs.tabCount > 0) {
                 for (i in 0..tabs.tabCount - 1) {
@@ -472,7 +505,7 @@ public class Coucou{
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer())
                             entryList.setDefaultRenderer(Date, new DateCellRenderer())
-                            entryList.model = new FeedEntryTableModel(node)
+                            entryList.model = new FeedEntryTableModel(node, session)
                             entryList.setSortOrder(2, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
                             // XXX: need to remove from filterableLists on tab close..
@@ -546,14 +579,7 @@ public class Coucou{
                             entryList.packAll()
                         }
                         scrollPane(constraints: 'right') {
-                            def styleSheet = new StyleSheet()
-                            styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-                            styleSheet.addRule("a {text-decoration:underline; color:blue; }")
-//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
-                            styleSheet.addRule("img {border-width:0; }")
-                            def editorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
-                            
-                            contentView = editorPane(editorKit: editorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+                            contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
                             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
                             contentView.focusLost = { e ->
                                 if (e.oppositeComponent != entryList) {
@@ -591,6 +617,9 @@ public class Coucou{
             if (feed.link) {
                 feedNode.setProperty('source', feed.link)
             }
+            else if (!feed.links.isEmpty()) {
+                feedNode.setProperty('source', entry.links[0])
+            }
 //            if (feed.uri) {
 //                feedNode.setProperty('uri', feed.uri)
 //            }
@@ -614,6 +643,9 @@ public class Coucou{
                 entryNode.setProperty('title', entry.title)
                 if (entry.description) {
                     entryNode.setProperty('description', entry.description.value)
+                }
+                else if (entry.contents && !entry.contents.isEmpty()) {
+                    entryNode.setProperty('description', entry.contents[0].value)
                 }
                 
                 // entry link..
@@ -755,6 +787,106 @@ public class Coucou{
             }
         }
         
+        def editNote = { parent = getNode('/notes'), nodeName = null ->
+            def noteNode
+            def title = 'Untitled Note'
+            if (nodeName) {
+                noteNode = parent.getNode(nodeName)
+                if (noteNode.hasProperty('title')) {
+                    title = noteNode.getProperty('title').string
+                }
+            }
+            swing.edt {
+                frame(title: title, size: [320, 240], show: true, locationRelativeTo: coucouFrame, id: 'noteEditorFrame') {
+                    actions() {
+                        action(id: 'saveNoteAction', name: 'Save', accelerator: shortcut('S'), closure: {
+                                title = noteEditor.viewport.view.text.find(/(?m)\A.*$/).replaceAll(/^[\s]+|[\s]+$/, '')
+                                if (title) {
+                                    if (!noteNode) {
+                                        noteNode = parent.addNode(Text.escapeIllegalJcrChars(title))
+                                    }
+                                    noteNode.setProperty('title', title)
+                                    noteNode.setProperty('content', noteEditor.viewport.view.text)
+                                    noteNode.setProperty('lastModified', Calendar.instance)
+                                    parent.save()
+                                    noteEditorFrame.dispose()
+                                    noteList.model.fireTableDataChanged()
+                                }
+                                else {
+                                    JOptionPane.showMessageDialog(noteEditorFrame, "No content specified")
+                                }
+                        })
+                        action(id: 'cancelEditAction', name: 'Cancel', accelerator: 'ESCAPE', closure: {noteEditorFrame.dispose()})
+                    }
+                    menuBar() {
+                        menu(text: "File", mnemonic: 'F') {
+                            menuItem(saveNoteAction)
+                            menuItem(cancelEditAction)
+                        }
+                        menu(text: "View", mnemonic: 'V') {
+                            checkBoxMenuItem(text: "Word Wrap", id: 'viewWordWrap')
+                        }
+                    }
+
+                    panel(border: emptyBorder(10)) {
+                        borderLayout()
+//                                    scrollPane {
+//                                        textArea(lineWrap: bind {viewWordWrap.selected}, wrapStyleWord: true)
+//                                    }
+                        RSyntaxTextArea editor = new RSyntaxTextArea()
+//                                    editor.lineWrap = bind {viewWordWrap.selected}
+                        bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
+                        editor.wrapStyleWord = true
+                        if (noteNode) {
+                            editor.text = noteNode.getProperty('content').string
+                        }
+                        widget(new RTextScrollPane(editor), id: 'noteEditor')
+//                                    noteEditor.gutter.bookmarkingEnabled = true
+//                                    panel(border: emptyBorder([5, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
+//                                        flowLayout(alignment: FlowLayout.TRAILING, hgap: 5)
+                        hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
+                            button(text: 'Preview..')
+                            hglue()
+                            button(action: saveNoteAction)
+                            hstrut(5)
+                            button(action: cancelEditAction)
+                        }
+                    }
+                }
+            }
+        }
+
+        def openNoteView = { tabs, node ->
+            def tab = getTabForNode(tabs, node)
+            if (tab) {
+                tabs.selectedComponent = tab
+                return
+            }
+            
+            swing.edt {
+                def noteView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
+                    borderLayout()
+                    scrollPane() {
+                        contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null, text: node.getProperty('content').string)
+                        contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                    }
+                    hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
+                        button(text: 'Revisions..')
+                        hglue()
+                        button(text: 'Edit')
+                    }
+                }
+                noteView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                noteView.putClientProperty('coucou.node', node)
+                tabs.add noteView
+                tabs.selectedComponent = noteView
+                
+                def iconSize = new Dimension(16, 16)
+                def noteIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/attachment.svg'), iconSize)
+                tabs.setIconAt(tabs.indexOfComponent(noteView), noteIcon)
+            }
+        }
+        
          swing.edt {
              lookAndFeel('substance5', 'system')
 
@@ -864,8 +996,10 @@ public class Coucou{
                         wizard.show();
                     })
 
-                    action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'))
-                    action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'))
+                    action(id: 'newNoteAction', name: 'Note', accelerator: shortcut('N'), closure: { editNote() })
+                    action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'), closure: { closeCurrentTab(tabs) })
+                    action(id: 'closeOtherTabsAction', name: 'Close Other Tabs', closure: { closeOtherTabs(tabs) })
+                    action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'), closure: { closeAllTabs(tabs) })
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     
                     action(id: 'importAction', name: 'Import..', closure: {
@@ -994,8 +1128,15 @@ public class Coucou{
                 
                 menuBar() {
                     menu(text: "File", mnemonic: 'F') {
+                        menu(text: 'New') {
+                            menuItem(text: "Email")
+                            menuItem(text: "Appointment")
+                            menuItem(text: "Task")
+                            menuItem(newNoteAction)
+                        }
+                        separator()
                         menuItem(closeTabAction)
-                        menuItem(text: "Close Other Tabs")
+                        menuItem(closeOtherTabsAction)
                         menuItem(closeAllTabsAction)
                         separator()
                         menuItem(text: "Chat", icon: imageIcon('/chat.png'))
@@ -1159,6 +1300,9 @@ public class Coucou{
 //                                addFeed(filterField.text)
                                 openSearchView(tabs, filterField.text)
                                 filterField.text = null
+                                for (list in filterableLists) {
+                                    list.rowFilter = null
+                                }
                                 filterField.transferFocus()
                             }
                         }
@@ -1168,7 +1312,11 @@ public class Coucou{
                         addButtonPopup.addMenuButton(new JCommandMenuButton('Compose Email', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuButton(new JCommandMenuButton('New Appointment', new EmptyResizableIcon(16)))
                         addButtonPopup.addMenuButton(new JCommandMenuButton('New Task', new EmptyResizableIcon(16)))
-                        addButtonPopup.addMenuButton(new JCommandMenuButton('New Note', new EmptyResizableIcon(16)))
+                        
+                        def newNoteButton = new JCommandMenuButton('New Note', new EmptyResizableIcon(16))
+                        newNoteButton.addActionListener({ editNote() } as ActionListener)
+                        
+                        addButtonPopup.addMenuButton(newNoteButton)
                         addButtonPopup.addMenuSeparator()
                         
                         def addFeedButton = new JCommandMenuButton('Add Feed', new EmptyResizableIcon(16))
@@ -1462,7 +1610,42 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'noteList')
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
+                                         noteList.setDefaultRenderer(Date, new DateCellRenderer())
+                                         noteList.setSortOrder(1, SortOrder.DESCENDING)
+                                         noteList.sortsOnUpdates = true
                                          filterableLists << noteList
+                                         noteList.selectionModel.valueChanged = { e ->
+                                             if (!e.valueIsAdjusting) {
+                                             if (noteList.selectedRow >= 0) {
+                                                 def notes = getNode('/notes').nodes
+                                                 notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                 def note = notes.nextNode()
+                                                 editContext.delete = {
+                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                         println "Deleting note: ${note}"
+                                                         note.remove()
+                                                         swing.edt {
+                                                             noteList.model.fireTableDataChanged()
+                                                         }
+                                                     }
+                                                 }
+                                                 editContext.enabled = true
+                                                 log.log delete_enabled, note
+                                             }
+                                             else {
+                                                 editContext.delete = null
+                                                 editContext.enabled = false
+                                             }
+                                             }
+                                         }
+                                         noteList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && noteList.selectedRow >= 0) {
+                                                def notes = getNode('/notes').nodes
+                                                notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                def note = notes.nextNode()
+                                                openNoteView(tabs, note)
+                                            }
+                                         }
                                          noteList.focusLost = {
                                              noteList.clearSelection()
                                          }
@@ -2135,10 +2318,13 @@ class FeedTableModel extends AbstractNodeTableModel {
     }
 }
 
-class FeedEntryTableModel extends AbstractNodeTableModel {
+class FeedEntryTableModel extends AbstractNodeTableModel implements javax.jcr.observation.EventListener {
     
-    FeedEntryTableModel(def node) {
+    FeedEntryTableModel(def node, def session = null) {
         super(node, (String[]) ['Title', 'Source', 'Last Updated'], (Class[]) [String, String, Date])
+        if (session) {
+            session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, true, null, null, false)
+        }
     }
     
     Object getValueAt(int row, int column) {
@@ -2160,6 +2346,10 @@ class FeedEntryTableModel extends AbstractNodeTableModel {
                 break
         }
         return value
+    }
+    
+    void onEvent(EventIterator events) {
+        fireTableDataChanged()
     }
 }
 
@@ -2256,7 +2446,7 @@ class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
 class NoteTableModel extends AbstractNodeTableModel {
     
     NoteTableModel(def node) {
-        super(node, (String[]) ['Subject', 'Last Modified'])
+        super(node, ['Title', 'Last Modified'] as String[], [String, Date] as Class[])
     }
     
     Object getValueAt(int row, int column) {
@@ -2264,11 +2454,16 @@ class NoteTableModel extends AbstractNodeTableModel {
         def value
         switch(column) {
             case 0:
-                value = node.name
+                if (node.hasProperty('title')) {
+                    value = node.getProperty('title').string
+                }
+                else {
+                    value = node.name
+                }
                 break
             case 1:
                 if (node.hasProperty('lastModified')) {
-                    value = node.getProperty('lastModified').value.date
+                    value = node.getProperty('lastModified').date.time
                 }
                 break
         }
