@@ -47,6 +47,8 @@ public class HTMLEditorKitExt extends HTMLEditorKit {
      */
     public void setStyleSheet(StyleSheet styleSheet) {
         this.styleSheet = styleSheet;
+        // add default styles..
+        styleSheet.addStyleSheet(super.getStyleSheet());
     }
 
     

@@ -130,7 +130,7 @@ import org.mnode.base.desktop.JTextFieldExt
 import org.mnode.base.desktop.HyperlinkListenerImpl
 import java.awt.event.InputEvent
 import javax.swing.KeyStroke
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.eclipse.mylyn.wikitext.core.WikiTextimport org.eclipse.mylyn.wikitext.core.parser.MarkupParserimport org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguageimport org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguageimport org.fife.ui.rsyntaxtextarea.SyntaxConstants//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -250,9 +250,10 @@ public class Coucou{
         
         def styleSheet = new StyleSheet()
         styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 //                            styleSheet.addRule("a:hover {text-decoration:underline; }")
-        styleSheet.addRule("img {border-width:0; }")
+//        styleSheet.addRule("img {border-width:0; }")
+        
         def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
         
         def initNode = { name ->
@@ -808,6 +809,15 @@ public class Coucou{
                                     noteNode.setProperty('title', title)
                                     noteNode.setProperty('content', noteEditor.viewport.view.text)
                                     noteNode.setProperty('lastModified', Calendar.instance)
+                                    if (formatCombo.selectedIndex == 0) {
+                                        noteNode.setProperty('contentType', 'text/plain')
+                                    }
+                                    else {
+                                        noteNode.setProperty('contentType', 'text/html')
+                                        if (formatCombo.selectedIndex > 1) {
+                                            noteNode.setProperty('markupLanguage', formatCombo.selectedItem)
+                                        }
+                                    }
                                     parent.save()
                                     noteEditorFrame.dispose()
                                     noteList.model.fireTableDataChanged()
@@ -830,10 +840,29 @@ public class Coucou{
 
                     panel(border: emptyBorder(10)) {
                         borderLayout()
+                        RSyntaxTextArea editor = new RSyntaxTextArea()
+                        hbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
+                            label(text: 'Title')
+                            hstrut(5)
+                            textField(text: title, id: 'titleField')
+                            hstrut(15)
+                            label(text: 'Format')
+                            hstrut(5)
+                            def textFormats = ['Plain Text', 'HTML', 'Confluence', 'MediaWiki']
+                            comboBox(model: new DefaultComboBoxModel(textFormats as Object[]), id: 'formatCombo')
+                            formatCombo.itemStateChanged = {
+                                if ('HTML' == formatCombo.selectedItem) {
+                                    editor.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_HTML
+                                }
+                                else {
+                                    editor.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_NONE
+                                }
+                            }
+                            hglue()
+                        }
 //                                    scrollPane {
 //                                        textArea(lineWrap: bind {viewWordWrap.selected}, wrapStyleWord: true)
 //                                    }
-                        RSyntaxTextArea editor = new RSyntaxTextArea()
 //                                    editor.lineWrap = bind {viewWordWrap.selected}
                         bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
                         editor.wrapStyleWord = true
@@ -867,8 +896,31 @@ public class Coucou{
                 def noteView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
                     borderLayout()
                     scrollPane() {
-                        contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null, text: node.getProperty('content').string)
-                        contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                        if ('text/html' == node.getProperty('contentType').string) { 
+                            contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+                            if (node.hasProperty('markupLanguage')) {
+                                if ('MediaWiki' == node.getProperty('markupLanguage').string) {
+                                    def parser = new MarkupParser(new MediaWikiLanguage())
+                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
+                                    println "Parsed mediawiki: ${content}"
+                                    contentView.text = content
+                                }
+                                else if ('Confluence' == node.getProperty('markupLanguage').string) {
+                                    def parser = new MarkupParser(new ConfluenceLanguage())
+                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
+                                    println "Parsed confluence: ${content}"
+                                    contentView.text = content
+                                }
+                            }
+                            else {
+                                contentView.text = node.getProperty('content').string
+                            }
+                            contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                        }
+                        else {
+                            contentView = editorPane(editable: false, contentType: node.getProperty('contentType').string, opaque: true, border: null)
+                            contentView.text = node.getProperty('content').string
+                        }
                     }
                     hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
                         button(text: 'Revisions..')
