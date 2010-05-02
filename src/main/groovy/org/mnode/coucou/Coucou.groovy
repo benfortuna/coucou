@@ -1282,22 +1282,28 @@ public class Coucou{
 //                    flowLayout(alignment: FlowLayout.LEADING)
                         borderLayout()
                     
-                        button(constraints: BorderLayout.WEST, id: 'photoButton', icon: imageIcon(ImageIO.read(Coucou.getResource('/avatar.png')).getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
-                        photoButton.actionPerformed = {
-                            if (imageChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
-                                doLater {
-                                   photoButton.icon = imageIcon(ImageIO.read(imageChooser.selectedFile).getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                        hbox {
+                            button(id: 'photoButton', icon: imageIcon(ImageIO.read(Coucou.getResource('/avatar.png')).getScaledInstance(50, 50, Image.SCALE_SMOOTH)), focusPainted: false, toolTipText: 'Click to change photo') //, minimumSize: new Dimension(50, 50))
+                            photoButton.actionPerformed = {
+                                if (imageChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                                    doLater {
+                                       photoButton.icon = imageIcon(ImageIO.read(imageChooser.selectedFile).getScaledInstance(50, -1, Image.SCALE_SMOOTH))
+                                    }
                                 }
                             }
-                        }
-                    
-                        vbox(border: emptyBorder(5)) {
-                            textField(id: 'nameField', text: System.getProperty('user.name', '<Enter your name here>'), border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 16))
-                            nameField.focusGained = { nameField.selectAll() }
+                            
+                            hstrut(5)
+                            
+                            vbox {
+                                textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 16))
+                                nameField.focusGained = { nameField.selectAll() }
+                                vstrut(3)
+                                textField(id: 'statusField', columns: 40, text: 'Comment Va?', font: new Font('Arial', Font.PLAIN, 12))
+                                statusField.focusGained = { statusField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
-                            comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 12))
-                            statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
+//                                comboBox(id: 'statusField', editable: true, border: lineBorder(color: new Color(230, 230, 230), thickness: 2, roundedCorners: true), font: new Font('Arial', Font.PLAIN, 12))
+//                                statusField.putClientProperty(org.jvnet.lafwidget.LafWidget.TEXT_SELECT_ON_FOCUS, true)
                         //statusField.focusGained = { nameField.selectAll() }
                         
                         /*
@@ -1307,8 +1313,10 @@ public class Coucou{
                         statusModel.addElement('Away')
                         statusField.model = statusModel
                         */
-                            statusField.model = new RepositoryComboBoxModel(session.rootNode.getNode('presence'))
-                            statusField.renderer = new RepositoryListCellRenderer()
+//                                statusField.model = new RepositoryComboBoxModel(session.rootNode.getNode('presence'))
+//                                statusField.renderer = new RepositoryListCellRenderer()
+                            }
+                            hglue()
                         }
                     }
                     bind(source: viewPresenceBar, sourceProperty:'selected', target: presencePane, targetProperty:'visible')
@@ -1593,6 +1601,102 @@ public class Coucou{
                                          }
                                      }
                                  }
+                                 panel(name: 'Notes', border: emptyBorder(10)) {
+                                     borderLayout()
+
+                                     scrollPane(border: null) {
+                                         table(showHorizontalLines: false, id: 'noteList')
+                                         noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         noteList.model = new NoteTableModel(getNode('/notes'))
+                                         noteList.setDefaultRenderer(Date, new DateCellRenderer())
+                                         noteList.setSortOrder(2, SortOrder.DESCENDING)
+                                         noteList.sortsOnUpdates = true
+                                         filterableLists << noteList
+                                         noteList.selectionModel.valueChanged = { e ->
+                                             if (!e.valueIsAdjusting) {
+                                             if (noteList.selectedRow >= 0) {
+                                                 def notes = getNode('/notes').nodes
+                                                 notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                 def note = notes.nextNode()
+                                                 editContext.delete = {
+                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                         println "Deleting note: ${note}"
+                                                         note.remove()
+                                                         swing.edt {
+                                                             noteList.model.fireTableDataChanged()
+                                                         }
+                                                     }
+                                                 }
+                                                 editContext.enabled = true
+                                                 log.log delete_enabled, note
+                                             }
+                                             else {
+                                                 editContext.delete = null
+                                                 editContext.enabled = false
+                                             }
+                                             }
+                                         }
+                                         noteList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && noteList.selectedRow >= 0) {
+                                                def notes = getNode('/notes').nodes
+                                                notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                def note = notes.nextNode()
+                                                openNoteView(tabs, note)
+                                            }
+                                         }
+                                         noteList.focusLost = {
+                                             noteList.clearSelection()
+                                         }
+                                     }
+                                 }
+                                 panel(name: 'Journal', border: emptyBorder(10)) {
+                                     borderLayout()
+
+                                     scrollPane(border: null) {
+                                         table(showHorizontalLines: false, id: 'journalList')
+                                         journalList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         journalList.model = new NoteTableModel(getNode('/journal'))
+                                         journalList.setDefaultRenderer(Date, new DateCellRenderer())
+                                         journalList.setSortOrder(2, SortOrder.DESCENDING)
+                                         journalList.sortsOnUpdates = true
+                                         filterableLists << journalList
+                                         journalList.selectionModel.valueChanged = { e ->
+                                             if (!e.valueIsAdjusting) {
+                                             if (journalList.selectedRow >= 0) {
+                                                 def journalEntries = getNode('/journal').nodes
+                                                 journalEntries.skip(journalList.convertRowIndexToModel(journalList.selectedRow))
+                                                 def journalEntry = journalEntries.nextNode()
+                                                 editContext.delete = {
+                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete journal entry: ${journalEntry}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                         println "Deleting journal entry: ${journalEntry}"
+                                                         journalEntry.remove()
+                                                         swing.edt {
+                                                             journalList.model.fireTableDataChanged()
+                                                         }
+                                                     }
+                                                 }
+                                                 editContext.enabled = true
+                                                 log.log delete_enabled, journalEntry
+                                             }
+                                             else {
+                                                 editContext.delete = null
+                                                 editContext.enabled = false
+                                             }
+                                             }
+                                         }
+                                         journalList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && journalList.selectedRow >= 0) {
+                                                def journalEntries = getNode('/journal').nodes
+                                                journalEntries.skip(journalList.convertRowIndexToModel(journalList.selectedRow))
+                                                def journalEntry = journals.nextNode()
+                                                openJournalEntryView(tabs, journalEntry)
+                                            }
+                                         }
+                                         journalList.focusLost = {
+                                             journalList.clearSelection()
+                                         }
+                                     }
+                                 }
                                  panel(name: 'Accounts', border: emptyBorder(10)) {
                                      borderLayout()
 
@@ -1664,54 +1768,6 @@ public class Coucou{
                                      hbox(constraints: BorderLayout.SOUTH) {
                                          hglue()
                                          hyperlink(new JXHyperlink(newAccountAction))
-                                     }
-                                 }
-                                 panel(name: 'Notes', border: emptyBorder(10)) {
-                                     borderLayout()
-
-                                     scrollPane(border: null) {
-                                         table(showHorizontalLines: false, id: 'noteList')
-                                         noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         noteList.model = new NoteTableModel(getNode('/notes'))
-                                         noteList.setDefaultRenderer(Date, new DateCellRenderer())
-                                         noteList.setSortOrder(1, SortOrder.DESCENDING)
-                                         noteList.sortsOnUpdates = true
-                                         filterableLists << noteList
-                                         noteList.selectionModel.valueChanged = { e ->
-                                             if (!e.valueIsAdjusting) {
-                                             if (noteList.selectedRow >= 0) {
-                                                 def notes = getNode('/notes').nodes
-                                                 notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
-                                                 def note = notes.nextNode()
-                                                 editContext.delete = {
-                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                         println "Deleting note: ${note}"
-                                                         note.remove()
-                                                         swing.edt {
-                                                             noteList.model.fireTableDataChanged()
-                                                         }
-                                                     }
-                                                 }
-                                                 editContext.enabled = true
-                                                 log.log delete_enabled, note
-                                             }
-                                             else {
-                                                 editContext.delete = null
-                                                 editContext.enabled = false
-                                             }
-                                             }
-                                         }
-                                         noteList.mouseClicked = { e ->
-                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && noteList.selectedRow >= 0) {
-                                                def notes = getNode('/notes').nodes
-                                                notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
-                                                def note = notes.nextNode()
-                                                openNoteView(tabs, note)
-                                            }
-                                         }
-                                         noteList.focusLost = {
-                                             noteList.clearSelection()
-                                         }
                                      }
                                  }
 /*
@@ -2509,7 +2565,7 @@ class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
 class NoteTableModel extends AbstractNodeTableModel {
     
     NoteTableModel(def node) {
-        super(node, ['Title', 'Last Modified'] as String[], [String, Date] as Class[])
+        super(node, ['Title', 'Tags', 'Last Modified'] as String[], [String, String, Date] as Class[])
     }
     
     Object getValueAt(int row, int column) {
@@ -2525,6 +2581,11 @@ class NoteTableModel extends AbstractNodeTableModel {
                 }
                 break
             case 1:
+                if (node.hasProperty('tags')) {
+                    value = node.getProperty('tags').string
+                }
+                break
+            case 2:
                 if (node.hasProperty('lastModified')) {
                     value = node.getProperty('lastModified').date.time
                 }
