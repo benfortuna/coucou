@@ -130,7 +130,12 @@ import org.mnode.base.desktop.JTextFieldExt
 import org.mnode.base.desktop.HyperlinkListenerImpl
 import java.awt.event.InputEvent
 import javax.swing.KeyStroke
-import org.eclipse.mylyn.wikitext.core.WikiTextimport org.eclipse.mylyn.wikitext.core.parser.MarkupParserimport org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguageimport org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguageimport org.fife.ui.rsyntaxtextarea.SyntaxConstants//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.eclipse.mylyn.wikitext.core.WikiText
+import org.eclipse.mylyn.wikitext.core.parser.MarkupParser
+import org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguage
+import org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguage
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -155,6 +160,7 @@ import javax.swing.table.DefaultTableCellRenderer
 import javax.imageio.ImageIO
 import ca.odell.glazedlists.swing.EventListModel
 import ca.odell.glazedlists.BasicEventList
+import ca.odell.glazedlists.SortedList
 import org.fife.ui.rtextarea.RTextScrollPane
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 
@@ -184,6 +190,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
     @Grab(group='org.mnode.base', module='base-desktop', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-substance', version='0.0.1-SNAPSHOT'),
     @Grab(group='org.mnode.base', module='base-feed', version='0.0.1-SNAPSHOT'),
+    @Grab(group='org.mnode.base', module='base-wiki', version='0.0.1-SNAPSHOT'),
     //@Grab(group='jgoodies', module='forms', version='1.0.5'),
     //@Grab(group='org.codehaus.griffon.flamingobuilder', module='flamingobuilder', version='0.2'),
     @Grab(group='net.java.dev.flamingo', module='flamingo', version='4.2'),
@@ -250,27 +257,28 @@ public class Coucou{
         
         def styleSheet = new StyleSheet()
         styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 //                            styleSheet.addRule("a:hover {text-decoration:underline; }")
 //        styleSheet.addRule("img {border-width:0; }")
         
         def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
         
-        def initNode = { name ->
+        def initNode = { name, type = 'nt:unstructured' ->
             if (!session.rootNode.hasNode(name)) {
                 log.log init_node, name
-                session.rootNode.addNode(name)
+                session.rootNode.addNode(name, type)
                 session.rootNode.save()
             }
         }
         
-        initNode('accounts')
-        initNode('contacts')
-        initNode('planner')
-        initNode('history')
-        initNode('archive')
-        initNode('presence')
-        initNode('notes')
+        initNode('contacts', 'nt:folder')
+        initNode('planner', 'nt:folder')
+        initNode('history', 'nt:folder')
+//        initNode('archive')
+//        initNode('presence')
+        initNode('notes', 'nt:folder')
+        initNode('journal', 'nt:folder')
+        initNode('accounts', 'nt:folder')
         
         def getNode = { path, referenceable = false ->
             if (!session.nodeExists(path)) {
@@ -293,6 +301,30 @@ public class Coucou{
         }
         
         def editContext = new EditContext()
+        
+        def compareByDate = { b, a ->
+            def aDate
+            if (a.hasProperty('date')) {
+                aDate = a.getProperty('date')
+            }
+            else if (a.hasProperty('lastModified')) {
+                aDate = a.getProperty('lastModified')
+            }
+            else if (a.hasProperty('lastUpdated')) {
+                aDate = a.getProperty('lastUpdated')
+            }
+            def bDate
+            if (b.hasProperty('date')) {
+                bDate = b.getProperty('date')
+            }
+            else if (b.hasProperty('lastModified')) {
+                bDate = b.getProperty('lastModified')
+            }
+            else if (b.hasProperty('lastUpdated')) {
+                bDate = b.getProperty('lastUpdated')
+            }
+            aDate.date.time <=> bDate.date.time
+        }
         
         def swing = new SwingXBuilder()
 //        swing.registerBeanFactory('frame', JRibbonFrame.class)
@@ -750,12 +782,17 @@ public class Coucou{
                 Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
                 def nodes = q.execute().nodes
 //                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
-                
-                def searchModel = new DefaultListModel()
-                for (node in nodes) {
-                    searchModel.addElement node
-                }
+
                 doLater {
+                
+//                def searchModel = new DefaultListModel()
+                    def resultList = new BasicEventList()
+                    def searchModel = new EventListModel(new SortedList(resultList, compareByDate as Comparator))
+                    for (node in nodes) {
+//                    searchModel.addElement node
+                        resultList.add(node)
+                    }
+                    
                     def searchView = panel(name: searchTerms, border: emptyBorder(10)) {
                         borderLayout()
                         scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
@@ -848,6 +885,9 @@ public class Coucou{
                     panel(border: emptyBorder(10)) {
                         borderLayout()
                         RSyntaxTextArea editor = new RSyntaxTextArea()
+                        if ('HTML' == format) {
+                            editor.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_HTML
+                        }
                         hbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
                             label(text: 'Title')
                             hstrut(5)
@@ -950,6 +990,77 @@ public class Coucou{
             }
         }
         
+        def editJournalEntry = { parent = getNode('/journal'), nodeName = null ->
+            def entryNode
+            def subject = 'Untitled Journal Entry'
+            if (nodeName) {
+                entryNode = parent.getNode(nodeName)
+                if (entryNode.hasProperty('subject')) {
+                    subject = entryNode.getProperty('subject').string
+                }
+            }
+            swing.edt {
+                frame(title: subject, size: [430, 400], show: true, locationRelativeTo: coucouFrame, id: 'journalEditorFrame') {
+                    actions() {
+                        action(id: 'saveJournalAction', name: 'Save', accelerator: shortcut('S'), closure: {
+                                if (subjectField.text) {
+                                    if (!entryNode) {
+                                        entryNode = parent.addNode(Text.escapeIllegalJcrChars(subjectField.text))
+                                    }
+                                    entryNode.setProperty('subject', subjectField.text)
+                                    noteNode.setProperty('content', journalEditor.viewport.view.text)
+                                    entryNode.setProperty('lastModified', Calendar.instance)
+                                    parent.save()
+                                    journalEditorFrame.dispose()
+                                    journalList.model.fireTableDataChanged()
+                                }
+                                else {
+                                    JOptionPane.showMessageDialog(journalEditorFrame, "No subject specified")
+                                }
+                        })
+                        action(id: 'cancelEditAction', name: 'Cancel', accelerator: 'ESCAPE', closure: {journalEditorFrame.dispose()})
+                    }
+                    menuBar() {
+                        menu(text: "File", mnemonic: 'F') {
+                            menuItem(saveJournalAction)
+                            menuItem(cancelEditAction)
+                        }
+                        menu(text: "View", mnemonic: 'V') {
+                            checkBoxMenuItem(text: "Word Wrap", id: 'viewWordWrap')
+                        }
+                    }
+
+                    panel(border: emptyBorder(10)) {
+                        borderLayout()
+                        RSyntaxTextArea editor = new RSyntaxTextArea()
+                        hbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
+                            label(text: 'Subject')
+                            hstrut(5)
+                            textField(text: subject, id: 'subjectField')
+                            subjectField.focusGained = {
+                                subjectField.selectAll()
+                            }
+                            hglue()
+                        }
+                        bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
+                        editor.wrapStyleWord = true
+                        if (entryNode) {
+                            editor.text = entryNode.getProperty('content').string
+                        }
+                        widget(new RTextScrollPane(editor), id: 'journalEditor')
+                        hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
+                            button(text: 'Preview..')
+                            hglue()
+                            button(action: saveJournalAction)
+                            hstrut(5)
+                            button(action: cancelEditAction)
+                        }
+                    }
+                }
+                subjectField.requestFocus()
+            }
+        }
+
          swing.edt {
              lookAndFeel('substance5', 'system')
 
@@ -1060,6 +1171,7 @@ public class Coucou{
                     })
 
                     action(id: 'newNoteAction', name: 'Note', accelerator: shortcut('N'), closure: { editNote() })
+                    action(id: 'newJournalEntryAction', name: 'Journal Entry', accelerator: shortcut('J'), closure: { editJournalEntry() })
                     action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'), closure: { closeCurrentTab(tabs) })
                     action(id: 'closeOtherTabsAction', name: 'Close Other Tabs', closure: { closeOtherTabs(tabs) })
                     action(id: 'closeAllTabsAction', name: 'Close All Tabs', accelerator: shortcut('shift W'), closure: { closeAllTabs(tabs) })
@@ -1196,6 +1308,7 @@ public class Coucou{
                             menuItem(text: "Appointment")
                             menuItem(text: "Task")
                             menuItem(newNoteAction)
+                            menuItem(newJournalEntryAction)
                         }
                         separator()
                         menuItem(closeTabAction)
@@ -1295,10 +1408,10 @@ public class Coucou{
                             hstrut(5)
                             
                             vbox {
-                                textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 16))
+                                textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 16), border: emptyBorder(3), foreground: new Color(0x444b56))
                                 nameField.focusGained = { nameField.selectAll() }
                                 vstrut(3)
-                                textField(id: 'statusField', columns: 40, text: 'Comment Va?', font: new Font('Arial', Font.PLAIN, 12))
+                                textField(id: 'statusField', columns: 40, text: 'Comment Va?', font: new Font('Arial', Font.PLAIN, 12), border: emptyBorder(3), foreground: new Color(0x444b56))
                                 statusField.focusGained = { statusField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
@@ -1386,8 +1499,12 @@ public class Coucou{
                         
                         def newNoteButton = new JCommandMenuButton('New Note', new EmptyResizableIcon(16))
                         newNoteButton.addActionListener({ editNote() } as ActionListener)
-                        
                         addButtonPopup.addMenuButton(newNoteButton)
+                        
+                        def newJournalEntryButton = new JCommandMenuButton('New Journal Entry', new EmptyResizableIcon(16))
+                        newJournalEntryButton.addActionListener({ editJournalEntry() } as ActionListener)
+                        addButtonPopup.addMenuButton(newJournalEntryButton)
+                        
                         addButtonPopup.addMenuSeparator()
                         
                         def addFeedButton = new JCommandMenuButton('Add Feed', new EmptyResizableIcon(16))
@@ -1655,7 +1772,7 @@ public class Coucou{
                                      scrollPane(border: null) {
                                          table(showHorizontalLines: false, id: 'journalList')
                                          journalList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         journalList.model = new NoteTableModel(getNode('/journal'))
+                                         journalList.model = new JournalTableModel(getNode('/journal'))
                                          journalList.setDefaultRenderer(Date, new DateCellRenderer())
                                          journalList.setSortOrder(2, SortOrder.DESCENDING)
                                          journalList.sortsOnUpdates = true
@@ -1868,7 +1985,7 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      */
-                                     def activityModel = new EventListModel(activityList)
+                                     def activityModel = new EventListModel(new SortedList(activityList, compareByDate as Comparator))
                                      activity.model = activityModel
 //                                     filterableLists << activity
 
@@ -2575,6 +2692,39 @@ class NoteTableModel extends AbstractNodeTableModel {
             case 0:
                 if (node.hasProperty('title')) {
                     value = node.getProperty('title').string
+                }
+                else {
+                    value = node.name
+                }
+                break
+            case 1:
+                if (node.hasProperty('tags')) {
+                    value = node.getProperty('tags').string
+                }
+                break
+            case 2:
+                if (node.hasProperty('lastModified')) {
+                    value = node.getProperty('lastModified').date.time
+                }
+                break
+        }
+        return value
+    }
+}
+
+class JournalTableModel extends AbstractNodeTableModel {
+    
+    JournalTableModel(def node) {
+        super(node, ['Subject', 'Tags', 'Last Modified'] as String[], [String, String, Date] as Class[])
+    }
+    
+    Object getValueAt(int row, int column) {
+        def node = getNodeAt(row)
+        def value
+        switch(column) {
+            case 0:
+                if (node.hasProperty('subject')) {
+                    value = node.getProperty('subject').string
                 }
                 else {
                     value = node.name
