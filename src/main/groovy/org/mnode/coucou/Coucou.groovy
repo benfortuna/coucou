@@ -1419,7 +1419,7 @@ public class Coucou{
                                 textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 24), border: emptyBorder(1), foreground: new Color(0x444b56), opaque: false)
                                 nameField.focusGained = { nameField.selectAll() }
                                 vstrut(3)
-                                textField(id: 'statusField', columns: 40, text: 'Comment \u00C7a Va?', font: new Font('Arial', Font.PLAIN, 12), border: emptyBorder(1), foreground: new Color(0x444b56), opaque: false)
+                                textField(id: 'statusField', columns: 40, text: 'Comment \u00E7a va?', font: new Font('Arial', Font.PLAIN, 12), border: emptyBorder(1), foreground: new Color(0x444b56), opaque: false)
                                 statusField.focusGained = { statusField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
