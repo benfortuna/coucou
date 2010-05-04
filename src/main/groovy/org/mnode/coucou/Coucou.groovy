@@ -134,6 +134,7 @@ import org.eclipse.mylyn.wikitext.core.WikiText
 import org.eclipse.mylyn.wikitext.core.parser.MarkupParser
 import org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguage
 import org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguage
+import org.eclipse.mylyn.wikitext.textile.core.TextileLanguage
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 //import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
@@ -257,7 +258,7 @@ public class Coucou{
         
         def styleSheet = new StyleSheet()
         styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 //                            styleSheet.addRule("a:hover {text-decoration:underline; }")
 //        styleSheet.addRule("img {border-width:0; }")
         
@@ -898,7 +899,7 @@ public class Coucou{
                             hstrut(15)
                             label(text: 'Format')
                             hstrut(5)
-                            def textFormats = ['Plain Text', 'HTML', 'Confluence', 'MediaWiki']
+                            def textFormats = ['Plain Text', 'HTML', 'Confluence', 'MediaWiki', 'Textile']
                             comboBox(model: new DefaultComboBoxModel(textFormats as Object[]), id: 'formatCombo', selectedItem: format)
                             formatCombo.itemStateChanged = {
                                 if ('HTML' == formatCombo.selectedItem) {
@@ -962,11 +963,18 @@ public class Coucou{
                                     println "Parsed confluence: ${content}"
                                     contentView.text = content
                                 }
+                                else if ('Textile' == node.getProperty('markupLanguage').string) {
+                                    def parser = new MarkupParser(new TextileLanguage())
+                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
+                                    println "Parsed confluence: ${content}"
+                                    contentView.text = content
+                                }
                             }
                             else {
                                 contentView.text = node.getProperty('content').string
                             }
                             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                            contentView.caretPosition = 0
                         }
                         else {
                             contentView = editorPane(editable: false, contentType: node.getProperty('contentType').string, opaque: true, border: null)
@@ -1408,10 +1416,10 @@ public class Coucou{
                             hstrut(5)
                             
                             vbox {
-                                textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 16), border: emptyBorder(3), foreground: new Color(0x444b56))
+                                textField(id: 'nameField', columns: 30, text: System.getProperty('user.name', '<Enter your name here>'), font: new Font('Arial', Font.PLAIN, 24), border: emptyBorder(1), foreground: new Color(0x444b56), opaque: false)
                                 nameField.focusGained = { nameField.selectAll() }
                                 vstrut(3)
-                                textField(id: 'statusField', columns: 40, text: 'Comment Va?', font: new Font('Arial', Font.PLAIN, 12), border: emptyBorder(3), foreground: new Color(0x444b56))
+                                textField(id: 'statusField', columns: 40, text: 'Comment \u00C7a Va?', font: new Font('Arial', Font.PLAIN, 12), border: emptyBorder(1), foreground: new Color(0x444b56), opaque: false)
                                 statusField.focusGained = { statusField.selectAll() }
                         
                         //textField(id: 'statusField', text: '<Enter your status here>', border: emptyBorder(1), font: new Font('Arial', Font.PLAIN, 14))
