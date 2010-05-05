@@ -272,14 +272,14 @@ public class Coucou{
             }
         }
         
-        initNode('contacts', 'nt:folder')
-        initNode('planner', 'nt:folder')
-        initNode('history', 'nt:folder')
+        initNode('contacts') //, 'nt:folder')
+        initNode('planner') //, 'nt:folder')
+        initNode('history') //, 'nt:folder')
 //        initNode('archive')
 //        initNode('presence')
-        initNode('notes', 'nt:folder')
-        initNode('journal', 'nt:folder')
-        initNode('accounts', 'nt:folder')
+        initNode('notes') //, 'nt:folder')
+        initNode('journal') //, 'nt:folder')
+        initNode('accounts') //, 'nt:folder')
         
         def getNode = { path, referenceable = false ->
             if (!session.nodeExists(path)) {
@@ -469,11 +469,11 @@ public class Coucou{
                                         if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                             explorerTree.clearSelection()
                                             def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-//                                            selectedPath.lastPathComponent.remove()
+                                            selectedPath.lastPathComponent.remove()
                                             println removedIndices
-                                            swing.edt {
-                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-                                            }
+//                                            swing.edt {
+//                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
+//                                            }
                                         }
                                     }
                                     editContext.enabled = true
@@ -853,6 +853,7 @@ public class Coucou{
                                     }
                                     noteNode.setProperty('title', titleField.text)
                                     noteNode.setProperty('content', noteEditor.viewport.view.text)
+                                    noteNode.setProperty('tags', tagsField.text)
                                     noteNode.setProperty('lastModified', Calendar.instance)
                                     if (formatCombo.selectedIndex == 0) {
                                         noteNode.setProperty('contentType', 'text/plain')
@@ -886,6 +887,7 @@ public class Coucou{
                     panel(border: emptyBorder(10)) {
                         borderLayout()
                         RSyntaxTextArea editor = new RSyntaxTextArea()
+                        editor.addHyperlinkListener(new HyperlinkListenerImpl())
                         if ('HTML' == format) {
                             editor.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_HTML
                         }
@@ -915,12 +917,27 @@ public class Coucou{
 //                                        textArea(lineWrap: bind {viewWordWrap.selected}, wrapStyleWord: true)
 //                                    }
 //                                    editor.lineWrap = bind {viewWordWrap.selected}
-                        bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
-                        editor.wrapStyleWord = true
-                        if (noteNode) {
-                            editor.text = noteNode.getProperty('content').string
+                        panel {
+                            borderLayout()
+                            
+                            bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
+                            editor.wrapStyleWord = true
+                            scrollPane(new RTextScrollPane(editor), id: 'noteEditor')
+                            
+                            vbox(constraints: BorderLayout.SOUTH, border: emptyBorder([10, 0, 0, 0])) {
+                                titledSeparator(title: 'Tags')
+                                vstrut(3)
+                                scrollPane {
+                                    textArea(rows: 3, lineWrap: true, wrapStyleWord: true, id: 'tagsField')
+                                }
+                            }
+                            if (noteNode) {
+                                editor.text = noteNode.getProperty('content').string
+                                if (noteNode.hasProperty('tags')) {
+                                    tagsField.text = noteNode.getProperty('tags').string
+                                }
+                            }
                         }
-                        widget(new RTextScrollPane(editor), id: 'noteEditor')
 //                                    noteEditor.gutter.bookmarkingEnabled = true
 //                                    panel(border: emptyBorder([5, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
 //                                        flowLayout(alignment: FlowLayout.TRAILING, hgap: 5)
@@ -1016,7 +1033,8 @@ public class Coucou{
                                         entryNode = parent.addNode(Text.escapeIllegalJcrChars(subjectField.text))
                                     }
                                     entryNode.setProperty('subject', subjectField.text)
-                                    noteNode.setProperty('content', journalEditor.viewport.view.text)
+                                    entryNode.setProperty('content', journalEditor.viewport.view.text)
+                                    entryNode.setProperty('tags', tagsField.text)
                                     entryNode.setProperty('lastModified', Calendar.instance)
                                     parent.save()
                                     journalEditorFrame.dispose()
@@ -1041,6 +1059,7 @@ public class Coucou{
                     panel(border: emptyBorder(10)) {
                         borderLayout()
                         RSyntaxTextArea editor = new RSyntaxTextArea()
+                        editor.addHyperlinkListener(new HyperlinkListenerImpl())
                         hbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
                             label(text: 'Subject')
                             hstrut(5)
@@ -1050,12 +1069,27 @@ public class Coucou{
                             }
                             hglue()
                         }
-                        bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
-                        editor.wrapStyleWord = true
-                        if (entryNode) {
-                            editor.text = entryNode.getProperty('content').string
+                        
+                        panel {
+                            borderLayout()
+                            
+                            bind(source: viewWordWrap, sourceProperty: 'selected', target: editor, targetProperty: 'lineWrap')
+                            editor.wrapStyleWord = true
+                            scrollPane(new RTextScrollPane(editor), id: 'journalEditor')
+                            
+                            vbox(constraints: BorderLayout.SOUTH, border: emptyBorder([10, 0, 0, 0])) {
+                                titledSeparator(title: 'Tags')
+                                vstrut(3)
+                                scrollPane {
+                                    textArea(rows: 3, lineWrap: true, wrapStyleWord: true, id: 'tagsField')
+                                }
+                            }
+                            if (entryNode) {
+                                editor.text = entryNode.getProperty('content').string
+                                tagsField.text = entryNode.getProperty('tags').string
+                            }
                         }
-                        widget(new RTextScrollPane(editor), id: 'journalEditor')
+                        
                         hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
                             button(text: 'Preview..')
                             hglue()
@@ -1066,6 +1100,37 @@ public class Coucou{
                     }
                 }
                 subjectField.requestFocus()
+            }
+        }
+
+        def openJournalEntryView = { tabs, node ->
+            def tab = getTabForNode(tabs, node)
+            if (tab) {
+                tabs.selectedComponent = tab
+                return
+            }
+            
+            swing.edt {
+                def entryView = panel(name: node.getProperty('subject').string, border: emptyBorder(10)) {
+                    borderLayout()
+                    scrollPane() {
+                        contentView = editorPane(editable: false, contentType: 'text/plain', opaque: true, border: null)
+                        contentView.text = node.getProperty('content').string
+                    }
+                    hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
+                        button(text: 'Revisions..')
+                        hglue()
+                        button(text: 'Edit', actionPerformed: {editJournalEntry(node.parent, node.name)})
+                    }
+                }
+                entryView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
+                entryView.putClientProperty('coucou.node', node)
+                tabs.add entryView
+                tabs.selectedComponent = entryView
+                
+                def iconSize = new Dimension(16, 16)
+                def noteIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/attachment.svg'), iconSize)
+                tabs.setIconAt(tabs.indexOfComponent(entryView), noteIcon)
             }
         }
 
@@ -1813,7 +1878,7 @@ public class Coucou{
                                             if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && journalList.selectedRow >= 0) {
                                                 def journalEntries = getNode('/journal').nodes
                                                 journalEntries.skip(journalList.convertRowIndexToModel(journalList.selectedRow))
-                                                def journalEntry = journals.nextNode()
+                                                def journalEntry = journalEntries.nextNode()
                                                 openJournalEntryView(tabs, journalEntry)
                                             }
                                          }
