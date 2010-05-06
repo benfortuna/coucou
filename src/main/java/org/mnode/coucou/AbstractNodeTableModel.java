@@ -24,6 +24,10 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +38,7 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public abstract class AbstractNodeTableModel extends AbstractTableModel {
+public abstract class AbstractNodeTableModel extends AbstractTableModel implements EventListener {
 
     private static final long serialVersionUID = -6466346860232504839L;
 
@@ -54,6 +58,14 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel {
         this.node = node;
         this.columnNames = columns;
         this.columnClasses = classes;
+        try {
+            node.getSession().getWorkspace().getObservationManager().addEventListener(this,
+                    Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED,
+                    node.getPath(), true, null, null, false);
+        }
+        catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
     }
     
     /**
@@ -85,7 +97,7 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel {
         try {
             return (int) node.getNodes().getSize();
         } catch (RepositoryException e) {
-            LOG.log(LogEntries.NODE_ERROR, node, e.getMessage());
+            LOG.log(LogEntries.NODE_ERROR, e, node);
         }
         return 0;
     }
@@ -100,5 +112,15 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel {
         PropertyIterator properties = node.getProperties();
         properties.skip(index);
         return properties.nextProperty();
+    }
+    
+    @Override
+    public void onEvent(EventIterator events) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                fireTableDataChanged();
+            }
+        });
     }
 }

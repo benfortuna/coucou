@@ -283,7 +283,7 @@ public class Coucou{
         
         def getNode = { path, referenceable = false ->
             if (!session.nodeExists(path)) {
-//                log.log init_node, path
+                log.log init_node, path
                 def node = session.rootNode.addNode(path[1..-1])
                 if (referenceable) {
                     node.addMixin('mix:referenceable')
@@ -301,7 +301,14 @@ public class Coucou{
             parent.save()
         }
         
-        def editContext = new EditContext()
+        def removeNode = { node ->
+            def parent = node.parent
+            node.remove()
+            parent.save()
+        }
+        
+//        def editContext = new EditContext()
+        def editContext = [:] as ObservableMap
         
         def compareByDate = { b, a ->
             def aDate
@@ -469,18 +476,18 @@ public class Coucou{
                                         if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                             explorerTree.clearSelection()
                                             def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-                                            selectedPath.lastPathComponent.remove()
+                                            removeNode selectedPath.lastPathComponent
                                             println removedIndices
 //                                            swing.edt {
 //                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
 //                                            }
                                         }
                                     }
-                                    editContext.enabled = true
+//                                    editContext.enabled = true
                                 }
                                 else {
                                     propertyTable.model = EMPTY_TABLE_MODEL
-                                    editContext.enabled = false
+//                                    editContext.enabled = false
                                     editContext.delete = null
                                 }
                             }
@@ -575,15 +582,15 @@ public class Coucou{
                                         }
                                         editContext.markAllRead = {
                                             markNodeRead(node, true)
-                                            swing.edt {
-                                                entryList.model.fireTableDataChanged()
-                                            }
+//                                            swing.edt {
+//                                                entryList.model.fireTableDataChanged()
+//                                            }
                                         }
-                                        editContext.markAsReadEnabled = true
+//                                        editContext.markAsReadEnabled = true
                                     }
                                     else {
                                         contentView.text = null
-                                        editContext.markAsReadEnabled = false
+//                                        editContext.markAsReadEnabled = false
                                         editContext.markAsRead = null
                                         editContext.markAsUnread = null
                                         editContext.markAllRead = null
@@ -765,7 +772,7 @@ public class Coucou{
                  }
                  doLater {
                      if (feedNode) {
-                         feedList.model.fireTableDataChanged()
+//                         feedList.model.fireTableDataChanged()
                          openFeedView(tabs, feedNode)
                      }
                  }
@@ -864,9 +871,9 @@ public class Coucou{
                                             noteNode.setProperty('markupLanguage', formatCombo.selectedItem)
                                         }
                                     }
-                                    parent.save()
+                                    saveNode parent
                                     noteEditorFrame.dispose()
-                                    noteList.model.fireTableDataChanged()
+//                                    noteList.model.fireTableDataChanged()
                                 }
                                 else {
                                     JOptionPane.showMessageDialog(noteEditorFrame, "No title specified")
@@ -1036,9 +1043,9 @@ public class Coucou{
                                     entryNode.setProperty('content', journalEditor.viewport.view.text)
                                     entryNode.setProperty('tags', tagsField.text)
                                     entryNode.setProperty('lastModified', Calendar.instance)
-                                    parent.save()
+                                    saveNode parent
                                     journalEditorFrame.dispose()
-                                    journalList.model.fireTableDataChanged()
+//                                    journalList.model.fireTableDataChanged()
                                 }
                                 else {
                                     JOptionPane.showMessageDialog(journalEditorFrame, "No subject specified")
@@ -1060,14 +1067,23 @@ public class Coucou{
                         borderLayout()
                         RSyntaxTextArea editor = new RSyntaxTextArea()
                         editor.addHyperlinkListener(new HyperlinkListenerImpl())
-                        hbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
-                            label(text: 'Subject')
-                            hstrut(5)
-                            textField(text: subject, id: 'subjectField')
-                            subjectField.focusGained = {
-                                subjectField.selectAll()
+                        vbox(border: emptyBorder([0, 0, 10, 0]), constraints: BorderLayout.NORTH) {
+                            hbox {
+                                label(text: 'Subject')
+                                hstrut(5)
+                                textField(text: subject, id: 'subjectField')
+                                subjectField.focusGained = {
+                                    subjectField.selectAll()
+                                }
+                                hglue()
                             }
-                            hglue()
+                            vstrut(3)
+                            hbox {
+                                label(text: 'Date')
+                                hstrut(5)
+                                datePicker(id: 'dateField')
+                                hglue()
+                            }
                         }
                         
                         panel {
@@ -1264,10 +1280,10 @@ public class Coucou{
                                     try {
                                         Asynchronizer.doParallel {
                                             def future = updateFeed.callAsync(feed)
-                                            future.get()
-                                            doLater {
-                                                feedList.model.fireTableDataChanged()
-                                            }
+//                                            future.get()
+//                                            doLater {
+//                                                feedList.model.fireTableDataChanged()
+//                                            }
                                         }
                                     }
                                     catch (Exception ex) {
@@ -1295,7 +1311,7 @@ public class Coucou{
                     action(id: 'exitAction', name: 'Exit', smallIcon: imageIcon('/exit.png'), accelerator: shortcut('Q'), closure: { close(coucouFrame, true) })
                     
 //                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind(source: editContext, sourceProperty: 'delete'), closure: { editContext.delete() })
-                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind { editContext.enabled }, closure: { editContext.delete() })
+                    action(id: 'deleteAction', name: 'Delete', accelerator: 'DELETE', enabled: bind { editContext.delete != null }, closure: { editContext.delete() })
                     
                      action(id: 'onlineHelpAction', name: 'Online Help', accelerator: 'F1', closure: { Desktop.desktop.browse(URI.create('http://coucou.im')) })
                      action(id: 'showTipsAction', name: 'Tips', closure: { tips.showDialog(coucouFrame) })
@@ -1323,9 +1339,9 @@ public class Coucou{
                      
                     action(id: 'homeAction', name: 'Home', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.ALT_DOWN_MASK), closure: { tabs.selectedIndex = 0})
                     
-                    action(id: 'markAsReadAction', name: 'Mark as Read', accelerator: 'R', enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAsRead?.call() })
-                    action(id: 'markAllReadAction', name: 'Mark All Read', accelerator: shortcut('alt R'), enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAllRead?.call() })
-                    action(id: 'markAsUnreadAction', name: 'Mark as Unread', accelerator: 'U', enabled: bind { editContext.markAsReadEnabled }, closure: { editContext.markAsUnread?.call() })
+                    action(id: 'markAsReadAction', name: 'Mark as Read', accelerator: 'R', enabled: bind { editContext.markAsRead != null }, closure: { editContext.markAsRead?.call() })
+                    action(id: 'markAllReadAction', name: 'Mark All Read', accelerator: shortcut('alt R'), enabled: bind { editContext.markAllRead != null }, closure: { editContext.markAllRead?.call() })
+                    action(id: 'markAsUnreadAction', name: 'Mark as Unread', accelerator: 'U', enabled: bind { editContext.markAsUnread != null }, closure: { editContext.markAsUnread?.call() })
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
@@ -1760,19 +1776,18 @@ public class Coucou{
                                                  editContext.delete = {
                                                      if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete feed: ${feed}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                                          println "Deleting feed: ${feed}"
-                                                         feed.remove()
-//                                                         feed.parent.save()
-                                                         swing.edt {
-                                                             feedList.model.fireTableDataChanged()
-                                                         }
+                                                         removeNode feed
+//                                                         swing.edt {
+//                                                             feedList.model.fireTableDataChanged()
+//                                                         }
                                                      }
                                                  }
-                                                 editContext.enabled = true
+//                                                 editContext.enabled = true
                                                  log.log delete_enabled, feed
                                              }
                                              else {
                                                  editContext.delete = null
-                                                 editContext.enabled = false
+//                                                 editContext.enabled = false
                                              }
                                              }
                                          }
@@ -1811,18 +1826,18 @@ public class Coucou{
                                                  editContext.delete = {
                                                      if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                                          println "Deleting note: ${note}"
-                                                         note.remove()
-                                                         swing.edt {
-                                                             noteList.model.fireTableDataChanged()
-                                                         }
+                                                         removeNode note
+//                                                         swing.edt {
+//                                                             noteList.model.fireTableDataChanged()
+//                                                         }
                                                      }
                                                  }
-                                                 editContext.enabled = true
+//                                                 editContext.enabled = true
                                                  log.log delete_enabled, note
                                              }
                                              else {
                                                  editContext.delete = null
-                                                 editContext.enabled = false
+//                                                 editContext.enabled = false
                                              }
                                              }
                                          }
@@ -1859,18 +1874,18 @@ public class Coucou{
                                                  editContext.delete = {
                                                      if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete journal entry: ${journalEntry}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                                          println "Deleting journal entry: ${journalEntry}"
-                                                         journalEntry.remove()
-                                                         swing.edt {
-                                                             journalList.model.fireTableDataChanged()
-                                                         }
+                                                         removeNode journalEntry
+//                                                         swing.edt {
+//                                                             journalList.model.fireTableDataChanged()
+//                                                         }
                                                      }
                                                  }
-                                                 editContext.enabled = true
+//                                                 editContext.enabled = true
                                                  log.log delete_enabled, journalEntry
                                              }
                                              else {
                                                  editContext.delete = null
-                                                 editContext.enabled = false
+//                                                 editContext.enabled = false
                                              }
                                              }
                                          }
@@ -2190,10 +2205,10 @@ public class Coucou{
                                 def future = updateFeed.callAsync(feedNode.getProperty('url').value.string)
 //                                if (feedNode.nodes.size != entryCount) {
 //                                }
-                                future.get()
-                                swing.edt {
-                                    feedList.model.fireTableDataChanged()
-                                }
+//                                future.get()
+//                                swing.edt {
+//                                    feedList.model.fireTableDataChanged()
+//                                }
                             }
                         }
                         catch (Exception e) {
@@ -2326,14 +2341,14 @@ class CreateAccountProducer implements WizardResultProducer {
                 accountsNode.addNode('xmpp')
             }
             def node = accountsNode.addNode("xmpp/${data['usernameField']}")
-            accountsNode.save()
+            saveNode accountsNode
         }
         else if (data['emailAccount']) {
             if (!accountsNode.hasNode('mail')) {
                 accountsNode.addNode('mail')
             }
             def node = accountsNode.addNode("mail/${data['emailAddressField']}")
-            accountsNode.save()
+            saveNode accountsNode
         }
         return null
     }
@@ -2500,133 +2515,6 @@ class RepositoryComboBoxModel extends RepositoryListModel implements ComboBoxMod
     }
 }
 
-class EditContext {
-    
-    @Bindable Boolean enabled
-    
-    @Bindable Boolean markAsReadEnabled
-    
-    Closure delete
-    
-    Closure markAsRead
-    
-    Closure markAllRead
-    
-    Closure markAsUnread
-    
-    void copy() {}
-    
-    void cut() {}
-    
-    void paste() {}
-}
-
-class RepositoryTreeTableModel extends AbstractNodeTreeTableModel {
-
-    RepositoryTreeTableModel(def node) {
-        super(node, (String[]) ['Name', 'Type', 'State'])
-    }
-    
-    Object getValueAt(Object node, int column) {
-        def value
-        switch(column) {
-            case 0:
-                value = node.name
-                break
-            case 1:
-                value = node.primaryNodeType.name
-                break
-            case 2:
-                value = node.isNew() ? 'N' : node.isModified() ? 'M' : null
-                break
-        }
-        return value
-    }
-}
-
-class PropertiesTableModel extends AbstractTableModel {
-    
-    def node
-    def columnNames = ['Property Name', 'Type', 'Value']
-    
-    PropertiesTableModel(def node) {
-        this.node = node
-    }
-
-    int getRowCount() {
-        return node.properties.size
-    }
-    
-    int getColumnCount() {
-        return columnNames.size
-    }
-    
-    String getColumnName(int column) {
-        return columnNames[column]
-    }
-    
-    Object getValueAt(int row, int column) {
-        def props = node.properties
-        props.skip(row)
-        def prop = props.nextProperty()
-        def value
-        switch(column) {
-            case 0:
-                value = prop.name
-                break
-            case 1:
-                if (prop.isMultiple()) {
-                }
-                else {
-                    value = PropertyType.nameFromValue(prop.value.type)
-                }
-                break
-            case 2:
-                if (prop.isMultiple()) {
-                }
-                else {
-                    value = prop.value.string
-                }
-                break
-        }
-        return value
-    }
-}
-
-class FeedTableModel extends AbstractNodeTableModel {
-    
-//    def df = new PrettyTime()
-    
-    FeedTableModel(def node) {
-        super(node, (String[]) ['Title', 'Source', 'Count', 'Last Updated'], (Class[]) [String, String, Integer, Date])
-    }
-    
-    Object getValueAt(int row, int column) {
-        def node = getNodeAt(row)
-        def value
-        switch(column) {
-            case 0:
-                value = node.getProperty('title').string
-                break
-            case 1:
-                if (node.hasProperty('source')) {
-                    value = node.getProperty('source').string
-                }
-                break
-            case 2:
-                value = node.nodes.size
-                break
-            case 3:
-                if (node.hasProperty('date')) {
-//                    value = df.format(node.getProperty('date').value.date.time)
-                    value = node.getProperty('date').date.time
-                }
-                break
-        }
-        return value
-    }
-}
-
 class FeedEntryTableModel extends AbstractNodeTableModel implements javax.jcr.observation.EventListener {
     
     FeedEntryTableModel(def node, def session) {
@@ -2692,34 +2580,6 @@ class HistoryTreeTableModel extends AbstractNodeTreeTableModel {
     }
 }
 
-class AccountTableModel extends AbstractNodeTableModel {
-    
-    AccountTableModel(def node) {
-        super(node, (String[]) ['Account Name', 'Status'])
-    }
-    
-    Object getValueAt(int row, int column) {
-        def node = getNodeAt(row)
-        def value
-        switch(column) {
-            case 0:
-                if (node.hasProperty('accountName')) {
-                    value = node.getProperty('accountName').value.string
-                }
-                else {
-                    value = node.name
-                }
-                break
-            case 1:
-                if (node.hasProperty('status')) {
-                    value = node.getProperty('status').value.string
-                }
-                break
-        }
-        return value
-    }
-}
-
 class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
 
     PlannerTreeTableModel(def node) {
@@ -2745,72 +2605,6 @@ class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
             case 2:
                 if (node.hasProperty('due')) {
                     value = node.hasProperty('due').value.date
-                }
-                break
-        }
-        return value
-    }
-}
-
-class NoteTableModel extends AbstractNodeTableModel {
-    
-    NoteTableModel(def node) {
-        super(node, ['Title', 'Tags', 'Last Modified'] as String[], [String, String, Date] as Class[])
-    }
-    
-    Object getValueAt(int row, int column) {
-        def node = getNodeAt(row)
-        def value
-        switch(column) {
-            case 0:
-                if (node.hasProperty('title')) {
-                    value = node.getProperty('title').string
-                }
-                else {
-                    value = node.name
-                }
-                break
-            case 1:
-                if (node.hasProperty('tags')) {
-                    value = node.getProperty('tags').string
-                }
-                break
-            case 2:
-                if (node.hasProperty('lastModified')) {
-                    value = node.getProperty('lastModified').date.time
-                }
-                break
-        }
-        return value
-    }
-}
-
-class JournalTableModel extends AbstractNodeTableModel {
-    
-    JournalTableModel(def node) {
-        super(node, ['Subject', 'Tags', 'Last Modified'] as String[], [String, String, Date] as Class[])
-    }
-    
-    Object getValueAt(int row, int column) {
-        def node = getNodeAt(row)
-        def value
-        switch(column) {
-            case 0:
-                if (node.hasProperty('subject')) {
-                    value = node.getProperty('subject').string
-                }
-                else {
-                    value = node.name
-                }
-                break
-            case 1:
-                if (node.hasProperty('tags')) {
-                    value = node.getProperty('tags').string
-                }
-                break
-            case 2:
-                if (node.hasProperty('lastModified')) {
-                    value = node.getProperty('lastModified').date.time
                 }
                 break
         }
