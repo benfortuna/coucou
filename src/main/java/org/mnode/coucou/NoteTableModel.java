@@ -23,6 +23,7 @@ import java.util.Date;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.observation.Event;
 
 import org.apache.commons.logging.LogFactory;
 import org.mnode.base.log.LogAdapter;
@@ -43,7 +44,8 @@ public class NoteTableModel extends AbstractNodeTableModel {
      */
     public NoteTableModel(Node node) {
         super(node, new String[] {"Title", "Tags", "Last Modified"},
-                new Class[] {String.class, String.class, Date.class});
+                new Class[] {String.class, String.class, Date.class},
+                Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
     }
 
     /**

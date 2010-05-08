@@ -546,8 +546,8 @@ public class Coucou{
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer())
                             entryList.setDefaultRenderer(Date, new DateCellRenderer())
-                            entryList.model = new FeedEntryTableModel(node, session)
-                            entryList.setSortOrder(2, SortOrder.DESCENDING)
+                            entryList.model = new FeedEntryTableModel(node)
+                            entryList.setSortOrder(3, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
                             // XXX: need to remove from filterableLists on tab close..
                             filterableLists << entryList
@@ -586,6 +586,14 @@ public class Coucou{
 //                                                entryList.model.fireTableDataChanged()
 //                                            }
                                         }
+                                        editContext.flag = {
+                                            def flag = true
+                                            if (entry.hasProperty('flag')) {
+                                                flag = !entry.getProperty('flag').boolean
+                                            }
+                                            entry.setProperty('flag', flag)
+                                            entry.save()
+                                        }
 //                                        editContext.markAsReadEnabled = true
                                     }
                                     else {
@@ -594,6 +602,7 @@ public class Coucou{
                                         editContext.markAsRead = null
                                         editContext.markAsUnread = null
                                         editContext.markAllRead = null
+                                        editContext.flag = null
                                     }
                                 }
                             }
@@ -641,6 +650,12 @@ public class Coucou{
             }
         }
         
+        def updateProperty = { aNode, propertyName, value ->
+            if (!aNode.hasProperty(propertyName) || aNode.getProperty(propertyName).string != value) {
+                aNode.setProperty(propertyName, value)
+            }
+        }
+        
         def updateFeed = { url ->
             // rome uses Thread.contextClassLoader..
             Thread.currentThread().contextClassLoader = Coucou.classLoader
@@ -648,18 +663,18 @@ public class Coucou{
             def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
             def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}", true)
-            feedNode.setProperty('url', url)
+            updateProperty(feedNode, 'url', url)
             if (feed.title) {
-                feedNode.setProperty('title', feed.title)
+                updateProperty(feedNode, 'title', feed.title)
             }
 //            else {
 //                feedNode.setProperty('title', feed.title)
 //            }
             if (feed.link) {
-                feedNode.setProperty('source', feed.link)
+                updateProperty(feedNode, 'source', feed.link)
             }
             else if (!feed.links.isEmpty()) {
-                feedNode.setProperty('source', entry.links[0])
+                updateProperty(feedNode, 'source', entry.links[0])
             }
 //            if (feed.uri) {
 //                feedNode.setProperty('uri', feed.uri)
@@ -678,22 +693,19 @@ public class Coucou{
                 else {
                     entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.title)}")
                 }
-                if (feed.link) {
-                    entryNode.setProperty('source', feedNode)
-                }
-                entryNode.setProperty('title', entry.title)
+                updateProperty(entryNode, 'title', entry.title)
                 if (entry.description) {
-                    entryNode.setProperty('description', entry.description.value)
+                    updateProperty(entryNode, 'description', entry.description.value)
                 }
                 else if (entry.contents && !entry.contents.isEmpty()) {
-                    entryNode.setProperty('description', entry.contents[0].value)
+                    updateProperty(entryNode, 'description', entry.contents[0].value)
                 }
                 
                 // entry link..
                 if (entry.uri) {
                     try {
                         new URL(entry.uri)
-                        entryNode.setProperty('link', entry.uri)
+                        updateProperty(entryNode, 'link', entry.uri)
                     }
                     catch (Exception e) {
                         // not a valid url..
@@ -702,7 +714,7 @@ public class Coucou{
                 if (entry.link) {
                     try {
                         new URL(entry.link)
-                        entryNode.setProperty('link', entry.link)
+                        updateProperty(entryNode, 'link', entry.link)
                     }
                     catch (Exception e) {
                         // not a valid url..
@@ -712,16 +724,20 @@ public class Coucou{
                 if (entryNode.isNew()) {
                     feedNode.setProperty('date', now)
                     entryNode.setProperty('seen', false)
+                    entryNode.setProperty('source', feedNode)
                 }
                 
+                def publishedDate = now
                 if (entry.publishedDate) {
-                    def publishedDate = Calendar.instance
                     publishedDate.setTime(entry.publishedDate)
+                }
+                
+                if (!entryNode.hasProperty('date') || entryNode.getProperty('date').date.time != publishedDate.time) {
                     entryNode.setProperty('date', publishedDate)
                 }
-                else if (entryNode.isNew()) {
-                    entryNode.setProperty('date', now)
-                }
+//                else if (entryNode.isNew()) {
+//                    entryNode.setProperty('date', now)
+//                }
             }
             saveNode feedNode
             return feedNode
@@ -1345,6 +1361,7 @@ public class Coucou{
                     action(id: 'replyAction', name: 'Reply', accelerator: shortcut('R'))
                     action(id: 'replyAllAction', name: 'Reply All', accelerator: shortcut('shift R'))
                     action(id: 'forwardAction', name: 'Forward', accelerator: shortcut('F'))
+                    action(id: 'flagAction', name: 'Flag', accelerator: 'F', enabled: bind { editContext.flag != null }, closure: { editContext.flag?.call() })
                     
                     action(id: 'activityClearAction', name: 'Clear Selected', accelerator: 'C', closure: {
                         def selectedIndex = activity.selectedIndex
@@ -1425,6 +1442,7 @@ public class Coucou{
                         }
                         separator()
                         menuItem(deleteAction)
+                        menuItem(text: "Rename")
                         separator()
                         menuItem(text: "Mail Filters")
                         menuItem(text: "Accounts")
@@ -1451,7 +1469,7 @@ public class Coucou{
                         menuItem(text: "New Tag..")
                     }
                     separator()
-                        menuItem(text: "Flag")
+                        menuItem(flagAction)
                         menuItem(text: "Annotate")
                     }
                     menu(text: "Tools", mnemonic: 'T') {
@@ -1764,6 +1782,7 @@ public class Coucou{
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          feedList.setDefaultRenderer(Date, new DateCellRenderer())
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
+                                         feedList.packAll()
                                          feedList.setSortOrder(3, SortOrder.DESCENDING)
                                          feedList.sortsOnUpdates = true
                                          filterableLists << feedList
@@ -1813,6 +1832,7 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'noteList')
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
+                                         noteList.packAll()
                                          noteList.setDefaultRenderer(Date, new DateCellRenderer())
                                          noteList.setSortOrder(2, SortOrder.DESCENDING)
                                          noteList.sortsOnUpdates = true
@@ -1861,6 +1881,7 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'journalList')
                                          journalList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          journalList.model = new JournalTableModel(getNode('/journal'))
+                                         journalList.packAll()
                                          journalList.setDefaultRenderer(Date, new DateCellRenderer())
                                          journalList.setSortOrder(2, SortOrder.DESCENDING)
                                          journalList.sortsOnUpdates = true
@@ -1928,6 +1949,7 @@ public class Coucou{
                                          table(showHorizontalLines: false, id: 'accountList')
                                          accountList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          accountList.model = new AccountTableModel(getNode('/accounts'))
+                                         accountList.packAll()
                                          accountList.focusLost = {
                                              accountList.clearSelection()
                                          }
@@ -2512,41 +2534,6 @@ class RepositoryComboBoxModel extends RepositoryListModel implements ComboBoxMod
     
     void setSelectedItem(Object anItem) {
         selectedNode = anItem
-    }
-}
-
-class FeedEntryTableModel extends AbstractNodeTableModel implements javax.jcr.observation.EventListener {
-    
-    FeedEntryTableModel(def node, def session) {
-        super(node, ['Title', 'Source', 'Last Updated'] as String[], [String, String, Date] as Class[])
-        if (session) {
-            session.workspace.observationManager.addEventListener(this, Event.NODE_ADDED | Event.NODE_REMOVED, node.path, true, null, null, false)
-        }
-    }
-    
-    Object getValueAt(int row, int column) {
-        def node = getNodeAt(row)
-        def value
-        switch(column) {
-            case 0:
-                value = node.getProperty('title').string
-                break
-            case 1:
-                if (node.hasProperty('source')) {
-                    value = node.getProperty('source').getNode().getProperty('title').string
-                }
-                break
-            case 2:
-                if (node.hasProperty('date')) {
-                    value = node.getProperty('date').date.time
-                }
-                break
-        }
-        return value
-    }
-    
-    void onEvent(EventIterator events) {
-        fireTableDataChanged()
     }
 }
 

@@ -19,6 +19,9 @@
 
 package org.mnode.coucou;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -50,18 +53,17 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel implemen
     
     private final Class<?>[] columnClasses;
 
-    public AbstractNodeTableModel(Node node, String[] columns) {
-        this(node, columns, null);
+    public AbstractNodeTableModel(Node node, String[] columns, int eventMask) {
+        this(node, columns, null, eventMask);
     }
 
-    public AbstractNodeTableModel(Node node, String[] columns, Class<?>[] classes) {
+    public AbstractNodeTableModel(Node node, String[] columns, Class<?>[] classes, int eventMask) {
         this.node = node;
         this.columnNames = columns;
         this.columnClasses = classes;
         try {
             node.getSession().getWorkspace().getObservationManager().addEventListener(this,
-                    Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED,
-                    node.getPath(), true, null, null, false);
+                    eventMask, node.getPath(), true, null, null, false);
         }
         catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
@@ -114,12 +116,72 @@ public abstract class AbstractNodeTableModel extends AbstractTableModel implemen
         return properties.nextProperty();
     }
     
+    protected final int getIndex(Event event, boolean isProperty) {
+        int index = -1;
+        try {
+            Node childNode = null;
+            if (isProperty) {
+                childNode = node.getSession().getProperty(event.getPath()).getParent();
+            }
+            else {
+                childNode = node.getSession().getNode(event.getPath());
+            }
+            // only return index of direct child node..
+            if (childNode.getParent().isSame(node)) {
+                // XXX: need to iterate through all child nodes to find index.. currently will always return zero.
+                index = childNode.getIndex() - 1;
+            }
+        }
+        catch (RepositoryException e) {
+            LOG.log(LogEntries.EVENT_PATH_ERROR, e, event);
+        }
+        return index;
+    }
+    
     @Override
-    public void onEvent(EventIterator events) {
+    public void onEvent(final EventIterator events) {
+        final List<Integer> addedIndicies = new ArrayList<Integer>();
+        final List<Integer> removedIndicies = new ArrayList<Integer>();
+        final List<Integer> changedIndicies = new ArrayList<Integer>();
+        while (events.hasNext()) {
+            Event e = events.nextEvent();
+            if (e.getType() == Event.NODE_ADDED) {
+                int index = getIndex(e, false);
+                if (index >= 0) {
+                    addedIndicies.add(index);
+                }
+            }
+            else if (e.getType() == Event.NODE_REMOVED) {
+                int index = getIndex(e, false);
+                if (index >= 0) {
+                    removedIndicies.add(index);
+                }
+            }
+            else if (e.getType() == Event.PROPERTY_ADDED || e.getType() == Event.PROPERTY_CHANGED) {
+                int index = getIndex(e, true);
+                if (index >= 0) {
+                    changedIndicies.add(index);
+                }
+            }
+        }
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                fireTableDataChanged();
+                if (!addedIndicies.isEmpty()) {
+//                    Collections.sort(addedIndicies);
+//                    fireTableRowsInserted(addedIndicies.get(0), addedIndicies.get(addedIndicies.size() - 1));
+                    fireTableDataChanged();
+                }
+                if (!removedIndicies.isEmpty()) {
+//                    Collections.sort(removedIndicies);
+//                    fireTableRowsDeleted(removedIndicies.get(0), removedIndicies.get(removedIndicies.size() - 1));
+                    fireTableDataChanged();
+                }
+                if (!changedIndicies.isEmpty()) {
+//                    Collections.sort(changedIndicies);
+//                    fireTableRowsUpdated(changedIndicies.get(0), changedIndicies.get(changedIndicies.size() - 1));
+                    fireTableDataChanged();
+                }
             }
         });
     }

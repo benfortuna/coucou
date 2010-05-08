@@ -95,7 +95,7 @@ public abstract class AbstractNodeTreeTableModel extends AbstractTreeTableModel 
         try {
             NodeIterator nodes = ((Node) parent).getNodes();
             while (nodes.hasNext()) {
-                if (nodes.nextNode().equals(child)) {
+                if (nodes.nextNode().isSame((Node) child)) {
                     return (int) nodes.getPosition();
                 }
             }

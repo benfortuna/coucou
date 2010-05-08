@@ -19,6 +19,8 @@
 
 package org.mnode.coucou;
 
+import java.util.Date;
+
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.Event;
@@ -31,18 +33,21 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public class AccountTableModel extends AbstractNodeTableModel {
+public class FeedEntryTableModel extends AbstractNodeTableModel {
 
     private static final long serialVersionUID = 1L;
     
-    private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(AccountTableModel.class));
+    private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(FeedEntryTableModel.class));
 
     /**
      * @param node
+     * @param columns
+     * @param classes
      */
-    public AccountTableModel(Node node) {
-        super(node, new String[] {"Account Name", "Status"},
-                Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
+    public FeedEntryTableModel(Node node) {
+        super(node, new String[] {"Flags", "Title", "Source", "Last Updated"},
+                new Class[] {Object.class, String.class, String.class, Date.class},
+                Event.NODE_ADDED | Event.NODE_REMOVED);
     }
 
     /**
@@ -56,16 +61,23 @@ public class AccountTableModel extends AbstractNodeTableModel {
             node = getNodeAt(rowIndex);
             switch(columnIndex) {
                 case 0:
-                    if (node.hasProperty("accountName")) {
-                        value = node.getProperty("accountName").getString();
-                    }
-                    else {
-                        value = node.getName();
+                    if (node.hasProperty("flag")) {
+                        if (node.getProperty("flag").getBoolean()) {
+                            value = "*";
+                        }
                     }
                     break;
                 case 1:
-                    if (node.hasProperty("status")) {
-                        value = node.getProperty("status").getString();
+                    value = node.getProperty("title").getString();
+                    break;
+                case 2:
+                    if (node.hasProperty("source")) {
+                        value = node.getProperty("source").getNode().getProperty("title").getString();
+                    }
+                    break;
+                case 3:
+                    if (node.hasProperty("date")) {
+                        value = node.getProperty("date").getDate().getTime();
                     }
                     break;
             }

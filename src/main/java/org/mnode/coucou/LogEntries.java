@@ -30,5 +30,8 @@ import org.mnode.base.log.LogEntry.Level;
 public final class LogEntries {
 
     public static final LogEntry NODE_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred reading node %s: %s");
+            "An unexpected error occurred reading node: %s");
+
+    public static final LogEntry EVENT_PATH_ERROR = new FormattedLogEntry(Level.Error,
+            "An unexpected error occurred reading path from event: %s");
 }
