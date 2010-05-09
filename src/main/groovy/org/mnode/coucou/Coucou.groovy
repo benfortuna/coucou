@@ -254,8 +254,6 @@ public class Coucou{
 
         def filterableLists = []
         
-        def activityList = new BasicEventList()
-        
         def styleSheet = new StyleSheet()
         styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
 //        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
@@ -333,6 +331,8 @@ public class Coucou{
             }
             aDate.date.time <=> bDate.date.time
         }
+        
+        def activityList = new SortedList(new BasicEventList(), compareByDate as Comparator)
         
         def swing = new SwingXBuilder()
 //        swing.registerBeanFactory('frame', JRibbonFrame.class)
@@ -471,24 +471,28 @@ public class Coucou{
                             explorerTree.selectionModel.valueChanged = {
                                 def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
                                 if (selectedPath) {
-                                    propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
-                                    editContext.delete = {
-                                        if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                            explorerTree.clearSelection()
-                                            def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-                                            removeNode selectedPath.lastPathComponent
-                                            println removedIndices
-//                                            swing.edt {
-//                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-//                                            }
+                                    swing.edt {
+                                        propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
+                                        editContext.delete = {
+                                            if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                explorerTree.clearSelection()
+                                                def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
+                                                removeNode selectedPath.lastPathComponent
+                                                println removedIndices
+    //                                            swing.edt {
+    //                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
+    //                                            }
+                                            }
                                         }
                                     }
 //                                    editContext.enabled = true
                                 }
                                 else {
-                                    propertyTable.model = EMPTY_TABLE_MODEL
+                                    swing.edt {
+                                        propertyTable.model = EMPTY_TABLE_MODEL
 //                                    editContext.enabled = false
-                                    editContext.delete = null
+                                        editContext.delete = null
+                                    }
                                 }
                             }
                             explorerTree.packAll()
@@ -559,50 +563,54 @@ public class Coucou{
                                         def entries = node.nodes
                                         entries.skip(entryList.convertRowIndexToModel(entryList.selectedRow))
                                         def entry = entries.nextNode()
-                                        if (entry.hasProperty('description')) {
-//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-                                            def content = entry.getProperty('description').value.string.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
-                                            contentView.text = content
-                                            contentView.caretPosition = 0
-                                        }
-                                        else {
-                                            contentView.text = null
-                                        }
-                                        editContext.markAsRead = {
-                                            markNodeRead(entry, true)
-                                            if (entryList.selectedRow < entryList.rowCount - 1) {
-                                                entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                        swing.edt {
+                                            if (entry.hasProperty('description')) {
+    //                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
+                                                def content = entry.getProperty('description').value.string.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+                                                contentView.text = content
+                                                contentView.caretPosition = 0
                                             }
-                                        }
-                                        editContext.markAsUnread = {
-                                            markNodeRead(entry, false)
-                                            if (entryList.selectedRow < entryList.rowCount - 1) {
-                                                entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                            else {
+                                                contentView.text = null
                                             }
-                                        }
-                                        editContext.markAllRead = {
-                                            markNodeRead(node, true)
-//                                            swing.edt {
-//                                                entryList.model.fireTableDataChanged()
-//                                            }
-                                        }
-                                        editContext.flag = {
-                                            def flag = true
-                                            if (entry.hasProperty('flag')) {
-                                                flag = !entry.getProperty('flag').boolean
+                                            editContext.markAsRead = {
+                                                markNodeRead(entry, true)
+                                                if (entryList.selectedRow < entryList.rowCount - 1) {
+                                                    entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                                }
                                             }
-                                            entry.setProperty('flag', flag)
-                                            entry.save()
+                                            editContext.markAsUnread = {
+                                                markNodeRead(entry, false)
+                                                if (entryList.selectedRow < entryList.rowCount - 1) {
+                                                    entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
+                                                }
+                                            }
+                                            editContext.markAllRead = {
+                                                markNodeRead(node, true)
+    //                                            swing.edt {
+    //                                                entryList.model.fireTableDataChanged()
+    //                                            }
+                                            }
+                                            editContext.flag = {
+                                                def flag = true
+                                                if (entry.hasProperty('flag')) {
+                                                    flag = !entry.getProperty('flag').boolean
+                                                }
+                                                entry.setProperty('flag', flag)
+                                                entry.save()
+                                            }
                                         }
 //                                        editContext.markAsReadEnabled = true
                                     }
                                     else {
-                                        contentView.text = null
-//                                        editContext.markAsReadEnabled = false
-                                        editContext.markAsRead = null
-                                        editContext.markAsUnread = null
-                                        editContext.markAllRead = null
-                                        editContext.flag = null
+                                        swing.edt {
+                                            contentView.text = null
+    //                                        editContext.markAsReadEnabled = false
+                                            editContext.markAsRead = null
+                                            editContext.markAsUnread = null
+                                            editContext.markAllRead = null
+                                            editContext.flag = null
+                                        }
                                     }
                                 }
                             }
@@ -721,15 +729,19 @@ public class Coucou{
                     }
                 }
                 
+                // XXX: properties below not being updated..
+                
                 if (entryNode.isNew()) {
-                    feedNode.setProperty('date', now)
+                    if (!feedNode.hasProperty('date') || feedNode.getProperty('date').date.time.before(now)) {
+                        feedNode.setProperty('date', now)
+                    }
                     entryNode.setProperty('seen', false)
                     entryNode.setProperty('source', feedNode)
                 }
                 
                 def publishedDate = now
                 if (entry.publishedDate) {
-                    publishedDate.setTime(entry.publishedDate)
+                    publishedDate.time = entry.publishedDate
                 }
                 
                 if (!entryNode.hasProperty('date') || entryNode.getProperty('date').date.time != publishedDate.time) {
@@ -1788,26 +1800,30 @@ public class Coucou{
                                          filterableLists << feedList
                                          feedList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
-                                             if (feedList.selectedRow >= 0) {
-                                                 def feeds = getNode('/feeds').nodes
-                                                 feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
-                                                 def feed = feeds.nextNode()
-                                                 editContext.delete = {
-                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete feed: ${feed}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                         println "Deleting feed: ${feed}"
-                                                         removeNode feed
-//                                                         swing.edt {
-//                                                             feedList.model.fireTableDataChanged()
-//                                                         }
+                                                 if (feedList.selectedRow >= 0) {
+                                                     def feeds = getNode('/feeds').nodes
+                                                     feeds.skip(feedList.convertRowIndexToModel(feedList.selectedRow))
+                                                     def feed = feeds.nextNode()
+                                                     swing.edt {
+                                                         editContext.delete = {
+                                                             if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete feed: ${feed}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                                 println "Deleting feed: ${feed}"
+                                                                 removeNode feed
+        //                                                         swing.edt {
+        //                                                             feedList.model.fireTableDataChanged()
+        //                                                         }
+                                                             }
+                                                         }
                                                      }
+    //                                                 editContext.enabled = true
+                                                     log.log delete_enabled, feed
                                                  }
-//                                                 editContext.enabled = true
-                                                 log.log delete_enabled, feed
-                                             }
-                                             else {
-                                                 editContext.delete = null
-//                                                 editContext.enabled = false
-                                             }
+                                                 else {
+                                                     swing.edt {
+                                                         editContext.delete = null
+                                                     }
+    //                                                 editContext.enabled = false
+                                                 }
                                              }
                                          }
                                          feedList.mouseClicked = { e ->
@@ -1839,26 +1855,30 @@ public class Coucou{
                                          filterableLists << noteList
                                          noteList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
-                                             if (noteList.selectedRow >= 0) {
-                                                 def notes = getNode('/notes').nodes
-                                                 notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
-                                                 def note = notes.nextNode()
-                                                 editContext.delete = {
-                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                         println "Deleting note: ${note}"
-                                                         removeNode note
-//                                                         swing.edt {
-//                                                             noteList.model.fireTableDataChanged()
-//                                                         }
+                                                 if (noteList.selectedRow >= 0) {
+                                                     def notes = getNode('/notes').nodes
+                                                     notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                     def note = notes.nextNode()
+                                                     swing.edt {
+                                                         editContext.delete = {
+                                                             if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                                 println "Deleting note: ${note}"
+                                                                 removeNode note
+        //                                                         swing.edt {
+        //                                                             noteList.model.fireTableDataChanged()
+        //                                                         }
+                                                             }
+                                                         }
                                                      }
+    //                                                 editContext.enabled = true
+                                                     log.log delete_enabled, note
                                                  }
-//                                                 editContext.enabled = true
-                                                 log.log delete_enabled, note
-                                             }
-                                             else {
-                                                 editContext.delete = null
-//                                                 editContext.enabled = false
-                                             }
+                                                 else {
+                                                     swing.edt {
+                                                         editContext.delete = null
+                                                     }
+    //                                                 editContext.enabled = false
+                                                 }
                                              }
                                          }
                                          noteList.mouseClicked = { e ->
@@ -1888,26 +1908,30 @@ public class Coucou{
                                          filterableLists << journalList
                                          journalList.selectionModel.valueChanged = { e ->
                                              if (!e.valueIsAdjusting) {
-                                             if (journalList.selectedRow >= 0) {
-                                                 def journalEntries = getNode('/journal').nodes
-                                                 journalEntries.skip(journalList.convertRowIndexToModel(journalList.selectedRow))
-                                                 def journalEntry = journalEntries.nextNode()
-                                                 editContext.delete = {
-                                                     if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete journal entry: ${journalEntry}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                         println "Deleting journal entry: ${journalEntry}"
-                                                         removeNode journalEntry
-//                                                         swing.edt {
-//                                                             journalList.model.fireTableDataChanged()
-//                                                         }
+                                                 if (journalList.selectedRow >= 0) {
+                                                     def journalEntries = getNode('/journal').nodes
+                                                     journalEntries.skip(journalList.convertRowIndexToModel(journalList.selectedRow))
+                                                     def journalEntry = journalEntries.nextNode()
+                                                     swing.edt {
+                                                         editContext.delete = {
+                                                             if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete journal entry: ${journalEntry}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                                 println "Deleting journal entry: ${journalEntry}"
+                                                                 removeNode journalEntry
+        //                                                         swing.edt {
+        //                                                             journalList.model.fireTableDataChanged()
+        //                                                         }
+                                                             }
+                                                         }
                                                      }
+    //                                                 editContext.enabled = true
+                                                     log.log delete_enabled, journalEntry
                                                  }
-//                                                 editContext.enabled = true
-                                                 log.log delete_enabled, journalEntry
-                                             }
-                                             else {
-                                                 editContext.delete = null
-//                                                 editContext.enabled = false
-                                             }
+                                                 else {
+                                                     swing.edt {
+                                                         editContext.delete = null
+                                                     }
+    //                                                 editContext.enabled = false
+                                                 }
                                              }
                                          }
                                          journalList.mouseClicked = { e ->
@@ -2095,7 +2119,7 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      */
-                                     def activityModel = new EventListModel(new SortedList(activityList, compareByDate as Comparator))
+                                     def activityModel = new EventListModel(activityList)
                                      activity.model = activityModel
 //                                     filterableLists << activity
 
