@@ -332,7 +332,7 @@ public class Coucou{
             aDate.date.time <=> bDate.date.time
         }
         
-        def activityList = new SortedList(new BasicEventList(), compareByDate as Comparator)
+        def activityList = new BasicEventList()
         
         def swing = new SwingXBuilder()
 //        swing.registerBeanFactory('frame', JRibbonFrame.class)
@@ -659,7 +659,7 @@ public class Coucou{
         }
         
         def updateProperty = { aNode, propertyName, value ->
-            if (!aNode.hasProperty(propertyName) || aNode.getProperty(propertyName).string != value) {
+            if (value && (!aNode.hasProperty(propertyName) || aNode.getProperty(propertyName).string != value)) {
                 aNode.setProperty(propertyName, value)
             }
         }
@@ -672,17 +672,15 @@ public class Coucou{
 //                                             def newNode = session.rootNode.getNode('feeds').addNode(Text.escapeIllegalJcrChars(newFeed.title))
             def feedNode = getNode("/feeds/${Text.escapeIllegalJcrChars(feed.title)}", true)
             updateProperty(feedNode, 'url', url)
-            if (feed.title) {
-                updateProperty(feedNode, 'title', feed.title)
-            }
+            updateProperty(feedNode, 'title', feed?.title)
 //            else {
 //                feedNode.setProperty('title', feed.title)
 //            }
-            if (feed.link) {
+            if (feed?.link) {
                 updateProperty(feedNode, 'source', feed.link)
             }
-            else if (!feed.links.isEmpty()) {
-                updateProperty(feedNode, 'source', entry.links[0])
+            else if (!feed.links?.isEmpty()) {
+                updateProperty(feedNode, 'source', feed.links[0])
             }
 //            if (feed.uri) {
 //                feedNode.setProperty('uri', feed.uri)
@@ -701,8 +699,8 @@ public class Coucou{
                 else {
                     entryNode = getNode("${feedNode.path}/${Text.escapeIllegalJcrChars(entry.title)}")
                 }
-                updateProperty(entryNode, 'title', entry.title)
-                if (entry.description) {
+                updateProperty(entryNode, 'title', entry?.title)
+                if (entry?.description) {
                     updateProperty(entryNode, 'description', entry.description.value)
                 }
                 else if (entry.contents && !entry.contents.isEmpty()) {
@@ -710,7 +708,7 @@ public class Coucou{
                 }
                 
                 // entry link..
-                if (entry.uri) {
+                if (entry?.uri) {
                     try {
                         new URL(entry.uri)
                         updateProperty(entryNode, 'link', entry.uri)
@@ -719,7 +717,7 @@ public class Coucou{
                         // not a valid url..
                     }
                 }
-                if (entry.link) {
+                if (entry?.link) {
                     try {
                         new URL(entry.link)
                         updateProperty(entryNode, 'link', entry.link)
@@ -732,21 +730,19 @@ public class Coucou{
                 // XXX: properties below not being updated..
                 
                 if (entryNode.isNew()) {
-                    if (!feedNode.hasProperty('date') || feedNode.getProperty('date').date.time.before(now)) {
+                    if (!feedNode.hasProperty('date') || feedNode.getProperty('date')?.date.time.before(now.time)) {
                         feedNode.setProperty('date', now)
                     }
                     entryNode.setProperty('seen', false)
                     entryNode.setProperty('source', feedNode)
+                    entryNode.setProperty('date', now)
                 }
                 
-                def publishedDate = now
-                if (entry.publishedDate) {
-                    publishedDate.time = entry.publishedDate
+//                def publishedDate = now
+                if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time != entry.publishedDate.time)) {
+                    entryNode.setProperty('date', entry.publishedDate)
                 }
                 
-                if (!entryNode.hasProperty('date') || entryNode.getProperty('date').date.time != publishedDate.time) {
-                    entryNode.setProperty('date', publishedDate)
-                }
 //                else if (entryNode.isNew()) {
 //                    entryNode.setProperty('date', now)
 //                }
@@ -1657,8 +1653,26 @@ public class Coucou{
 //                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
                                      
 //                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+                                     panel(constraints: BorderLayout.NORTH, border: emptyBorder([0, 0, 5, 0])) {
+                                         flowLayout(alignment: FlowLayout.TRAILING)
+                                         
+                                         def viewButtonSize = new java.awt.Dimension(16, 16)
+                                         def viewButtons = new JCommandButtonStrip()
+                                         viewButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
+                                         
+                                         def gridViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
+                                         gridViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'gridView') }
+                                         viewButtons.add(gridViewButton)
+                                         
+                                         def listViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
+                                         listViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'listView') }
+                                         viewButtons.add(listViewButton)
+                                         widget(viewButtons)
+                                     }
                                      
-                                         scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                     panel(id: 'contactsPane') {
+                                         cardLayout()
+                                         scrollPane(constraints: 'gridView', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
 //                                             list(id: 'contactsList')
 //                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
 //                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
@@ -1711,6 +1725,11 @@ public class Coucou{
                                                 widget(contactGrid)
                                                 bind(source: viewContactGroups, sourceProperty:'selected', target: contactGrid, targetProperty: 'toShowGroupLabels')
                                          }
+                                         scrollPane(constraints: 'listView', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                             table(showHorizontalLines: false, id: 'contactList', columnControlVisible: true)
+                                             contactList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         }
+                                     }
 //                                         vglue()
 //                                     }
                                      
@@ -2119,7 +2138,7 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      */
-                                     def activityModel = new EventListModel(activityList)
+                                     def activityModel = new EventListModel(new SortedList(activityList, compareByDate as Comparator))
                                      activity.model = activityModel
 //                                     filterableLists << activity
 
