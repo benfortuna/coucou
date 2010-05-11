@@ -24,6 +24,7 @@ import groovy.swing.SwingXBuilder
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Cursor
 import java.awt.Desktop
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -164,6 +165,9 @@ import ca.odell.glazedlists.BasicEventList
 import ca.odell.glazedlists.SortedList
 import org.fife.ui.rtextarea.RTextScrollPane
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
+import javax.jcr.RepositoryException
+import org.mnode.base.log.adapter.JclAdapter
+import org.apache.commons.logging.LogFactory
 
 /**
  * @author fortuna
@@ -537,6 +541,7 @@ public class Coucou{
             }
             
             swing.edt {
+                coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
                 def feedView = panel(name: node.getProperty('title').value.string, border: emptyBorder(10)) {
                     borderLayout()
                     splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
@@ -655,6 +660,7 @@ public class Coucou{
                 def iconSize = new Dimension(16, 16)
                 def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/feed.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
+                coucouFrame.cursor = Cursor.defaultCursor
             }
         }
         
@@ -810,6 +816,9 @@ public class Coucou{
         }
         
         def openSearchView = { tabs, searchTerms ->
+            swing.edt {
+                coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+            }
             swing.doOutside {
                 Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
                 def nodes = q.execute().nodes
@@ -853,6 +862,7 @@ public class Coucou{
                     def iconSize = new Dimension(16, 16)
                     def searchIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/search.svg'), iconSize)
                     tabs.setIconAt(tabs.indexOfComponent(searchView), searchIcon)
+                    coucouFrame.cursor = Cursor.defaultCursor
                 }
             }
         }
@@ -1728,6 +1738,7 @@ public class Coucou{
                                          scrollPane(constraints: 'listView', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
                                              table(showHorizontalLines: false, id: 'contactList', columnControlVisible: true)
                                              contactList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                             contactList.model = new ContactTableModel(getNode('/contacts'))
                                          }
                                      }
 //                                         vglue()
@@ -2236,14 +2247,23 @@ public class Coucou{
                  trayIcon.popupMenu = popupMenu
                  
                  SystemTray.systemTray.add(trayIcon)
+                 
+                 coucouFrame.windowClosing = {
+                     close(coucouFrame, false)
+                     
+                     // show notification on hide..
+                     trayIcon.displayMessage('Coucou Minimised', 'Right-click and select Exit to shutdown completely', TrayIcon.MessageType.INFO)
+                 }
+             }
+             else {
+                 coucouFrame.windowClosing = {
+                     close(coucouFrame, true)
+                 }
              }
              
 //             coucouFrame.ribbon.configureHelp(helpIcon, onlineHelpAction)
              
 //           TrackerRegistry.instance.register(coucouFrame, 'coucouFrame');
-           coucouFrame.windowClosing = {
-               close(coucouFrame, !SystemTray.isSupported())
-           }
            
            // bonjour..
            /*
@@ -2669,5 +2689,56 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
                 activityStream.ensureIndexIsVisible(0)
             }
         }
+    }
+}
+
+class ContactTableModel extends AbstractNodeTableModel {
+
+    private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(ContactTableModel.class));
+
+    ContactTableModel(def node) {
+        super(node, ['Name', 'Organisation', 'Telephone', 'Mobile', 'Email'] as String[], Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED)
+    }
+    
+    Object getValueAt(int row, int column) {
+        Object value = null;
+        Node node = null;
+        try {
+            node = getNodeAt(rowIndex);
+            switch(columnIndex) {
+                case 0:
+                    if (node.hasProperty("fullName")) {
+                        value = node.getProperty("fullName").getString();
+                    }
+                    else {
+                        value = node.getName();
+                    }
+                    break;
+                case 1:
+                    if (node.hasProperty("org")) {
+                        value = node.getProperty("org").getString();
+                    }
+                    break;
+                case 2:
+                    if (node.hasProperty("mainPhone")) {
+                        value = node.getProperty("mainPhone").getString();
+                    }
+                    break;
+                case 3:
+                    if (node.hasProperty("mobile")) {
+                        value = node.getProperty("mobile").getString();
+                    }
+                    break;
+                case 4:
+                    if (node.hasProperty("email")) {
+                        value = node.getProperty("email").getString();
+                    }
+                    break;
+            }
+        }
+        catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return value;
     }
 }
