@@ -2696,8 +2696,9 @@ class ContactTableModel extends AbstractNodeTableModel {
 
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(ContactTableModel.class));
 
-    ContactTableModel(def node) {
-        super(node, ['Name', 'Organisation', 'Telephone', 'Mobile', 'Email'] as String[], Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED)
+    ContactTableModel(Node node) {
+        super(node, ['Name', 'Organisation', 'Telephone', 'Mobile', 'Email'] as String[],
+                Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED)
     }
     
     Object getValueAt(int row, int column) {
