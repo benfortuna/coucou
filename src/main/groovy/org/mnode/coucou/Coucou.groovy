@@ -744,14 +744,14 @@ public class Coucou{
                     entryNode.setProperty('date', now)
                 }
                 
-//                def publishedDate = now
                 if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time != entry.publishedDate.time)) {
-                    entryNode.setProperty('date', entry.publishedDate)
+                    def publishedDate = Calendar.instance
+                    publishedDate.time = entry.publishedDate
+                    entryNode.setProperty('date', publishedDate)
                 }
-                
-//                else if (entryNode.isNew()) {
-//                    entryNode.setProperty('date', now)
-//                }
+                else if (entryNode.isNew()) {
+                    entryNode.setProperty('date', now)
+                }
             }
             saveNode feedNode
             return feedNode
