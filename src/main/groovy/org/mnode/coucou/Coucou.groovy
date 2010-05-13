@@ -137,7 +137,7 @@ import org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguage
 import org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguage
 import org.eclipse.mylyn.wikitext.textile.core.TextileLanguage
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jdesktop.swingx.treetable.DefaultTreeTableModel//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -1761,7 +1761,8 @@ public class Coucou{
                                         getNode('/planner/This Month')
                                         getNode('/planner/Overdue')
                                         getNode('/planner/Deleted')
-                                        plannerTree.treeTableModel = new PlannerTreeTableModel(getNode('/planner'))
+//                                        plannerTree.treeTableModel = new PlannerTreeTableModel(getNode('/planner'))
+                                        plannerTree.treeTableModel = new DefaultTreeTableModel(new PlannerTreeTableNode(getNode('/planner')), ['Summary', 'Participants', 'Categories', 'Due'])
                                         plannerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                                         plannerTree.packAll()
                                         plannerTree.focusLost = {
