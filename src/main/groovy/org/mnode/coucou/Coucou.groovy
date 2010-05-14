@@ -470,22 +470,24 @@ public class Coucou{
                     splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
                         scrollPane(constraints: 'left') {
                             treeTable(id: 'explorerTree')
-                            explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
+//                            explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
+                            explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(node), ['Name', 'Type', 'State'])
                             explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                             explorerTree.selectionModel.valueChanged = {
                                 def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
                                 if (selectedPath) {
                                     swing.edt {
-                                        propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent)
+                                        propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent.userObject)
                                         editContext.delete = {
-                                            if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                            if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.userObject.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
                                                 explorerTree.clearSelection()
-                                                def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-                                                removeNode selectedPath.lastPathComponent
-                                                println removedIndices
-    //                                            swing.edt {
+//                                                def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
+                                                removeNode selectedPath.lastPathComponent.userObject
+//                                                println removedIndices
+                                                swing.edt {
     //                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-    //                                            }
+                                                    explorerTree.treeTableModel.reload(selectedPath.parentPath.lastPathComponent)
+                                                }
                                             }
                                         }
                                     }
@@ -1805,7 +1807,8 @@ public class Coucou{
                                         // chat..
                                         getNode('/history/Conversations')
                                         getNode('/history/Deleted')
-                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
+//                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
+                                        historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/history')), ['Subject', 'From', 'Count', 'Last Updated'])
                                         historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
 //                                        historyTree.selectionModel.valueChanged = {
                                         historyTree.packAll()
@@ -2598,68 +2601,6 @@ class RepositoryComboBoxModel extends RepositoryListModel implements ComboBoxMod
     
     void setSelectedItem(Object anItem) {
         selectedNode = anItem
-    }
-}
-
-class HistoryTreeTableModel extends AbstractNodeTreeTableModel {
-
-    HistoryTreeTableModel(def node) {
-        super(node, (String[]) ['Subject', 'From', 'Count', 'Last Updated'])
-    }
-    
-    Object getValueAt(Object node, int column) {
-        def value
-        switch(column) {
-            case 0:
-                value = node.name
-                break
-            case 1:
-                if (node.hasProperty('from')) {
-                    value = node.hasProperty('from').value.string
-                }
-                break
-            case 2:
-                value = node.nodes.size
-                break
-            case 2:
-                if (node.hasProperty('lastModified')) {
-                    value = node.hasProperty('lastModified').value.date
-                }
-                break
-        }
-        return value
-    }
-}
-
-class PlannerTreeTableModel extends AbstractNodeTreeTableModel {
-
-    PlannerTreeTableModel(def node) {
-        super(node, (String[]) ['Summary', 'Participants', 'Categories', 'Due'])
-    }
-    
-    Object getValueAt(Object node, int column) {
-        def value
-        switch(column) {
-            case 0:
-                value = node.name
-                break
-            case 1:
-                if (node.hasProperty('organiser')) {
-                    value = node.hasProperty('organiser').value.string
-                }
-                break
-            case 1:
-                if (node.hasProperty('categories')) {
-                    value = node.hasProperty('categories').value.date
-                }
-                break
-            case 2:
-                if (node.hasProperty('due')) {
-                    value = node.hasProperty('due').value.date
-                }
-                break
-        }
-        return value
     }
 }
 
