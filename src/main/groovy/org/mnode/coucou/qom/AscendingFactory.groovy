@@ -16,25 +16,25 @@
  * You should have received a copy of the GNU General Public License
  * along with Base Modules.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.mnode.coucou.qom
 
-package org.mnode.coucou;
-
-import org.mnode.base.log.FormattedLogEntry;
-import org.mnode.base.log.LogEntry;
-import org.mnode.base.log.LogEntry.Level;
+import javax.jcr.query.QueryManagerimport javax.jcr.query.qom.Orderingimport javax.jcr.query.qom.DynamicOperand
 
 /**
  * @author Ben
  *
  */
-public final class LogEntries {
-
-    public static final LogEntry NODE_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred reading node: %s");
-
-    public static final LogEntry EVENT_PATH_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred reading path from event: %s");
-
-    public static final LogEntry QUERY_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred executing query: %s");
+public class AscendingFactory extends AbstractQomFactory {
+     
+     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+         Ordering ordering
+         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, Ordering.class)) {
+             ordering = (Ordering) value
+         }
+         else {
+             DynamicOperand operand = attributes.remove('operand')
+             ordering = queryManager.qomFactory.ascending(operand)
+         }
+         return ordering
+     }
 }

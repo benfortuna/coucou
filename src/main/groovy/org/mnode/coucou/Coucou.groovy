@@ -137,7 +137,7 @@ import org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguage
 import org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguage
 import org.eclipse.mylyn.wikitext.textile.core.TextileLanguage
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
-import org.jdesktop.swingx.treetable.DefaultTreeTableModel//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jdesktop.swingx.treetable.DefaultTreeTableModelimport javax.swing.Actionimport java.net.URI//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -168,6 +168,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import javax.jcr.RepositoryException
 import org.mnode.base.log.adapter.JclAdapter
 import org.apache.commons.logging.LogFactory
+import org.mnode.coucou.qom.QueryObjectModelBuilder
 
 /**
  * @author fortuna
@@ -643,15 +644,29 @@ public class Coucou{
                             }
                             entryList.packAll()
                         }
+
                         scrollPane(constraints: 'right') {
                             contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
-                            contentView.addHyperlinkListener(new HyperlinkListenerImpl())
-                            contentView.focusLost = { e ->
-                                if (e.oppositeComponent != entryList) {
-                                    entryList.clearSelection()
-                                }
+                        }
+                        contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+                        contentView.focusLost = { e ->
+                            if (e.oppositeComponent != entryList) {
+                                entryList.clearSelection()
                             }
                         }
+                        contentView.mouseClicked = { e ->
+                            if (e.popupTrigger) {
+                                def popupLocation = contentView.getPopupLocation(e)
+                                contentView.componentPopupMenu.show(contentView, popupLocation.x, popupLocation.y)
+                            }
+                        }
+                        /*
+                        contentView.componentPopupMenu = popupMenu() {
+                            menuItem(internetSearchAction)
+                            separator()
+                            menuItem(text: 'View Source')//, action: { frame(title: title, size: [430, 400], show: true, locationRelativeTo: coucouFrame) } as Action)
+                        }
+                        */
                     }
                 }
                 feedView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
@@ -822,7 +837,12 @@ public class Coucou{
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
             }
             swing.doOutside {
-                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
+//                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
+                QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
+                Query q = queryBuilder.query(
+                        source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                        constraint: queryBuilder.fullTextSearch(selectorName: 'all_nodes', searchTerms: "${searchTerms}"))
+                
                 def nodes = q.execute().nodes
 //                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
 
@@ -1418,6 +1438,8 @@ public class Coucou{
                     
                     action(id: 'logoutAction', name: 'Logout', closure: { session.logout() })
                     action(id: 'repositoryExplorerAction', name: 'Repository Explorer', closure: { openExplorerTab(tabs, session.rootNode) })
+                    
+                    action(id: 'internetSearchAction', name: 'Search The Internet..', closure: { Desktop.getDesktop().browse(URI.create("http://google.com/search?q=${URLEncoder.encode('ben fortuna')}")) })
                 }
                 
                 fileChooser(id: 'chooser')
@@ -1756,8 +1778,21 @@ public class Coucou{
                                      
                                      scrollPane() {
                                         treeTable(id: 'plannerTree', columnControlVisible: true)
-                                        getNode('/planner/Today')
-                                        getNode('/planner/Tomorrow')
+                                        QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
+                                        def todayNode = getNode('/planner/Today')
+                                        if (!todayNode.hasNode("query")) {
+                                            Query q = queryBuilder.query(
+                                                    source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                                    constraint: queryBuilder.childNode(selectorName: 'all_nodes', path: "${todayNode.parent.path}"))
+                                            q.storeAsNode("${todayNode.path}/query")
+                                        }
+                                        def tomorrowNode = getNode('/planner/Tomorrow')
+                                        if (!tomorrowNode.hasNode("query")) {
+                                            Query q = queryBuilder.query(
+                                                    source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                                    constraint: queryBuilder.childNode(selectorName: 'all_nodes', path: "${tomorrowNode.parent.path}"))
+                                            q.storeAsNode("${tomorrowNode.path}/query")
+                                        }
                                         getNode('/planner/This Week')
                                         getNode('/planner/Next Week')
                                         getNode('/planner/This Month')

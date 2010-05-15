@@ -16,25 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Base Modules.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.mnode.coucou.qom
 
-package org.mnode.coucou;
-
-import org.mnode.base.log.FormattedLogEntry;
-import org.mnode.base.log.LogEntry;
-import org.mnode.base.log.LogEntry.Level;
+import javax.jcr.query.QueryManagerimport javax.jcr.ValueFactory
 
 /**
  * @author Ben
  *
  */
-public final class LogEntries {
+public abstract class AbstractQomFactory extends AbstractFactory{
 
-    public static final LogEntry NODE_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred reading node: %s");
-
-    public static final LogEntry EVENT_PATH_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred reading path from event: %s");
-
-    public static final LogEntry QUERY_ERROR = new FormattedLogEntry(Level.Error,
-            "An unexpected error occurred executing query: %s");
+    QueryManager queryManager
+    
+    ValueFactory valueFactory
 }

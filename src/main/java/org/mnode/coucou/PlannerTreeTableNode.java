@@ -64,12 +64,18 @@ public class PlannerTreeTableNode extends AbstractRepositoryTreeTableNode {
      */
     @Override
     public Enumeration<? extends TreeTableNode> children() {
-        Vector<PlannerTreeTableNode> children = new Vector<PlannerTreeTableNode>();
+        Vector<TreeTableNode> children = new Vector<TreeTableNode>();
         final Node node = (Node) getUserObject();
         try {
             final NodeIterator nodes = node.getNodes();
             while (nodes.hasNext()) {
-                children.add(new PlannerTreeTableNode(nodes.nextNode(), this));
+                Node nextNode = nodes.nextNode();
+                if (nextNode.hasNode("query")) {
+                    children.add(new PlannerQueryTreeTableNode(nextNode, this));
+                }
+                else {
+                    children.add(new PlannerTreeTableNode(nextNode, this));
+                }
             }
         } catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
@@ -87,7 +93,13 @@ public class PlannerTreeTableNode extends AbstractRepositoryTreeTableNode {
         try {
             final NodeIterator nodes = node.getNodes();
             nodes.skip(index);
-            childNode = new PlannerTreeTableNode(nodes.nextNode(), this);
+            Node nextNode = nodes.nextNode();
+            if (nextNode.hasNode("query")) {
+                childNode = new PlannerQueryTreeTableNode(nextNode, this);
+            }
+            else {
+                childNode = new PlannerTreeTableNode(nextNode, this);
+            }
         } catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
         }
