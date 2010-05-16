@@ -166,6 +166,7 @@ import ca.odell.glazedlists.SortedList
 import org.fife.ui.rtextarea.RTextScrollPane
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import javax.jcr.RepositoryException
+import javax.jcr.query.qom.QueryObjectModelConstants
 import org.mnode.base.log.adapter.JclAdapter
 import org.apache.commons.logging.LogFactory
 import org.mnode.coucou.qom.QueryObjectModelBuilder
@@ -1779,21 +1780,27 @@ public class Coucou{
                                      scrollPane() {
                                         treeTable(id: 'plannerTree', columnControlVisible: true)
                                         QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
+                                        Query q = queryBuilder.query(
+                                                source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                                constraint: queryBuilder.and(
+                                                        constraint1: queryBuilder.childNode(selectorName: 'all_nodes', path: "${getNode('/planner').path}"),
+                                                        constraint2: queryBuilder.comparison(
+                                                                operand1: queryBuilder.propertyValue(selectorName: 'all_nodes', propertyName: 'due'),
+                                                                operator: QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO,
+                                                                operand2: queryBuilder.bindVariable(name: 'minDate'))))
+                                                                
                                         def todayNode = getNode('/planner/Today')
                                         if (!todayNode.hasNode("query")) {
-                                            Query q = queryBuilder.query(
-                                                    source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-                                                    constraint: queryBuilder.childNode(selectorName: 'all_nodes', path: "${todayNode.parent.path}"))
                                             q.storeAsNode("${todayNode.path}/query")
                                         }
                                         def tomorrowNode = getNode('/planner/Tomorrow')
                                         if (!tomorrowNode.hasNode("query")) {
-                                            Query q = queryBuilder.query(
-                                                    source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-                                                    constraint: queryBuilder.childNode(selectorName: 'all_nodes', path: "${tomorrowNode.parent.path}"))
                                             q.storeAsNode("${tomorrowNode.path}/query")
                                         }
-                                        getNode('/planner/This Week')
+                                        def thisWeekNode = getNode('/planner/This Week')
+                                        if (!thisWeekNode.hasNode("query")) {
+                                            q.storeAsNode("${thisWeekNode.path}/query")
+                                        }
                                         getNode('/planner/Next Week')
                                         getNode('/planner/This Month')
                                         getNode('/planner/Overdue')

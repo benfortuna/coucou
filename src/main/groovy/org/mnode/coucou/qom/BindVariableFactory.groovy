@@ -18,26 +18,23 @@
  */
 package org.mnode.coucou.qom
 
-import javax.jcr.query.QueryManagerimport javax.jcr.query.qom.DynamicOperandimport javax.jcr.query.qom.Comparisonimport javax.jcr.query.qom.StaticOperand
+import javax.jcr.query.QueryManagerimport javax.jcr.query.qom.BindVariableValue
 
 /**
  * @author Ben
  *
  */
-public class ComparisonFactory extends AbstractQomFactory {
+public class BindVariableFactory extends AbstractQomFactory {
      
      public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-         Comparison comparison
-         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, Comparison.class)) {
-             comparison = (Comparison) value
+         BindVariableValue bindVariable
+         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, BindVariableValue.class)) {
+             bindVariable = (BindVariableValue) value
          }
          else {
-             DynamicOperand operand1 = attributes.remove('operand1')
-             String operator = attributes.remove('operator')
-             StaticOperand operand2 = attributes.remove('operand2')
-//             StaticOperand operand2 = queryManager.qomFactory.literal(operand2Value)
-             comparison = queryManager.qomFactory.comparison(operand1, operator, operand2)
+             String bindVariableName = attributes.remove('name')
+             bindVariable = queryManager.qomFactory.bindVariable(bindVariableName)
          }
-         return comparison
+         return bindVariable
      }
 }

@@ -19,6 +19,7 @@
 
 package org.mnode.coucou;
 
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -47,6 +48,27 @@ public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode {
     public PlannerQueryTreeTableNode(Node node) {
         super(createQuery(node));
         this.node = node;
+        try {
+            if ("Today".equals(node.getName()) || "This Week".equals(node.getName())) {
+                Calendar todayCal = Calendar.getInstance();
+                todayCal.set(Calendar.HOUR_OF_DAY, 0);
+                todayCal.clear(Calendar.MINUTE);
+                todayCal.clear(Calendar.SECOND);
+                todayCal.clear(Calendar.MILLISECOND);
+                getBindVariables().put("minDate", node.getSession().getValueFactory().createValue(todayCal));
+            }
+            else if ("Tomorrow".equals(node.getName())) {
+                Calendar tomorrowCal = Calendar.getInstance();
+                tomorrowCal.add(Calendar.DAY_OF_MONTH, 1);
+                tomorrowCal.set(Calendar.HOUR_OF_DAY, 0);
+                tomorrowCal.clear(Calendar.MINUTE);
+                tomorrowCal.clear(Calendar.SECOND);
+                tomorrowCal.clear(Calendar.MILLISECOND);
+                getBindVariables().put("minDate", node.getSession().getValueFactory().createValue(tomorrowCal));
+            }
+        } catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
     }
 
     /**
@@ -77,7 +99,7 @@ public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode {
     public Enumeration<? extends TreeTableNode> children() {
         Vector<PlannerTreeTableNode> children = new Vector<PlannerTreeTableNode>();
         for (Node node : getNodes()) {
-            children.add(new PlannerTreeTableNode(node));
+            children.add(new PlannerTreeTableNode(node, this));
         }
         return children.elements();
     }
@@ -87,7 +109,7 @@ public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode {
      */
     @Override
     public TreeTableNode getChildAt(int index) {
-        return new PlannerTreeTableNode(getNodes().get(index));
+        return new PlannerTreeTableNode(getNodes().get(index), this);
     }
 
     /**

@@ -33,6 +33,7 @@ public class QueryObjectModelBuilder extends FactoryBuilderSupport {
     public QueryObjectModelBuilder(QueryManager queryManager, ValueFactory valueFactory) {
         registerFactory('and', new AndFactory(queryManager: queryManager))
         registerFactory('ascending', new AscendingFactory(queryManager: queryManager))
+        registerFactory('bindVariable', new BindVariableFactory(queryManager: queryManager))
         registerFactory('childNode', new ChildNodeFactory(queryManager: queryManager))
         registerFactory('comparison', new ComparisonFactory(queryManager: queryManager, valueFactory: valueFactory))
         registerFactory('descending', new DescendingFactory(queryManager: queryManager))

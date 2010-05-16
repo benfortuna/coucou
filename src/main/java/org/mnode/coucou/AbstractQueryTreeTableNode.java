@@ -19,12 +19,15 @@
 
 package org.mnode.coucou;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.query.Query;
 import javax.swing.tree.TreeNode;
 
@@ -46,6 +49,8 @@ public abstract class AbstractQueryTreeTableNode implements TreeTableNode {
     private final TreeTableNode parent;
     
     private List<Node> result;
+    
+    private Map<String, Value> bindVariables = new HashMap<String, Value>();
     
     /**
      * @param query
@@ -153,6 +158,9 @@ public abstract class AbstractQueryTreeTableNode implements TreeTableNode {
     protected final List<Node> getNodes() {
         if (result == null) {
             try {
+                for (String varName : bindVariables.keySet()) {
+                    query.bindValue(varName, bindVariables.get(varName));
+                }
                 final NodeIterator nodes = query.execute().getNodes();
                 result = new CopyOnWriteArrayList<Node>();
                 while (nodes.hasNext()) {
@@ -168,5 +176,19 @@ public abstract class AbstractQueryTreeTableNode implements TreeTableNode {
     
     protected final void reset() {
         result = null;
+    }
+
+    /**
+     * @return the bindVariables
+     */
+    public Map<String, Value> getBindVariables() {
+        return bindVariables;
+    }
+
+    /**
+     * @param bindVariables the bindVariables to set
+     */
+    public void setBindVariables(Map<String, Value> bindVariables) {
+        this.bindVariables = bindVariables;
     }
 }
