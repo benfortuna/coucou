@@ -137,7 +137,10 @@ import org.eclipse.mylyn.wikitext.mediawiki.core.MediaWikiLanguage
 import org.eclipse.mylyn.wikitext.confluence.core.ConfluenceLanguage
 import org.eclipse.mylyn.wikitext.textile.core.TextileLanguage
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
-import org.jdesktop.swingx.treetable.DefaultTreeTableModelimport javax.swing.Actionimport java.net.URI//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jdesktop.swingx.treetable.DefaultTreeTableModel
+import javax.swing.Action
+import java.net.URI
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -1316,6 +1319,7 @@ public class Coucou{
                         wizard.show();
                     })
 
+                    action(id: 'newTaskAction', name: 'Task', accelerator: shortcut('K'), closure: { })
                     action(id: 'newNoteAction', name: 'Note', accelerator: shortcut('N'), closure: { editNote() })
                     action(id: 'newJournalEntryAction', name: 'Journal Entry', accelerator: shortcut('J'), closure: { editJournalEntry() })
                     action(id: 'closeTabAction', name: 'Close Tab', accelerator: shortcut('W'), closure: { closeCurrentTab(tabs) })
@@ -1682,32 +1686,13 @@ public class Coucou{
                          borderLayout()
                          splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0, continuousLayout: true) {
                              tabbedPane(constraints: 'left', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
-                                 panel(name: 'Contacts', border: emptyBorder(10)) {
+                                 panel(name: 'Contacts') {
                                      borderLayout()
-//                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
-//                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
                                      
-//                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
-                                     panel(constraints: BorderLayout.NORTH, border: emptyBorder([0, 0, 5, 0])) {
-                                         flowLayout(alignment: FlowLayout.TRAILING)
-                                         
-                                         def viewButtonSize = new java.awt.Dimension(16, 16)
-                                         def viewButtons = new JCommandButtonStrip()
-                                         viewButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
-                                         
-                                         def gridViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
-                                         gridViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'gridView') }
-                                         viewButtons.add(gridViewButton)
-                                         
-                                         def listViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
-                                         listViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'listView') }
-                                         viewButtons.add(listViewButton)
-                                         widget(viewButtons)
-                                     }
-                                     
-                                     panel(id: 'contactsPane') {
-                                         cardLayout()
-                                         scrollPane(constraints: 'gridView', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                     tabbedPane(tabPlacement: JTabbedPane.RIGHT, id: 'contactViewTabs') {
+                                         panel(name: 'Grid', border: emptyBorder([7, 6, 7, 10])) {
+                                             borderLayout()
+                                             scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
 //                                             list(id: 'contactsList')
 //                                             contactsList.model = new RepositoryListModel(session.rootNode.getNode('contacts'))
 //                                             contactsList.cellRenderer = new RepositoryListCellRenderer()
@@ -1759,13 +1744,45 @@ public class Coucou{
                                                 }
                                                 widget(contactGrid)
                                                 bind(source: viewContactGroups, sourceProperty:'selected', target: contactGrid, targetProperty: 'toShowGroupLabels')
+                                            }
                                          }
-                                         scrollPane(constraints: 'listView', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                                             table(showHorizontalLines: false, id: 'contactList', columnControlVisible: true)
-                                             contactList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                             contactList.model = new ContactTableModel(getNode('/contacts'))
+                                         panel(name: 'List', border: emptyBorder([7, 6, 7, 10])) {
+                                             borderLayout()
+                                             scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+                                                 table(showHorizontalLines: false, id: 'contactList', columnControlVisible: true)
+                                                 contactList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                                 contactList.model = new ContactTableModel(getNode('/contacts'))
+                                             }
                                          }
                                      }
+                                     contactViewTabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
+                                     
+//                                         titledSeparator(title: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+//                                         label(text: 'Online Contacts', font: new Font('Arial', Font.PLAIN, 14), horizontalTextPosition: SwingConstants.LEFT, foreground: Color.WHITE)
+                                     
+//                                         titledSeparator(title: 'Saved Contacts', font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE)
+/*
+                                     panel(constraints: BorderLayout.NORTH, border: emptyBorder([0, 0, 5, 0])) {
+                                         flowLayout(alignment: FlowLayout.TRAILING)
+                                         
+                                         def viewButtonSize = new java.awt.Dimension(16, 16)
+                                         def viewButtons = new JCommandButtonStrip()
+                                         viewButtons.displayState = CommandButtonDisplayState.FIT_TO_ICON
+                                         
+                                         def gridViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
+                                         gridViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'gridView') }
+                                         viewButtons.add(gridViewButton)
+                                         
+                                         def listViewButton = new JCommandButton(SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/home.svg'), viewButtonSize))
+                                         listViewButton.actionPerformed = { contactsPane.layout.show(contactsPane, 'listView') }
+                                         viewButtons.add(listViewButton)
+                                         widget(viewButtons)
+                                     }
+                                     
+                                     panel(id: 'contactsPane') {
+                                         cardLayout()
+                                     }
+*/
 //                                         vglue()
 //                                     }
                                      
@@ -1779,6 +1796,9 @@ public class Coucou{
                                      
                                      scrollPane() {
                                         treeTable(id: 'plannerTree', columnControlVisible: true)
+                                        getNode('/planner/Personal')
+                                        getNode('/planner/Work')
+
                                         QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
                                         Query q = queryBuilder.query(
                                                 source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
@@ -1848,6 +1868,11 @@ public class Coucou{
                                         getNode('/history/Templates/Task')
                                         // chat..
                                         getNode('/history/Conversations')
+                                        getNode('/history/Today')
+                                        getNode('/history/Yesterday')
+                                        getNode('/history/This Week')
+                                        getNode('/history/Last Week')
+                                        getNode('/history/This Month')
                                         getNode('/history/Deleted')
 //                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
                                         historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/history')), ['Subject', 'From', 'Count', 'Last Updated'])
