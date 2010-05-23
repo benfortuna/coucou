@@ -540,7 +540,7 @@ public class Coucou{
             node.save()
         }
         
-        def openFeedView = { tabs, node ->
+        def openFeedView = { tabs, node, selectedItem = null ->
             def tab = getTabForNode(tabs, node)
             if (tab) {
                 tabs.selectedComponent = tab
@@ -664,6 +664,21 @@ public class Coucou{
                                 contentView.componentPopupMenu.show(contentView, popupLocation.x, popupLocation.y)
                             }
                         }
+                        
+                        if (selectedItem) {
+                            doLater {
+                                def childNodes = node.nodes
+                                while (childNodes.hasNext()) {
+                                    if (selectedItem.isSame(childNodes.nextNode())) {
+                                        def row = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
+                                        entryList.selectionModel.setSelectionInterval(row, row)
+                                        entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                        
                         /*
                         contentView.componentPopupMenu = popupMenu() {
                             menuItem(internetSearchAction)
@@ -762,10 +777,11 @@ public class Coucou{
                     }
                     entryNode.setProperty('seen', false)
                     entryNode.setProperty('source', feedNode)
-                    entryNode.setProperty('date', now)
+//                    entryNode.setProperty('date', now)
                 }
                 
-                if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time != entry.publishedDate.time)) {
+                // XXX: future published dates are ignored..
+                if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time.after(entry.publishedDate.time))) {
                     def publishedDate = Calendar.instance
                     publishedDate.time = entry.publishedDate
                     entryNode.setProperty('date', publishedDate)
@@ -870,7 +886,7 @@ public class Coucou{
                                 if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
                                     if (searchList.selectedValue) {
                                         def node = searchList.selectedValue
-                                        openFeedView(tabs, node.parent)
+                                        openFeedView(tabs, node.parent, node)
                                     }
                                 }
                             }
@@ -1799,15 +1815,18 @@ public class Coucou{
                                         getNode('/planner/Personal')
                                         getNode('/planner/Work')
 
+                                        // XXX: Search folders...
                                         QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
-                                        Query q = queryBuilder.query(
-                                                source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-                                                constraint: queryBuilder.and(
-                                                        constraint1: queryBuilder.childNode(selectorName: 'all_nodes', path: "${getNode('/planner').path}"),
-                                                        constraint2: queryBuilder.comparison(
-                                                                operand1: queryBuilder.propertyValue(selectorName: 'all_nodes', propertyName: 'due'),
+                                        Query q = queryBuilder.with {
+                                            query(
+                                                source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                                constraint: and(
+                                                        constraint1: childNode(selectorName: 'all_nodes', path: '/planner'),
+                                                        constraint2: comparison(
+                                                                operand1: propertyValue(selectorName: 'all_nodes', propertyName: 'due'),
                                                                 operator: QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO,
-                                                                operand2: queryBuilder.bindVariable(name: 'minDate'))))
+                                                                operand2: bindVariable(name: 'minDate'))))
+                                        }
                                                                 
                                         def todayNode = getNode('/planner/Today')
                                         if (!todayNode.hasNode("query")) {
@@ -1859,15 +1878,17 @@ public class Coucou{
                                         treeTable(id: 'historyTree', columnControlVisible: true)
                                         // email..
                                         getNode('/history/Inbox')
-                                        getNode('/history/Outbox')
-                                        getNode('/history/Sent')
-                                        getNode('/history/Drafts')
                                         getNode('/history/Templates')
                                         getNode('/history/Templates/Mail')
                                         getNode('/history/Templates/Meeting')
                                         getNode('/history/Templates/Task')
                                         // chat..
                                         getNode('/history/Conversations')
+                                        
+                                        // XXX: Search folders...
+                                        getNode('/history/Outbox')
+                                        getNode('/history/Sent')
+                                        getNode('/history/Drafts')
                                         getNode('/history/Today')
                                         getNode('/history/Yesterday')
                                         getNode('/history/This Week')
@@ -1999,6 +2020,7 @@ public class Coucou{
                                      borderLayout()
 
                                      scrollPane(border: null) {
+                                         /*
                                          table(showHorizontalLines: false, id: 'journalList')
                                          journalList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          journalList.model = new JournalTableModel(getNode('/journal'))
@@ -2045,6 +2067,47 @@ public class Coucou{
                                          }
                                          journalList.focusLost = {
                                              journalList.clearSelection()
+                                         }
+                                         */
+                                         treeTable(id: 'journalTree', columnControlVisible: true)
+                                         getNode('/journal/Personal')
+                                         getNode('/journal/Work')
+
+                                         // XXX: Search folders...
+                                         QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
+                                         Query q = queryBuilder.with {
+                                             query(
+                                                 source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                                 constraint: and(
+                                                         constraint1: childNode(selectorName: 'all_nodes', path: '/journal'),
+                                                         constraint2: comparison(
+                                                                 operand1: propertyValue(selectorName: 'all_nodes', propertyName: 'lastModified'),
+                                                                 operator: QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO,
+                                                                 operand2: bindVariable(name: 'minDate'))))
+                                         }
+                                                                 
+                                         def todayNode = getNode('/journal/Today')
+                                         if (!todayNode.hasNode("query")) {
+//                                             q.storeAsNode("${todayNode.path}/query")
+                                         }
+                                         def yesterdayNode = getNode('/journal/Yesterday')
+                                         if (!yesterdayNode.hasNode("query")) {
+//                                             q.storeAsNode("${yesterdayNode.path}/query")
+                                         }
+                                         def thisWeekNode = getNode('/journal/This Week')
+//                                         if (!thisWeekNode.hasNode("query")) {
+//                                             q.storeAsNode("${thisWeekNode.path}/query")
+//                                         }
+                                         getNode('/journal/Last Week')
+                                         getNode('/journal/This Month')
+                                         getNode('/journal/Last Month')
+                                         getNode('/journal/Deleted')
+//                                         journalTree.treeTableModel = new JournalTreeTableModel(getNode('/journal'))
+                                         journalTree.treeTableModel = new DefaultTreeTableModel(new JournalTreeTableNode(getNode('/journal')), ['Subject', 'Tags', 'Last Modified'])
+                                         journalTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+                                         journalTree.packAll()
+                                         journalTree.focusLost = {
+                                             journalTree.clearSelection()
                                          }
                                      }
                                  }
@@ -2154,7 +2217,7 @@ public class Coucou{
                                          if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
                                              if (activity.selectedValue) {
                                                  def node = activity.selectedValue
-                                                 openFeedView(tabs, node.parent)
+                                                 openFeedView(tabs, node.parent, node)
                                                  try {
                                                      // lock for list modification..
                                                      activityList.readWriteLock.writeLock().lock()
