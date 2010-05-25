@@ -182,6 +182,7 @@ import org.mnode.coucou.qom.QueryObjectModelBuilder
  * @author fortuna
  *
  */
+ /*
 @Grapes([
 //      @Grab(group='net.java.dev.glazedlists', module='glazedlists_java15', version='1.8.0'),
       @Grab(group='org.codehaus.gpars', module='gpars', version='0.9'),
@@ -221,6 +222,7 @@ import org.mnode.coucou.qom.QueryObjectModelBuilder
 //    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
 //    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
+    */
 public class Coucou{
      
     static final LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
