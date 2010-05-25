@@ -164,8 +164,12 @@ import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import javax.imageio.ImageIO
 import ca.odell.glazedlists.swing.EventListModel
+import ca.odell.glazedlists.swing.EventTableModel
 import ca.odell.glazedlists.BasicEventList
 import ca.odell.glazedlists.SortedList
+import ca.odell.glazedlists.GlazedLists
+import ca.odell.glazedlists.gui.AdvancedTableFormat
+import ca.odell.glazedlists.swing.EventListJXTableSorting
 import org.fife.ui.rtextarea.RTextScrollPane
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import javax.jcr.RepositoryException
@@ -178,7 +182,6 @@ import org.mnode.coucou.qom.QueryObjectModelBuilder
  * @author fortuna
  *
  */
- /*
 @Grapes([
 //      @Grab(group='net.java.dev.glazedlists', module='glazedlists_java15', version='1.8.0'),
       @Grab(group='org.codehaus.gpars', module='gpars', version='0.9'),
@@ -218,7 +221,6 @@ import org.mnode.coucou.qom.QueryObjectModelBuilder
 //    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
 //    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
-    */
 public class Coucou{
      
     static final LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
@@ -491,7 +493,7 @@ public class Coucou{
 //                                                println removedIndices
                                                 swing.edt {
     //                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-                                                    explorerTree.treeTableModel.reload(selectedPath.parentPath.lastPathComponent)
+                                                    explorerTree.treeTableModel.reload() //selectedPath.parentPath.lastPathComponent)
                                                 }
                                             }
                                         }
@@ -541,18 +543,22 @@ public class Coucou{
         }
         
         def openFeedView = { tabs, node, selectedItem = null ->
-            def tab = getTabForNode(tabs, node)
-            if (tab) {
-                tabs.selectedComponent = tab
-                return
+            def feedView = getTabForNode(tabs, node)
+            if (feedView) {
+                tabs.selectedComponent = feedView
             }
-            
-            swing.edt {
+            else {
+              swing.edt {
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-                def feedView = panel(name: node.getProperty('title').value.string, border: emptyBorder(10)) {
+                
+                def resultList = new BasicEventList()
+                def tableFormat = new FeedEntryTableFormat()
+//                def sortedList = new SortedList(resultList, tableFormat.getColumnComparator(3))
+                def entryListModel = new EventTableModel(resultList, tableFormat)
+                def entryList
+                feedView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
                     borderLayout()
                     splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
-                        def entryList
                         def contentView
                         scrollPane(constraints: 'left') {
 //                            def entryList = list()
@@ -560,13 +566,16 @@ public class Coucou{
 //                            entryList.cellRenderer = new FeedViewListCellRenderer()
                             entryList = table(showHorizontalLines: false)
                             entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                            entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer())
-                            entryList.setDefaultRenderer(Date, new DateCellRenderer())
-                            entryList.model = new FeedEntryTableModel(node)
+                            entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer(node))
+                            entryList.setDefaultRenderer(Date, new DateCellRenderer(node))
+//                            entryList.model = new FeedEntryTableModel(node)
+                            entryList.model = entryListModel
+//                            EventListJXTableSorting.install(entryList, sortedList)
                             entryList.setSortOrder(3, SortOrder.DESCENDING)
                             entryList.sortsOnUpdates = true
+                            
                             // XXX: need to remove from filterableLists on tab close..
-                            filterableLists << entryList
+//                            filterableLists << entryList
                             entryList.selectionModel.valueChanged = { e ->
                                 if (!e.valueIsAdjusting) {
 //                                if (entryList.selectedValue && entryList.selectedValue.hasProperty('description')) {
@@ -646,7 +655,6 @@ public class Coucou{
                                     entryList.clearSelection()
                                 }
                             }
-                            entryList.packAll()
                         }
 
                         scrollPane(constraints: 'right') {
@@ -665,20 +673,6 @@ public class Coucou{
                             }
                         }
                         
-                        if (selectedItem) {
-                            doLater {
-                                def childNodes = node.nodes
-                                while (childNodes.hasNext()) {
-                                    if (selectedItem.isSame(childNodes.nextNode())) {
-                                        def row = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
-                                        entryList.selectionModel.setSelectionInterval(row, row)
-                                        entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                        
                         /*
                         contentView.componentPopupMenu = popupMenu() {
                             menuItem(internetSearchAction)
@@ -690,12 +684,36 @@ public class Coucou{
                 }
                 feedView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 feedView.putClientProperty('coucou.node', node)
+                feedView.putClientProperty('entryList', entryList)
                 tabs.add feedView
                 tabs.selectedComponent = feedView
                 
                 def iconSize = new Dimension(16, 16)
                 def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/feed.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
+                
+                doLater {
+                    for (entryNode in node.nodes) {
+                        resultList.add(entryNode)
+                    }
+                    entryList.packAll()
+                }
+              }
+            }
+
+            swing.doLater {
+                        if (selectedItem) {
+                                def childNodes = node.nodes
+                                while (childNodes.hasNext()) {
+                                    if (selectedItem.isSame(childNodes.nextNode())) {
+                                        def entryList = feedView.getClientProperty('entryList')
+                                        def row = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
+                                        entryList.selectionModel.setSelectionInterval(row, row)
+                                        entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
+                                        break
+                                    }
+                                }
+                        }
                 coucouFrame.cursor = Cursor.defaultCursor
             }
         }
@@ -855,31 +873,15 @@ public class Coucou{
         def openSearchView = { tabs, searchTerms ->
             swing.edt {
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-            }
-            swing.doOutside {
-//                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
-                QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
-                Query q = queryBuilder.query(
-                        source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-                        constraint: queryBuilder.fullTextSearch(selectorName: 'all_nodes', searchTerms: "${searchTerms}"))
-                
-                def nodes = q.execute().nodes
-//                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
-
-                doLater {
                 
 //                def searchModel = new DefaultListModel()
                     def resultList = new BasicEventList()
                     def searchModel = new EventListModel(new SortedList(resultList, compareByDate as Comparator))
-                    for (node in nodes) {
-//                    searchModel.addElement node
-                        resultList.add(node)
-                    }
                     
                     def searchView = panel(name: searchTerms, border: emptyBorder(10)) {
                         borderLayout()
                         scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                            list(opaque: false, id: 'searchList')
+                            def searchList = list(opaque: false)
                             searchList.cellRenderer = new ActivityListCellRenderer()
                             searchList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                             searchList.mouseClicked = { e ->
@@ -904,8 +906,25 @@ public class Coucou{
                     def iconSize = new Dimension(16, 16)
                     def searchIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/search.svg'), iconSize)
                     tabs.setIconAt(tabs.indexOfComponent(searchView), searchIcon)
+
+              doOutside {
+//                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
+                QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
+                Query q = queryBuilder.query(
+                        source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                        constraint: queryBuilder.fullTextSearch(selectorName: 'all_nodes', searchTerms: "${searchTerms}"))
+                
+                def nodes = q.execute().nodes
+//                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
+
+                doLater {
+                    for (node in nodes) {
+//                    searchModel.addElement node
+                        resultList.add(node)
+                    }
                     coucouFrame.cursor = Cursor.defaultCursor
                 }
+              }
             }
         }
         
@@ -1914,7 +1933,7 @@ public class Coucou{
 //                                         feedList.cellRenderer = new FeedViewListCellRenderer()
                                          table(showHorizontalLines: false, id: 'feedList', columnControlVisible: true)
                                          feedList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         feedList.setDefaultRenderer(Date, new DateCellRenderer())
+                                         feedList.setDefaultRenderer(Date, new DateCellRenderer(getNode('/feeds')))
                                          feedList.model = new FeedTableModel(getNode('/feeds'))
                                          feedList.packAll()
                                          feedList.setSortOrder(3, SortOrder.DESCENDING)
@@ -1971,7 +1990,7 @@ public class Coucou{
                                          noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
                                          noteList.model = new NoteTableModel(getNode('/notes'))
                                          noteList.packAll()
-                                         noteList.setDefaultRenderer(Date, new DateCellRenderer())
+                                         noteList.setDefaultRenderer(Date, new DateCellRenderer(getNode('/notes')))
                                          noteList.setSortOrder(2, SortOrder.DESCENDING)
                                          noteList.sortsOnUpdates = true
                                          filterableLists << noteList

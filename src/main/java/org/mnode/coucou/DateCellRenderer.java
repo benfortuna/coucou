@@ -22,6 +22,7 @@ package org.mnode.coucou;
 import java.awt.Component;
 import java.util.Date;
 
+import javax.jcr.Node;
 import javax.swing.JTable;
 
 import com.ocpsoft.pretty.time.PrettyTime;
@@ -35,6 +36,10 @@ public class DateCellRenderer extends DefaultNodeTableCellRenderer {
     private static final long serialVersionUID = 1L;
     
     private final PrettyTime df = new PrettyTime();
+    
+    public DateCellRenderer(Node parent) {
+        super(parent);
+    }
     
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,

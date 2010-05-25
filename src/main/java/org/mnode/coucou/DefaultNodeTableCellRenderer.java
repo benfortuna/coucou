@@ -23,6 +23,7 @@ import java.awt.Component;
 import java.awt.Font;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -37,9 +38,12 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     private final Font defaultFont;
     private final Font unreadFont;
     
-    public DefaultNodeTableCellRenderer() {
+    private final Node parent;
+    
+    public DefaultNodeTableCellRenderer(Node parent) {
         defaultFont = getFont();
         unreadFont = getFont().deriveFont(Font.BOLD);
+        this.parent = parent;
     }
     
     @Override
@@ -48,7 +52,10 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
         
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         try {
-            Node node = ((AbstractNodeTableModel) table.getModel()).getNodeAt(table.convertRowIndexToModel(row));
+//            Node node = ((AbstractNodeTableModel) table.getModel()).getNodeAt(table.convertRowIndexToModel(row));
+            NodeIterator nodes = parent.getNodes();
+            nodes.skip(table.convertRowIndexToModel(row));
+            Node node = nodes.nextNode();
             if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
                 setFont(unreadFont);
             }
