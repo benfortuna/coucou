@@ -96,7 +96,7 @@ public class FeedEntryTableFormat implements AdvancedTableFormat<Node> {
         }
     }
     
-    public Comparator<?> getColumnComparator(int column) {
+    public Comparator<? extends Comparable<?>> getColumnComparator(int column) {
         switch (column) {
             default: return GlazedLists.comparableComparator();
         }
