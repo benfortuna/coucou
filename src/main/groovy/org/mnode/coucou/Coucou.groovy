@@ -140,7 +140,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel
 import javax.swing.Action
 import java.net.URI
-//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jdesktop.swingx.table.ColumnFactory//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -253,6 +253,8 @@ public class Coucou{
          LookAndFeelHelper.instance.addLookAndFeelAlias('substance5', 'org.jvnet.substance.skin.SubstanceNebulaLookAndFeel')
 //         LookAndFeelHelper.instance.addLookAndFeelAlias('seaglass', 'com.seaglasslookandfeel.SeaGlassLookAndFeel')
          
+        ColumnFactory.instance = new RowLimitedColumnFactory(100)
+        
         //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
@@ -548,16 +550,32 @@ public class Coucou{
             def feedView = getTabForNode(tabs, node)
             if (feedView) {
                 tabs.selectedComponent = feedView
+                if (selectedItem) {
+                    def childNodes = node.nodes
+                    while (childNodes.hasNext()) {
+                        if (selectedItem.isSame(childNodes.nextNode())) {
+                            def entryList = feedView.getClientProperty('entryList')
+                            def row = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
+                            swing.edt {
+                                entryList.selectionModel.setSelectionInterval(row, row)
+                                entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
+                            }
+                            break
+                        }
+                    }
+                }
             }
             else {
               swing.edt {
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
                 
                 def resultList = new BasicEventList()
+                def entryList
+                resultList.readWriteLock.readLock().lock()
+                try {
                 def tableFormat = new FeedEntryTableFormat()
 //                def sortedList = new SortedList(resultList, tableFormat.getColumnComparator(3))
                 def entryListModel = new EventTableModel(resultList, tableFormat)
-                def entryList
                 feedView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
                     borderLayout()
                     splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
@@ -684,6 +702,9 @@ public class Coucou{
                         */
                     }
                 }
+                } finally {
+                    resultList.readWriteLock.readLock().unlock()
+                }
                 feedView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 feedView.putClientProperty('coucou.node', node)
                 feedView.putClientProperty('entryList', entryList)
@@ -694,15 +715,48 @@ public class Coucou{
                 def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/feed.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
                 
-                doLater {
-                    for (entryNode in node.nodes) {
-                        resultList.add(entryNode)
+                doOutside {
+                    def selectedRow
+//                    def childNodes = node.nodes
+                    resultList.readWriteLock.writeLock().lock()
+                    try {
+                        for (entryNode in node.nodes) {
+//                    while (childNodes.hasNext()) {
+//                        def entryNode = childNodes.nextNode()
+                            resultList.add(entryNode)
+/*                        
+                        if (selectedItem?.isSame(entryNode)) {
+                            selectedRow = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
+                            entryList.selectionModel.setSelectionInterval(row, row)
+                            entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
+                        }
+*/
+                        }
+                    } finally {
+                        resultList.readWriteLock.writeLock().unlock()
                     }
-                    entryList.packAll()
+                    
+                    doLater {
+                        entryList.packAll()
+                        if (selectedItem) {
+                                def childNodes = node.nodes
+                                while (childNodes.hasNext()) {
+                                    if (selectedItem.isSame(childNodes.nextNode())) {
+                                        def row = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
+                                        edt {
+                                            entryList.selectionModel.setSelectionInterval(row, row)
+                                            entryList.scrollRectToVisible(entryList.getCellRect(row, 0, true))
+                                        }
+                                        break
+                                    }
+                                }
+                        }
+                        coucouFrame.cursor = Cursor.defaultCursor
+                    }
                 }
               }
             }
-
+/*
             swing.doLater {
                         if (selectedItem) {
                                 def childNodes = node.nodes
@@ -716,8 +770,9 @@ public class Coucou{
                                     }
                                 }
                         }
-                coucouFrame.cursor = Cursor.defaultCursor
+//                coucouFrame.cursor = Cursor.defaultCursor
             }
+*/
         }
         
         def updateProperty = { aNode, propertyName, value ->
