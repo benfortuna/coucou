@@ -231,7 +231,7 @@ public class Coucou{
     static final LogEntry delete_disabled = new FormattedLogEntry(Level.Info, 'Disable deletion')
     static final LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
     
-    static final def EMPTY_TABLE_MODEL = new DefaultTableModel()
+//    static final def EMPTY_TABLE_MODEL = new DefaultTableModel()
      
     static void close(def frame, def exit) {
         if (exit) {
@@ -476,50 +476,7 @@ public class Coucou{
             }
             
             swing.edt {
-                def explorerTab = panel(name: 'Repository Explorer', border: emptyBorder(10)) {
-                    borderLayout()
-                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
-                        scrollPane(constraints: 'left') {
-                            treeTable(id: 'explorerTree')
-//                            explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
-                            explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(node), ['Name', 'Type', 'State'])
-                            explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
-                            explorerTree.selectionModel.valueChanged = {
-                                def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
-                                if (selectedPath) {
-                                    swing.edt {
-                                        propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent.userObject)
-                                        editContext.delete = {
-                                            if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete node: ${selectedPath.lastPathComponent.userObject.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                explorerTree.clearSelection()
-//                                                def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-                                                removeNode selectedPath.lastPathComponent.userObject
-//                                                println removedIndices
-                                                swing.edt {
-    //                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-                                                    explorerTree.treeTableModel.reload() //selectedPath.parentPath.lastPathComponent)
-                                                }
-                                            }
-                                        }
-                                    }
-//                                    editContext.enabled = true
-                                }
-                                else {
-                                    swing.edt {
-                                        propertyTable.model = EMPTY_TABLE_MODEL
-//                                    editContext.enabled = false
-                                        editContext.delete = null
-                                    }
-                                }
-                            }
-                            explorerTree.packAll()
-                        }
-                        scrollPane(constraints: 'right') {
-                            table(showHorizontalLines: false, id: 'propertyTable')
-                            propertyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                        }
-                    }
-                }
+                def explorerTab = new ExplorerView(node, coucouFrame, editContext)
             
                 explorerTab.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 explorerTab.putClientProperty('coucou.node', node)
@@ -570,144 +527,16 @@ public class Coucou{
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
                 
                 def resultList = new BasicEventList()
-                def entryList
                 resultList.readWriteLock.readLock().lock()
                 try {
-                def tableFormat = new FeedEntryTableFormat()
-//                def sortedList = new SortedList(resultList, tableFormat.getColumnComparator(3))
-                def entryListModel = new EventTableModel(resultList, tableFormat)
-                feedView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
-                    borderLayout()
-                    splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
-                        def contentView
-                        scrollPane(constraints: 'left') {
-//                            def entryList = list()
-//                            entryList.model = new RepositoryListModel(node)
-//                            entryList.cellRenderer = new FeedViewListCellRenderer()
-                            entryList = table(showHorizontalLines: false)
-                            entryList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                            entryList.setDefaultRenderer(String, new DefaultNodeTableCellRenderer(node))
-                            entryList.setDefaultRenderer(Date, new DateCellRenderer(node))
-//                            entryList.model = new FeedEntryTableModel(node)
-                            entryList.model = entryListModel
-//                            EventListJXTableSorting.install(entryList, sortedList)
-                            entryList.setSortOrder(3, SortOrder.DESCENDING)
-                            entryList.sortsOnUpdates = true
-                            
-                            // XXX: need to remove from filterableLists on tab close..
-//                            filterableLists << entryList
-                            entryList.selectionModel.valueChanged = { e ->
-                                if (!e.valueIsAdjusting) {
-//                                if (entryList.selectedValue && entryList.selectedValue.hasProperty('description')) {
-//                                    contentView.text = entryList.selectedValue.getProperty('description').value.string
-                                    if (entryList.selectedRow >= 0) {
-                                        def entries = node.nodes
-                                        entries.skip(entryList.convertRowIndexToModel(entryList.selectedRow))
-                                        def entry = entries.nextNode()
-                                        swing.edt {
-                                            if (entry.hasProperty('description')) {
-    //                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-                                                def content = entry.getProperty('description').value.string.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
-                                                contentView.text = content
-                                                contentView.caretPosition = 0
-                                            }
-                                            else {
-                                                contentView.text = null
-                                            }
-                                            editContext.markAsRead = {
-                                                markNodeRead(entry, true)
-                                                if (entryList.selectedRow < entryList.rowCount - 1) {
-                                                    entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
-                                                }
-                                            }
-                                            editContext.markAsUnread = {
-                                                markNodeRead(entry, false)
-                                                if (entryList.selectedRow < entryList.rowCount - 1) {
-                                                    entryList.setRowSelectionInterval(entryList.selectedRow + 1, entryList.selectedRow + 1)
-                                                }
-                                            }
-                                            editContext.markAllRead = {
-                                                markNodeRead(node, true)
-    //                                            swing.edt {
-    //                                                entryList.model.fireTableDataChanged()
-    //                                            }
-                                            }
-                                            editContext.flag = {
-                                                def flag = true
-                                                if (entry.hasProperty('flag')) {
-                                                    flag = !entry.getProperty('flag').boolean
-                                                }
-                                                entry.setProperty('flag', flag)
-                                                entry.save()
-                                            }
-                                        }
-//                                        editContext.markAsReadEnabled = true
-                                    }
-                                    else {
-                                        swing.edt {
-                                            contentView.text = null
-    //                                        editContext.markAsReadEnabled = false
-                                            editContext.markAsRead = null
-                                            editContext.markAsUnread = null
-                                            editContext.markAllRead = null
-                                            editContext.flag = null
-                                        }
-                                    }
-                                }
-                            }
-                            entryList.mouseClicked = { e ->
-                                if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && entryList.selectedRow >= 0) {
-//                                    if (entryList.selectedRow >= 0 && entryList.model[entryList.selectedRow].hasProperty('link')) {
-//                                        Desktop.desktop.browse(URI.create(entryList.model[entryList.selectedRow].getProperty('link').value.string))
-//                                    }
-                                    def entries = node.nodes
-                                    entries.skip(entryList.convertRowIndexToModel(entryList.selectedRow))
-                                    def entry = entries.nextNode()
-                                    if (entry.hasProperty('link')) {
-                                        Desktop.desktop.browse(URI.create(entry.getProperty('link').value.string))
-                                        entry.setProperty('seen', true)
-                                        entry.save()
-                                    }
-                                }
-                            }
-                            entryList.focusLost = { e ->
-                                if (e.oppositeComponent != contentView) {
-                                    entryList.clearSelection()
-                                }
-                            }
-                        }
-
-                        scrollPane(constraints: 'right') {
-                            contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
-                        }
-                        contentView.addHyperlinkListener(new HyperlinkListenerImpl())
-                        contentView.focusLost = { e ->
-                            if (e.oppositeComponent != entryList) {
-                                entryList.clearSelection()
-                            }
-                        }
-                        contentView.mouseClicked = { e ->
-                            if (e.popupTrigger) {
-                                def popupLocation = contentView.getPopupLocation(e)
-                                contentView.componentPopupMenu.show(contentView, popupLocation.x, popupLocation.y)
-                            }
-                        }
-                        
-                        /*
-                        contentView.componentPopupMenu = popupMenu() {
-                            menuItem(internetSearchAction)
-                            separator()
-                            menuItem(text: 'View Source')//, action: { frame(title: title, size: [430, 400], show: true, locationRelativeTo: coucouFrame) } as Action)
-                        }
-                        */
-                    }
-                }
+                    feedView = new FeedView(node, resultList, editContext, defaultEditorKit)
+                    feedView.markNodeRead = markNodeRead
                 } finally {
                     resultList.readWriteLock.readLock().unlock()
                 }
                 feedView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 feedView.putClientProperty('coucou.node', node)
-                feedView.putClientProperty('entryList', entryList)
+//                feedView.putClientProperty('entryList', entryList)
                 tabs.add feedView
                 tabs.selectedComponent = feedView
                 
@@ -737,6 +566,7 @@ public class Coucou{
                     }
                     
                     doLater {
+                        def entryList = feedView.getClientProperty('entryList')
                         entryList.packAll()
                         if (selectedItem) {
                                 def childNodes = node.nodes
@@ -931,30 +761,10 @@ public class Coucou{
             swing.edt {
                 coucouFrame.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
                 
-//                def searchModel = new DefaultListModel()
                     def resultList = new BasicEventList()
-                    def searchModel = new EventListModel(new SortedList(resultList, compareByDate as Comparator))
-                    
-                    def searchView = panel(name: searchTerms, border: emptyBorder(10)) {
-                        borderLayout()
-                        scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-                            def searchList = list(opaque: false)
-                            searchList.cellRenderer = new ActivityListCellRenderer()
-                            searchList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                            searchList.mouseClicked = { e ->
-                                if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2) {
-                                    if (searchList.selectedValue) {
-                                        def node = searchList.selectedValue
-                                        openFeedView(tabs, node.parent, node)
-                                    }
-                                }
-                            }
-                            searchList.focusLost = {
-                                searchList.clearSelection()
-                            }
-                            searchList.model = searchModel
-                        }
-                    }
+
+                    searchView = new SearchView(searchTerms, resultList, compareByDate)
+                    searchView.showItem = { node -> openFeedView(tabs, node.parent, node)}
                     searchView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                     searchView.putClientProperty('coucou.query', searchTerms)
                     tabs.add searchView
@@ -967,9 +777,9 @@ public class Coucou{
               doOutside {
 //                Query q = session.workspace.queryManager.createQuery("select * from [nt:unstructured] as all_nodes where contains(all_nodes.*, '${searchTerms}')", Query.JCR_SQL2)
                 QueryObjectModelBuilder queryBuilder = new QueryObjectModelBuilder(session.workspace.queryManager, session.valueFactory)
-                Query q = queryBuilder.query(
-                        source: queryBuilder.selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-                        constraint: queryBuilder.fullTextSearch(selectorName: 'all_nodes', searchTerms: "${searchTerms}"))
+                Query q = queryBuilder.with {
+                        query(source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+                                constraint: fullTextSearch(selectorName: 'all_nodes', searchTerms: "${searchTerms}"))}
                 
                 def nodes = q.execute().nodes
 //                println "Found ${nodes.size} matching nodes: ${nodes.collect { it.path }}"
@@ -1121,48 +931,8 @@ public class Coucou{
             }
             
             swing.edt {
-                def noteView = panel(name: node.getProperty('title').string, border: emptyBorder(10)) {
-                    borderLayout()
-                    scrollPane() {
-                        if ('text/html' == node.getProperty('contentType').string) { 
-                            contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
-                            if (node.hasProperty('markupLanguage')) {
-                                if ('MediaWiki' == node.getProperty('markupLanguage').string) {
-                                    def parser = new MarkupParser(new MediaWikiLanguage())
-                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
-                                    println "Parsed mediawiki: ${content}"
-                                    contentView.text = content
-                                }
-                                else if ('Confluence' == node.getProperty('markupLanguage').string) {
-                                    def parser = new MarkupParser(new ConfluenceLanguage())
-                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
-                                    println "Parsed confluence: ${content}"
-                                    contentView.text = content
-                                }
-                                else if ('Textile' == node.getProperty('markupLanguage').string) {
-                                    def parser = new MarkupParser(new TextileLanguage())
-                                    def content = parser.parseToHtml(node.getProperty('content').string).replaceAll(/(?i)\<\?.*\?\>|\<meta.*\/\>/, '')
-                                    println "Parsed confluence: ${content}"
-                                    contentView.text = content
-                                }
-                            }
-                            else {
-                                contentView.text = node.getProperty('content').string
-                            }
-                            contentView.addHyperlinkListener(new HyperlinkListenerImpl())
-                            contentView.caretPosition = 0
-                        }
-                        else {
-                            contentView = editorPane(editable: false, contentType: node.getProperty('contentType').string, opaque: true, border: null)
-                            contentView.text = node.getProperty('content').string
-                        }
-                    }
-                    hbox(border: emptyBorder([10, 0, 0, 0]), constraints: BorderLayout.SOUTH) {
-                        button(text: 'Revisions..')
-                        hglue()
-                        button(text: 'Edit', actionPerformed: {editNote(node.parent, node.name)})
-                    }
-                }
+                def noteView = new NoteView(node, defaultEditorKit)
+                noteView.editNote = editNote
                 noteView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 noteView.putClientProperty('coucou.node', node)
                 tabs.add noteView
@@ -1279,6 +1049,7 @@ public class Coucou{
             }
             
             swing.edt {
+/*
                 def entryView = panel(name: node.getProperty('subject').string, border: emptyBorder(10)) {
                     borderLayout()
                     scrollPane() {
@@ -1291,6 +1062,9 @@ public class Coucou{
                         button(text: 'Edit', actionPerformed: {editJournalEntry(node.parent, node.name)})
                     }
                 }
+*/
+                def entryView = new JournalView(node)
+                entryView.editJournalEntry = editJournalEntry
                 entryView.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_BUTTONS_PROPERTY, true)
                 entryView.putClientProperty('coucou.node', node)
                 tabs.add entryView
