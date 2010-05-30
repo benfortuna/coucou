@@ -1194,44 +1194,47 @@ public class Coucou{
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     
                     action(id: 'importAction', name: 'Import..', closure: {
-                        if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
-                            doOutside {
-                                def opml = new XmlSlurper().parse(chooser.selectedFile)
-                                def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
-                                if (feeds.isEmpty()) {
-                                    feeds = opml.body.outline.collect { it.@xmlUrl.text() }
-                                }
-                                println "Feeds: ${feeds}"
-                                def errorMap = [:]
-                                for (feed in feeds) {
-                                    try {
-                                        Asynchronizer.doParallel {
-                                            def future = updateFeed.callAsync(feed)
-//                                            future.get()
-//                                            doLater {
-//                                                feedList.model.fireTableDataChanged()
-//                                            }
+                        dialog(title: 'Import', locationRelativeTo: coucouFrame, id: 'importDialog') {
+                            borderLayout()
+                            panel() {
+                                gridLayout(1, 1)
+                                button(action: action(name: 'Import Feeds..', closure: {
+                                    if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                                        importDialog.dispose()
+                                        doOutside {
+                                            def opml = new XmlSlurper().parse(chooser.selectedFile)
+                                            def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
+                                            if (feeds.isEmpty()) {
+                                                feeds = opml.body.outline.collect { it.@xmlUrl.text() }
+                                            }
+                                            println "Feeds: ${feeds}"
+                                            def errorMap = [:]
+                                            for (feed in feeds) {
+                                                try {
+                                                    Asynchronizer.doParallel {
+                                                        def future = updateFeed.callAsync(feed)
+            //                                            future.get()
+            //                                            doLater {
+            //                                                feedList.model.fireTableDataChanged()
+            //                                            }
+                                                    }
+                                                }
+                                                catch (Exception ex) {
+                                                    log.log unexpected_error, ex
+                                                    errorMap.put(feed, ex)
+                                                }
+                                            }
+                                            if (!errorMap.isEmpty()) {
+                                                doLater {
+                                                    def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
+                                                        "<html><body>Error importing feeds: ${errorMap}</body></html>", null, null, null, null)
+                                                    JXErrorPane.showDialog(coucouFrame, error);
+                                                }
+                                            }
                                         }
                                     }
-                                    catch (Exception ex) {
-                                        log.log unexpected_error, ex
-                                        errorMap.put(feed, ex)
-                                    }
-                                }
-                                if (!errorMap.isEmpty()) {
-                                    doLater {
-                                        def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
-                                            "<html><body>Error importing feeds: ${errorMap}</body></html>", null, null, null, null)
-                                        JXErrorPane.showDialog(coucouFrame, error);
-                                    }
-                                }
+                                }))
                             }
-                               //def tab = newTab(chooser.selectedFile)
-                               //tabs.add(tab)
-                               //tabs.setIconAt(tabs.indexOfComponent(tab), FileSystemView.fileSystemView.getSystemIcon(chooser.selectedFile))
-                               //tabs.selectedComponent = tab
-//                               openTab(tabs, chooser.selectedFile)
-//                            }
                         }
                     })
                     

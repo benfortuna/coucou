@@ -19,7 +19,7 @@
 package org.mnode.coucou
 
 import org.jdesktop.swingx.JXPanel
-import groovy.swing.SwingXBuilderimport javax.swing.JSplitPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport ca.odell.glazedlists.swing.EventTableModelimport javax.swing.SortOrderimport java.awt.event.MouseEventimport org.mnode.base.desktop.HyperlinkListenerImplimport java.awt.Desktop
+import groovy.swing.SwingXBuilderimport javax.swing.JSplitPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport ca.odell.glazedlists.swing.EventTableModelimport javax.swing.SortOrderimport java.awt.event.MouseEventimport org.mnode.base.desktop.HyperlinkListenerImplimport java.awt.Desktopimport javax.swing.Action
 
 /**
  * @author Ben
@@ -40,6 +40,7 @@ public class FeedView extends JXPanel {
         
         add swing.splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
             def contentView
+            def contentViewPopup
             scrollPane(constraints: 'left') {
 //                def entryList = list()
 //                entryList.model = new RepositoryListModel(node)
@@ -131,7 +132,7 @@ public class FeedView extends JXPanel {
                     }
                 }
                 entryList.focusLost = { e ->
-                    if (e.oppositeComponent != contentView) {
+                    if (e.oppositeComponent != contentView && e.oppositeComponent != contentViewPopup) {
                         entryList.clearSelection()
                     }
                 }
@@ -145,14 +146,51 @@ public class FeedView extends JXPanel {
             }
             contentView.addHyperlinkListener(new HyperlinkListenerImpl())
             contentView.focusLost = { e ->
-                if (e.oppositeComponent != entryList) {
+                if (e.oppositeComponent != entryList && e.oppositeComponent != contentViewPopup) {
                     entryList.clearSelection()
                 }
             }
-            contentView.mouseClicked = { e ->
+            
+            frame(title: "Source: ${name}", size: [430, 400], show: false, locationRelativeTo: contentView, id: 'viewSourceFrame') {
+                borderLayout()
+                scrollPane {
+                    textArea(id: 'viewSourceContent')
+                }
+            }
+            
+            
+            contentView.mousePressed = { e ->
                 if (e.popupTrigger) {
                     def popupLocation = contentView.getPopupLocation(e)
-                    contentView.componentPopupMenu.show(contentView, popupLocation.x, popupLocation.y)
+                    if (!popupLocation) {
+                        popupLocation = e.point
+                    }
+                    contentViewPopup = popupMenu() {
+                        //              menuItem(internetSearchAction)
+                        separator()
+                        menuItem(action(name: 'View Source', closure: {
+                            viewSourceContent.text = contentView.text
+                            viewSourceFrame.show()
+                        }))
+                    }
+                    contentViewPopup.show(contentView, popupLocation.x as int, popupLocation.y as int)
+                }
+            }
+            contentView.mouseReleased = { e ->
+                if (e.popupTrigger) {
+                    def popupLocation = contentView.getPopupLocation(e)
+                    if (!popupLocation) {
+                        popupLocation = e.point
+                    }
+                    contentViewPopup = popupMenu() {
+                        //              menuItem(internetSearchAction)
+                        separator()
+                        menuItem(action(name: 'View Source', closure: {
+                            viewSourceContent.text = contentView.text
+                            viewSourceFrame.show()
+                        }))
+                    }
+                    contentViewPopup.show(contentView, popupLocation.x as int, popupLocation.y as int)
                 }
             }
             
