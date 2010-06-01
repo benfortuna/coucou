@@ -139,6 +139,11 @@
 			<artifactId>rsyntaxtextarea</artifactId>
 			<version>1.4.0</version>
 		</dependency>
+		<dependency>
+			<groupId>net.fortuna.mstor</groupId>
+			<artifactId>mstor</artifactId>
+			<version>0.9.12</version>
+		</dependency>
 		<!--
 		<dependency>
 			<groupId>jgoodies</groupId>

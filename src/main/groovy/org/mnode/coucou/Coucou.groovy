@@ -140,7 +140,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel
 import javax.swing.Action
 import java.net.URI
-import org.jdesktop.swingx.table.ColumnFactory//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import org.jdesktop.swingx.table.ColumnFactory
+import javax.mail.Sessionimport java.util.Propertiesimport javax.mail.Storeimport javax.mail.URLName//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -177,6 +178,8 @@ import javax.jcr.query.qom.QueryObjectModelConstants
 import org.mnode.base.log.adapter.JclAdapter
 import org.apache.commons.logging.LogFactory
 import org.mnode.coucou.qom.QueryObjectModelBuilder
+import javax.mail.Folder
+import javax.mail.MessagingException
 
 /**
  * @author fortuna
@@ -219,6 +222,7 @@ import org.mnode.coucou.qom.QueryObjectModelBuilder
     //@Grab(group='org.apache.jackrabbit', module='jackrabbit-text-extractors', version='2.0.0'),
     @Grab(group='org.slf4j', module='slf4j-log4j12', version='1.5.8'),
     @Grab(group='net.fortuna.ical4j', module='ical4j-connector', version='0.9'),
+    @Grab(group='net.fortuna.mstor', module='mstor', version='0.9.12'),
 //    @Grab(group='com.miglayout', module='miglayout', version='3.7.2'),
 //    @Grab(group='com.ocpsoft', module='ocpsoft-pretty-time', version='1.0.5'),
     @Grab(group='com.fifesoft.rsyntaxtextarea', module='rsyntaxtextarea', version='1.4.0')])
@@ -235,7 +239,9 @@ public class Coucou{
      
     static void close(def frame, def exit) {
         if (exit) {
-            System.exit(0)
+            if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(frame, "Exit Coucou?", 'Confirm shutdown', JOptionPane.OK_CANCEL_OPTION)) {
+                System.exit(0)
+            }
         }
         else {
             frame.visible = false
@@ -1194,11 +1200,11 @@ public class Coucou{
                     action(id: 'printAction', name: 'Print', accelerator: shortcut('P'))
                     
                     action(id: 'importAction', name: 'Import..', closure: {
-                        dialog(title: 'Import', locationRelativeTo: coucouFrame, id: 'importDialog') {
+                        dialog(title: 'Import', id: 'importDialog', size: [350, 250], show: true, owner: coucouFrame, modal: true, locationRelativeTo: coucouFrame) {
                             borderLayout()
                             panel() {
-                                gridLayout(1, 1)
-                                button(action: action(name: 'Import Feeds..', closure: {
+//                                gridLayout(1, 1)
+                                button(text: 'Import Feeds..', actionPerformed: {
                                     if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
                                         importDialog.dispose()
                                         doOutside {
@@ -1233,7 +1239,29 @@ public class Coucou{
                                             }
                                         }
                                     }
-                                }))
+                                })
+                                button(text: 'Import Email..', actionPerformed: {
+                                    if (dirChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+                                        importDialog.dispose()
+                                        doOutside {
+                                            // load email..
+                                            Session importSession = Session.getInstance(new Properties())
+                                            Store importStore = importSession.getStore(new URLName("mstor:${dirChooser.selectedFile.absolutePath}"))
+                                            importStore.connect()
+                                            
+                                            for (folder in importStore.defaultFolder.list()) {
+                                                folder.open(Folder.READ_ONLY)
+                                                try {
+                                                    for (message in folder.messages) {
+                                                        println message.subject
+                                                    }
+                                                } catch (MessagingException e) {
+                                                    println e
+                                                }
+                                            }
+                                        }
+                                    }
+                                })
                             }
                         }
                     })
@@ -1318,6 +1346,7 @@ public class Coucou{
                 
                 fileChooser(id: 'chooser')
                 fileChooser(id: 'imageChooser', fileFilter: new ImageFileFilter())
+                fileChooser(id: 'dirChooser', fileSelectionMode: JFileChooser.FILES_AND_DIRECTORIES)
                 
                 tipOfTheDay(id: 'tips', model: defaultTipModel(tips: [
                     defaultTip(name: 'test', tip: '<html><em>testing</em>')
