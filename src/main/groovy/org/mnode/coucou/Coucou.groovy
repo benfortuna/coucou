@@ -141,7 +141,7 @@ import org.jdesktop.swingx.treetable.DefaultTreeTableModel
 import javax.swing.Action
 import java.net.URI
 import org.jdesktop.swingx.table.ColumnFactory
-import javax.mail.Sessionimport java.util.Propertiesimport javax.mail.Storeimport javax.mail.URLName//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import javax.mail.Sessionimport java.util.Propertiesimport javax.mail.Storeimport javax.mail.URLNameimport javax.naming.InitialContextimport org.apache.jackrabbit.core.jndi.RegistryHelperimport javax.mail.Authenticatorimport javax.mail.PasswordAuthentication//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -264,11 +264,29 @@ public class Coucou{
         //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
-        def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
-        def repository = new TransientRepository(repoConfig)
+//        def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+//        def repository = new TransientRepository(repoConfig)
+        
+        def context = new InitialContext()
+        RegistryHelper.registerRepository(context, 'coucou', Coucou.getResource("/config.xml").file, new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
+        
+        def repository = context.lookup('coucou')
         
         def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
-        Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
+//        Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
+        Runtime.getRuntime().addShutdownHook({
+            session.logout()
+            RegistryHelper.unregisterRepository(context, 'coucou')
+        })
+        
+        def mailSessionProps = new Properties()
+        mailSessionProps.setProperty('mstor.repository.name', 'coucou')
+        mailSessionProps.setProperty('mstor.repository.path', 'History')
+        mailSessionProps.setProperty('mstor.repository.create', 'true')
+        mailSessionProps.setProperty('mail.store.protocol', 'mstor')
+        
+        Session mailSession = Session.getInstance(mailSessionProps, {new PasswordAuthentication('mail', '')} as Authenticator)
+        
 //        def jcr = new JcrBuilder()
 //        jcr.session = session
 //        jcr.log = log
@@ -1255,8 +1273,15 @@ public class Coucou{
                                                     for (message in folder.messages) {
                                                         println message.subject
                                                     }
+                                                    def localStore = mailSession.store
+                                                    localStore.connect()
+                                                    def inbox = localStore.defaultFolder.getFolder('Inbox')
+                                                    inbox.open(Folder.READ_WRITE)
+                                                    inbox.appendMessages(folder.messages)
+                                                    inbox.close()
+                                                    localStore.disconnect()
                                                 } catch (MessagingException e) {
-                                                    println e
+                                                    log.log unexpected_error, e
                                                 }
                                             }
                                         }
