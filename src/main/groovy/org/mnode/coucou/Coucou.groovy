@@ -1276,10 +1276,13 @@ public class Coucou{
                                                     def localStore = mailSession.store
                                                     localStore.connect()
                                                     def inbox = localStore.defaultFolder.getFolder('Inbox')
+                                                    if (!inbox.exists()) {
+                                                        inbox.create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES)
+                                                    }
                                                     inbox.open(Folder.READ_WRITE)
                                                     inbox.appendMessages(folder.messages)
-                                                    inbox.close()
-                                                    localStore.disconnect()
+                                                    inbox.close(false)
+                                                    localStore.close()
                                                 } catch (MessagingException e) {
                                                     log.log unexpected_error, e
                                                 }
@@ -1803,7 +1806,7 @@ public class Coucou{
                                         getNode('/history/This Month')
                                         getNode('/history/Deleted')
 //                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
-                                        historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/history')), ['Subject', 'From', 'Count', 'Last Updated'])
+                                        historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/History')), ['Flags', 'Subject', 'From', 'Count', 'Last Updated'])
                                         historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
 //                                        historyTree.selectionModel.valueChanged = {
                                         historyTree.packAll()
@@ -2216,7 +2219,7 @@ public class Coucou{
                          }
                      }
                  }
-                tabs.setIconAt(tabs.indexOfComponent(homeTab), new PaddedIcon(imageIcon('/logo-12.png'), 14, 18))
+                tabs.setIconAt(tabs.indexOfComponent(homeTab), new PaddedIcon(imageIcon('/logo-12.png'), 14, 20))
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
                  tabs.putClientProperty(SubstanceLookAndFeel.TABBED_PANE_CLOSE_CALLBACK, new TabCloseCallbackImpl())
                  SubstanceLookAndFeel.registerTabCloseChangeListener(tabs, new VetoableMultipleTabCloseListenerImpl([homeTab]))
