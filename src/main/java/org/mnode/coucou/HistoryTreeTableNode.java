@@ -19,11 +19,7 @@
 
 package org.mnode.coucou;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.logging.LogFactory;
@@ -35,7 +31,7 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public class HistoryTreeTableNode extends AbstractRepositoryTreeTableNode {
+public class HistoryTreeTableNode extends AbstractRepositoryTreeTableNode<TreeTableNode> {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(HistoryTreeTableNode.class));
 
@@ -56,39 +52,21 @@ public class HistoryTreeTableNode extends AbstractRepositoryTreeTableNode {
 
     @Override
     public int getColumnCount() {
-        return 4;
+        return 5;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Enumeration<? extends TreeTableNode> children() {
-        Vector<HistoryTreeTableNode> children = new Vector<HistoryTreeTableNode>();
-        final Node node = (Node) getUserObject();
-        try {
-            final NodeIterator nodes = node.getNodes();
-            while (nodes.hasNext()) {
-                children.add(new HistoryTreeTableNode(nodes.nextNode(), this));
-            }
-        } catch (RepositoryException e) {
-            LOG.log(LogEntries.NODE_ERROR, e, node);
-        }
-        return children.elements();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TreeTableNode getChildAt(int index) {
+    protected TreeTableNode createChildNode(Node node) {
         TreeTableNode childNode = null;
-        final Node node = (Node) getUserObject();
         try {
-            final NodeIterator nodes = node.getNodes();
-            nodes.skip(index);
-            childNode = new HistoryTreeTableNode(nodes.nextNode(), this);
-        } catch (RepositoryException e) {
+            if (node.hasNode("query")) {
+                childNode = new HistoryQueryTreeTableNode(node, this);
+            }
+            else {
+                childNode = new HistoryTreeTableNode(node, this);
+            }
+        }
+        catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
         }
         return childNode;
@@ -100,28 +78,34 @@ public class HistoryTreeTableNode extends AbstractRepositoryTreeTableNode {
     @Override
     public Object getValueAt(int column) {
         Object value = null;
-        Node node = (Node) getUserObject();
+        final Node node = (Node) getUserObject();
         try {
+            final Node headers = node.hasNode("headers") ? node.getNode("headers") : null;
             switch(column) {
                 case 0:
-                    if (node.hasProperty("subject")) {
-                        value = node.getProperty("subject").getString();
+                    if (node.hasProperty("flags")) {
+                        value = node.getProperty("flags").getString();
                     }
                     else {
                         value = node.getName();
                     }
                     break;
                 case 1:
-                    if (node.hasProperty("sender")) {
-                        value = node.getProperty("sender").getString();
+                    if (headers != null && headers.hasProperty("Subject")) {
+                        value = headers.getProperty("Subject").getString();
                     }
                     break;
                 case 2:
-                    value = node.getNodes().getSize();
+                    if (headers != null && headers.hasProperty("From")) {
+                        value = node.getProperty("From").getString();
+                    }
                     break;
                 case 3:
-                    if (node.hasProperty("sentDate")) {
-                        value = node.getProperty("sentDate").getDate().getTime();
+                    value = node.getNodes().getSize();
+                    break;
+                case 4:
+                    if (headers != null && headers.hasProperty("Date")) {
+                        value = node.getProperty("Date").getString();
                     }
                     break;
             }

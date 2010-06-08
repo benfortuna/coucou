@@ -19,11 +19,7 @@
 
 package org.mnode.coucou;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.logging.LogFactory;
@@ -35,7 +31,7 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public class PlannerTreeTableNode extends AbstractRepositoryTreeTableNode {
+public class PlannerTreeTableNode extends AbstractRepositoryTreeTableNode<TreeTableNode> {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(PlannerTreeTableNode.class));
 
@@ -59,48 +55,18 @@ public class PlannerTreeTableNode extends AbstractRepositoryTreeTableNode {
         return 4;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Enumeration<? extends TreeTableNode> children() {
-        Vector<TreeTableNode> children = new Vector<TreeTableNode>();
-        final Node node = (Node) getUserObject();
-        try {
-            final NodeIterator nodes = node.getNodes();
-            while (nodes.hasNext()) {
-                Node nextNode = nodes.nextNode();
-                if (nextNode.hasNode("query")) {
-                    children.add(new PlannerQueryTreeTableNode(nextNode, this));
-                }
-                else {
-                    children.add(new PlannerTreeTableNode(nextNode, this));
-                }
-            }
-        } catch (RepositoryException e) {
-            LOG.log(LogEntries.NODE_ERROR, e, node);
-        }
-        return children.elements();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TreeTableNode getChildAt(int index) {
+    protected TreeTableNode createChildNode(Node node) {
         TreeTableNode childNode = null;
-        final Node node = (Node) getUserObject();
         try {
-            final NodeIterator nodes = node.getNodes();
-            nodes.skip(index);
-            Node nextNode = nodes.nextNode();
-            if (nextNode.hasNode("query")) {
-                childNode = new PlannerQueryTreeTableNode(nextNode, this);
+            if (node.hasNode("query")) {
+                childNode = new PlannerQueryTreeTableNode(node, this);
             }
             else {
-                childNode = new PlannerTreeTableNode(nextNode, this);
+                childNode = new PlannerTreeTableNode(node, this);
             }
-        } catch (RepositoryException e) {
+        }
+        catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
         }
         return childNode;

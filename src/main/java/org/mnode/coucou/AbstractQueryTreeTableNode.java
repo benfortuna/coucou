@@ -19,9 +19,11 @@
 
 package org.mnode.coucou;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.jcr.Node;
@@ -37,12 +39,16 @@ import org.mnode.base.log.LogAdapter;
 import org.mnode.base.log.adapter.JclAdapter;
 
 /**
+ * @param <T> the child node type
+ * 
  * @author Ben
  *
  */
-public abstract class AbstractQueryTreeTableNode implements TreeTableNode {
+public abstract class AbstractQueryTreeTableNode<T extends TreeTableNode> implements TreeTableNode {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(AbstractQueryTreeTableNode.class));
+    
+    private final Node node;
     
     private final Query query;
     
@@ -55,19 +61,76 @@ public abstract class AbstractQueryTreeTableNode implements TreeTableNode {
     /**
      * @param query
      */
-    public AbstractQueryTreeTableNode(Query query) {
-        this(query, null);
+    public AbstractQueryTreeTableNode(Node node) {
+        this(node, null);
     }
     
     /**
      * @param query
      * @param parent
      */
-    public AbstractQueryTreeTableNode(Query query, TreeTableNode parent) {
-        this.query = query;
+    public AbstractQueryTreeTableNode(Node node, TreeTableNode parent) {
+        this.node = node;
+        this.query = createQuery(node);
         this.parent = parent;
     }
 
+    private Query createQuery(Node node) {
+        Query query = null;
+        try {
+            if (node.hasNode("query")) {
+                query = node.getSession().getWorkspace().getQueryManager().getQuery(node.getNode("query"));
+            }
+        } catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return query;
+    }
+
+    protected abstract T createChildNode(Node node);
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final Enumeration<? extends TreeTableNode> children() {
+        Vector<T> children = new Vector<T>();
+        for (Node node : getNodes()) {
+            children.add(createChildNode(node));
+        }
+        return children.elements();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final TreeTableNode getChildAt(int index) {
+        return createChildNode(getNodes().get(index));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int getColumnCount() {
+        return 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final Object getValueAt(int column) {
+        Object value = null;
+        try {
+            value = node.getName();
+        } catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return value;
+    }
+    
     /**
      * {@inheritDoc}
      */

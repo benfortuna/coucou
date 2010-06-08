@@ -20,12 +20,9 @@
 package org.mnode.coucou;
 
 import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Vector;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.Query;
 
 import org.apache.commons.logging.LogFactory;
 import org.jdesktop.swingx.treetable.TreeTableNode;
@@ -36,18 +33,15 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode {
+public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode<PlannerTreeTableNode> {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(PlannerQueryTreeTableNode.class));
-
-    private final Node node;
     
     /**
      * @param query
      */
     public PlannerQueryTreeTableNode(Node node) {
-        super(createQuery(node));
-        this.node = node;
+        super(node);
         try {
             if ("Today".equals(node.getName()) || "This Week".equals(node.getName())) {
                 Calendar todayCal = Calendar.getInstance();
@@ -76,62 +70,12 @@ public class PlannerQueryTreeTableNode extends AbstractQueryTreeTableNode {
      * @param parent
      */
     public PlannerQueryTreeTableNode(Node node, TreeTableNode parent) {
-        super(createQuery(node), parent);
-        this.node = node;
-    }
-
-    private static Query createQuery(Node node) {
-        Query query = null;
-        try {
-            if (node.hasNode("query")) {
-                query = node.getSession().getWorkspace().getQueryManager().getQuery(node.getNode("query"));
-            }
-        } catch (RepositoryException e) {
-            LOG.log(LogEntries.NODE_ERROR, e, node);
-        }
-        return query;
+        super(node, parent);
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Enumeration<? extends TreeTableNode> children() {
-        Vector<PlannerTreeTableNode> children = new Vector<PlannerTreeTableNode>();
-        for (Node node : getNodes()) {
-            children.add(new PlannerTreeTableNode(node, this));
-        }
-        return children.elements();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TreeTableNode getChildAt(int index) {
-        return new PlannerTreeTableNode(getNodes().get(index), this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getColumnCount() {
-        return 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Object getValueAt(int column) {
-        Object value = null;
-        try {
-            value = node.getName();
-        } catch (RepositoryException e) {
-            LOG.log(LogEntries.NODE_ERROR, e, node);
-        }
-        return value;
+    protected PlannerTreeTableNode createChildNode(Node node) {
+        return new PlannerTreeTableNode(node, this);
     }
 
 }

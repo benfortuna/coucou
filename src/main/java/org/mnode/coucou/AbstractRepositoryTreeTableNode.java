@@ -19,6 +19,9 @@
 
 package org.mnode.coucou;
 
+import java.util.Enumeration;
+import java.util.Vector;
+
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -30,10 +33,12 @@ import org.mnode.base.log.LogAdapter;
 import org.mnode.base.log.adapter.JclAdapter;
 
 /**
+ * @param <T> the child node type
+ * 
  * @author Ben
  *
  */
-public abstract class AbstractRepositoryTreeTableNode implements TreeTableNode {
+public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> implements TreeTableNode {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(AbstractRepositoryTreeTableNode.class));
 
@@ -57,6 +62,45 @@ public abstract class AbstractRepositoryTreeTableNode implements TreeTableNode {
         this.parent = parent;
     }
 
+    protected abstract T createChildNode(Node node);
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final Enumeration<? extends TreeTableNode> children() {
+        Vector<TreeTableNode> children = new Vector<TreeTableNode>();
+        final Node node = (Node) getUserObject();
+        try {
+            final NodeIterator nodes = node.getNodes();
+            while (nodes.hasNext()) {
+                Node nextNode = nodes.nextNode();
+                children.add(createChildNode(nextNode));
+            }
+        } catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return children.elements();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final TreeTableNode getChildAt(int index) {
+        TreeTableNode childNode = null;
+        final Node node = (Node) getUserObject();
+        try {
+            final NodeIterator nodes = node.getNodes();
+            nodes.skip(index);
+            Node nextNode = nodes.nextNode();
+            childNode = createChildNode(nextNode);
+        } catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return childNode;
+    }
+    
     @Override
     public TreeTableNode getParent() {
         return parent;
