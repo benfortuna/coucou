@@ -141,7 +141,15 @@ import org.jdesktop.swingx.treetable.DefaultTreeTableModel
 import javax.swing.Action
 import java.net.URI
 import org.jdesktop.swingx.table.ColumnFactory
-import javax.mail.Sessionimport java.util.Propertiesimport javax.mail.Storeimport javax.mail.URLNameimport javax.naming.InitialContextimport org.apache.jackrabbit.core.jndi.RegistryHelperimport javax.mail.Authenticatorimport javax.mail.PasswordAuthentication//import org.jvnet.flamingo.ribbon.JRibbonFrame
+import javax.mail.Session
+import java.util.Properties
+import javax.mail.Store
+import javax.mail.URLName
+import javax.naming.InitialContext
+import org.apache.jackrabbit.core.jndi.RegistryHelper
+import javax.mail.Authenticator
+import javax.mail.PasswordAuthentication
+//import org.jvnet.flamingo.ribbon.JRibbonFrame
 //import griffon.builder.flamingo.FlamingoBuilder
 import org.jvnet.flamingo.common.JCommandButton
 import org.jvnet.flamingo.common.JCommandButtonPanel
@@ -264,13 +272,12 @@ public class Coucou{
         //System.setProperty("org.apache.jackrabbit.repository.home", new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
         //System.setProperty("org.apache.jackrabbit.repository.conf", Coucou.class.getResource("/config.xml").file)
         
-//        def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
-//        def repository = new TransientRepository(repoConfig)
+        def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
+        def repository = new TransientRepository(repoConfig)
         
-        def context = new InitialContext()
-        RegistryHelper.registerRepository(context, 'coucou', Coucou.getResource("/config.xml").file, new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
-        
-        def repository = context.lookup('coucou')
+//        def context = new InitialContext()
+//        RegistryHelper.registerRepository(context, 'coucou', Coucou.getResource("/config.xml").file, new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
+//        def repository = context.lookup('coucou')
         
         def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
 //        Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
