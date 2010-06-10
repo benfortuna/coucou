@@ -176,6 +176,7 @@ import ca.odell.glazedlists.swing.EventListModel
 import ca.odell.glazedlists.swing.EventTableModel
 import ca.odell.glazedlists.BasicEventList
 import ca.odell.glazedlists.SortedList
+import ca.odell.glazedlists.RangeList
 import ca.odell.glazedlists.GlazedLists
 import ca.odell.glazedlists.gui.AdvancedTableFormat
 import ca.odell.glazedlists.swing.EventListJXTableSorting
@@ -575,15 +576,25 @@ public class Coucou{
                 def feedIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.getResource('/icons/feed.svg'), iconSize)
                 tabs.setIconAt(tabs.indexOfComponent(feedView), feedIcon)
                 
+                def entryList = feedView.getClientProperty('entryList')
+                boolean listPacked
                 doOutside {
                     def selectedRow
 //                    def childNodes = node.nodes
                     resultList.readWriteLock.writeLock().lock()
                     try {
+                        int count = 0
                         for (entryNode in node.nodes) {
 //                    while (childNodes.hasNext()) {
 //                        def entryNode = childNodes.nextNode()
                             resultList.add(entryNode)
+                            
+                            if (count++ == 100) {
+                                doLater {
+                                    entryList.packAll()
+                                    listPacked = true
+                                }
+                            }
 /*                        
                         if (selectedItem?.isSame(entryNode)) {
                             selectedRow = entryList.convertRowIndexToView(childNodes.position - 1 as Integer)
@@ -597,8 +608,9 @@ public class Coucou{
                     }
                     
                     doLater {
-                        def entryList = feedView.getClientProperty('entryList')
-                        entryList.packAll()
+                        if (!listPacked) {
+                            entryList.packAll()
+                        }
                         if (selectedItem) {
                                 def childNodes = node.nodes
                                 while (childNodes.hasNext()) {
@@ -1112,7 +1124,7 @@ public class Coucou{
 
 //             def helpIcon = SvgBatikResizableIcon.getSvgIcon(Coucou.class.getResource('/icons/im.svg'), new java.awt.Dimension(20, 20))
              
-             imageIcon('/logo.png', id: 'logoIcon')
+//             imageIcon('/logo.png', id: 'logoIcon')
              
              frame(title: 'Coucou', id: 'coucouFrame', defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
                      size: [640, 480], show: false, locationRelativeTo: null, iconImage: ImageIO.read(Coucou.getResource('/happy.png'))) {
@@ -2200,7 +2212,9 @@ public class Coucou{
 //                                     activityModel.addElement(new EventMessage('Meeting with associates', 'test@example.com', new Date(System.currentTimeMillis() - 100000)))
 //                                     activityModel.addElement(new TaskMessage('Complete TPS Reports', 'test@example.com', new Date(System.currentTimeMillis() - 1000000)))
                                      */
-                                     def activityModel = new EventListModel(new SortedList(activityList, compareByDate as Comparator))
+                                     def boundedActivityList = new RangeList(new SortedList(activityList, compareByDate as Comparator))
+                                     boundedActivityList.setHeadRange(0, 100)
+                                     def activityModel = new EventListModel(boundedActivityList)
                                      activity.model = activityModel
 //                                     filterableLists << activity
 
@@ -2659,12 +2673,12 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
     def swing
 
     void onEvent(EventIterator events) {
-        println "Events fired: ${events.size}"
-        while (events.hasNext()) {
-            def event = events.nextEvent()
-            println "Node added: ${event.path}"
-            def node = session.getItem(event.path)
-            swing.edt {
+        swing.doOutside {
+            println "Events fired: ${events.size}"
+            while (events.hasNext()) {
+                def event = events.nextEvent()
+                println "Node added: ${event.path}"
+                def node = session.getItem(event.path)
                 try {
                     // lock for list modification..
                     activityList.readWriteLock.writeLock().lock()
@@ -2674,8 +2688,10 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
                     // unlock post-list modification..
                     activityList.readWriteLock.writeLock().unlock()
                 }
-                activityStream.clearSelection()
-                activityStream.ensureIndexIsVisible(0)
+                doLater {
+                    activityStream.clearSelection()
+                    activityStream.ensureIndexIsVisible(0)
+                }
             }
         }
     }
