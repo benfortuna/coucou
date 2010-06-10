@@ -284,7 +284,7 @@ public class Coucou{
 //        Runtime.getRuntime().addShutdownHook(new SessionLogout(session))
         Runtime.getRuntime().addShutdownHook({
             session.logout()
-            RegistryHelper.unregisterRepository(context, 'coucou')
+//            RegistryHelper.unregisterRepository(context, 'coucou')
         })
         
         def mailSessionProps = new Properties()
@@ -1785,7 +1785,7 @@ public class Coucou{
                                  panel(name: 'History', border: emptyBorder(10)) {
                                      borderLayout()
 //                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
-                                     scrollPane() {
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
 //                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
                                          /*
                                          historyTree.model.root.removeAllChildren()
@@ -1804,6 +1804,8 @@ public class Coucou{
                                          */
 //                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
 //                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
+
+/*
                                         treeTable(id: 'historyTree', columnControlVisible: true)
                                         // email..
                                         getNode('/history/Inbox')
@@ -1832,6 +1834,10 @@ public class Coucou{
                                         historyTree.focusLost = {
                                             historyTree.clearSelection()
                                         }
+*/
+                                        table(showHorizontalLines: false, id: 'historyTable', columnControlVisible: true)
+                                        historyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+//                                        historyTable.model = new EventTableModel(historyList, new MyTableFormat())
                                      }
                                  }
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
