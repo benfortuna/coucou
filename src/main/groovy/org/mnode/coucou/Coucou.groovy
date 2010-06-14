@@ -174,9 +174,11 @@ import javax.swing.table.DefaultTableCellRenderer
 import javax.imageio.ImageIO
 import ca.odell.glazedlists.swing.EventListModel
 import ca.odell.glazedlists.swing.EventTableModel
+import ca.odell.glazedlists.swing.TreeTableSupport
 import ca.odell.glazedlists.BasicEventList
 import ca.odell.glazedlists.SortedList
 import ca.odell.glazedlists.RangeList
+import ca.odell.glazedlists.TreeList
 import ca.odell.glazedlists.GlazedLists
 import ca.odell.glazedlists.gui.AdvancedTableFormat
 import ca.odell.glazedlists.swing.EventListJXTableSorting
@@ -1837,7 +1839,28 @@ public class Coucou{
 */
                                         table(showHorizontalLines: false, id: 'historyTable', columnControlVisible: true)
                                         historyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-//                                        historyTable.model = new EventTableModel(historyList, new MyTableFormat())
+                                        
+                                        def historyList = new BasicEventList()
+//                                        historyList.add 'Today'
+//                                        historyList.add 'Older Items'
+                                        def historyTree = new TreeList(historyList, new HistoryTreeListFormat(), TreeList.NODES_START_EXPANDED)
+                                        historyTable.model = new EventTableModel(historyTree, new HistoryTableFormat())
+                                        TreeTableSupport.install(historyTable, historyTree, 0)
+                                        historyTable.setSortOrder(3, SortOrder.DESCENDING)
+                                        historyTable.setDefaultRenderer(Date, new DateCellRenderer(getNode('/feeds')))
+                                        
+                                        for (node in getNode('/feeds').nodes) {
+                                            try {
+                                                // lock for list modification..
+                                                historyList.readWriteLock.writeLock().lock()
+                                                historyList.add node
+                                            }
+                                            finally {
+                                                // unlock post-list modification..
+                                                historyList.readWriteLock.writeLock().unlock()
+                                            }
+                                        }
+                                        historyTable.packAll()
                                      }
                                  }
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
@@ -2700,5 +2723,114 @@ class ActivityStreamUpdater implements javax.jcr.observation.EventListener {
                 }
             }
         }
+    }
+}
+
+class HistoryTableFormat implements AdvancedTableFormat<Object> {
+
+    private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(HistoryTableFormat.class));
+    
+    public int getColumnCount() {
+        return 4;
+    }
+    
+    public String getColumnName(int column) {
+        switch (column) {
+            case 0: return "Flags";
+            case 1: return "Subject";
+            case 2: return "From";
+            case 3: return "Received";
+            default: return null;
+        }
+    }
+    
+    public Object getColumnValue(Object node, int column) {
+        Object value = null;
+        try {
+            switch(column) {
+                case 0:
+                    if (node instanceof javax.jcr.Node && node.hasProperty("flag")) {
+                        if (node.getProperty("flag").getBoolean()) {
+                            value = "*";
+                        }
+                    }
+                    break;
+                case 1:
+                    if (node instanceof javax.jcr.Node) {
+                        value = node.getProperty("title").getString();
+                    }
+                    else {
+                        value = node
+                    }
+                    break;
+                case 2:
+                    if (node instanceof javax.jcr.Node && node.hasProperty("source")) {
+                        value = node.getProperty("source").getString();
+                    }
+                    break;
+                case 3:
+                    if (node instanceof javax.jcr.Node && node.hasProperty("date")) {
+                        value = node.getProperty("date").getDate().getTime();
+                    }
+                    break;
+            }
+        }
+        catch (RepositoryException e) {
+            LOG.log(LogEntries.NODE_ERROR, e, node);
+        }
+        return value;
+    }
+    
+    public Class<?> getColumnClass(int column) {
+        switch (column) {
+            case 0: return Object.class;
+            case 1: return String.class;
+            case 2: return String.class;
+            case 3: return Date.class;
+            default: return Object.class;
+        }
+    }
+    
+    public Comparator<? extends Comparable<?>> getColumnComparator(int column) {
+        switch (column) {
+            default: return GlazedLists.comparableComparator();
+        }
+    }
+
+}
+
+class HistoryTreeListFormat implements TreeList.Format<Object> {
+    
+    private Date today
+    
+    HistoryTreeListFormat() {
+        def cal = Calendar.instance
+        cal.set(Calendar.HOUR, 0)
+        cal.clear(Calendar.MINUTE)
+        cal.clear(Calendar.SECOND)
+        cal.clear(Calendar.MILLISECOND)
+        today = cal.time
+    }
+
+    boolean allowsChildren(Object element) {
+        return !(element instanceof javax.jcr.Node)
+    }
+    
+    Comparator<? extends Object> getComparator(int depth) {
+        if (depth == 0) {
+//            return GlazedLists.comparableComparator();
+            return { a, b -> b <=> a } as Comparator
+        }
+        return GlazedLists.comparableComparator()
+    }
+    
+    void getPath(List<Object> path, Object element) {
+        if (element.getProperty('date').date.time.before(today)) {
+            path.add('Older Items')
+        }
+        else {
+            path.add('Today')
+        }
+        path.add(element)
     }
 }
