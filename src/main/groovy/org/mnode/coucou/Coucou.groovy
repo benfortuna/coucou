@@ -175,6 +175,7 @@ import javax.imageio.ImageIO
 import ca.odell.glazedlists.swing.EventListModel
 import ca.odell.glazedlists.swing.EventTableModel
 import ca.odell.glazedlists.swing.TreeTableSupport
+import ca.odell.glazedlists.swing.TableComparatorChooser
 import ca.odell.glazedlists.BasicEventList
 import ca.odell.glazedlists.SortedList
 import ca.odell.glazedlists.RangeList
@@ -1633,6 +1634,90 @@ public class Coucou{
                          borderLayout()
                          splitPane(id: 'splitPane', oneTouchExpandable: true, dividerLocation: 1.0, continuousLayout: true) {
                              tabbedPane(constraints: 'left', tabPlacement: JTabbedPane.BOTTOM, id: 'navTabs') {
+                                 panel(name: 'Inbox', border: emptyBorder(10)) {
+                                     borderLayout()
+//                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
+                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
+//                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
+                                         /*
+                                         historyTree.model.root.removeAllChildren()
+                                         
+                                         def mailNode = new TreeNode('Mail')
+                                         mailNode.add(new TreeNode('Inbox'))
+                                         mailNode.add(new TreeNode('Sent'))
+                                         mailNode.add(new TreeNode('Drafts'))
+                                         mailNode.add(new TreeNode('Deleted'))
+                                         
+                                         historyTree.model.root.add(mailNode)
+                                         historyTree.model.root.add(new TreeNode('Conversations'))
+                                         historyTree.model.root.add(new TreeNode('Events'))
+                                         historyTree.model.root.add(new TreeNode('Tasks'))
+                                         historyTree.model.reload(historyTree.model.root)
+                                         */
+//                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
+//                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
+
+/*
+                                        treeTable(id: 'historyTree', columnControlVisible: true)
+                                        // email..
+                                        getNode('/history/Inbox')
+                                        getNode('/history/Templates')
+                                        getNode('/history/Templates/Mail')
+                                        getNode('/history/Templates/Meeting')
+                                        getNode('/history/Templates/Task')
+                                        // chat..
+                                        getNode('/history/Conversations')
+                                        
+                                        // XXX: Search folders...
+                                        getNode('/history/Outbox')
+                                        getNode('/history/Sent')
+                                        getNode('/history/Drafts')
+                                        getNode('/history/Today')
+                                        getNode('/history/Yesterday')
+                                        getNode('/history/This Week')
+                                        getNode('/history/Last Week')
+                                        getNode('/history/This Month')
+                                        getNode('/history/Deleted')
+//                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
+                                        historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/History')), ['Flags', 'Subject', 'From', 'Count', 'Last Updated'])
+                                        historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+//                                        historyTree.selectionModel.valueChanged = {
+                                        historyTree.packAll()
+                                        historyTree.focusLost = {
+                                            historyTree.clearSelection()
+                                        }
+*/
+                                        table(showHorizontalLines: false, id: 'historyTable', columnControlVisible: true, sortable: false)
+                                        historyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                        historyTable.rowSorter = null
+                                        
+                                        def historyList = new BasicEventList()
+//                                        historyList.add 'Today'
+//                                        historyList.add 'Older Items'
+                                        
+                                        def sortedHistoryList = new SortedList(historyList, null)
+                                        def historyTree = new TreeList(sortedHistoryList, new HistoryTreeListFormat(), TreeList.NODES_START_EXPANDED)
+                                        historyTable.model = new EventTableModel(historyTree, new HistoryTableFormat())
+                                        def treeTableSupport = TreeTableSupport.install(historyTable, historyTree, 1)
+//                                        historyTable.setSortOrder(3, SortOrder.DESCENDING)
+                                        TableComparatorChooser.install(historyTable, sortedHistoryList, TableComparatorChooser.SINGLE_COLUMN)
+                                        historyTable.setDefaultRenderer(Date, new DateCellRenderer(getNode('/feeds')))
+                                        doLater {
+                                            for (node in getNode('/feeds').nodes) {
+                                                try {
+                                                    // lock for list modification..
+                                                    historyList.readWriteLock.writeLock().lock()
+                                                    historyList.add node
+                                                }
+                                                finally {
+                                                    // unlock post-list modification..
+                                                    historyList.readWriteLock.writeLock().unlock()
+                                                }
+                                            }
+                                            historyTable.packAll()
+                                        }
+                                     }
+                                 }
                                  panel(name: 'Contacts') {
                                      borderLayout()
                                      
@@ -1784,85 +1869,6 @@ public class Coucou{
                                         }
                                      }
                                  }
-                                 panel(name: 'History', border: emptyBorder(10)) {
-                                     borderLayout()
-//                                     label(text: 'Folders', constraints: BorderLayout.NORTH, font: new Font('Arial', Font.PLAIN, 14), foreground: Color.WHITE, background: Color.GRAY, opaque: true)
-                                     scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null) {
-//                                         tree(id: 'historyTree', rootVisible: false, showsRootHandles: true)
-                                         /*
-                                         historyTree.model.root.removeAllChildren()
-                                         
-                                         def mailNode = new TreeNode('Mail')
-                                         mailNode.add(new TreeNode('Inbox'))
-                                         mailNode.add(new TreeNode('Sent'))
-                                         mailNode.add(new TreeNode('Drafts'))
-                                         mailNode.add(new TreeNode('Deleted'))
-                                         
-                                         historyTree.model.root.add(mailNode)
-                                         historyTree.model.root.add(new TreeNode('Conversations'))
-                                         historyTree.model.root.add(new TreeNode('Events'))
-                                         historyTree.model.root.add(new TreeNode('Tasks'))
-                                         historyTree.model.reload(historyTree.model.root)
-                                         */
-//                                         historyTree.model = new RepositoryTreeModel(session.rootNode.getNode('history'))
-//                                         historyTree.cellRenderer = new RepositoryTreeCellRenderer()
-
-/*
-                                        treeTable(id: 'historyTree', columnControlVisible: true)
-                                        // email..
-                                        getNode('/history/Inbox')
-                                        getNode('/history/Templates')
-                                        getNode('/history/Templates/Mail')
-                                        getNode('/history/Templates/Meeting')
-                                        getNode('/history/Templates/Task')
-                                        // chat..
-                                        getNode('/history/Conversations')
-                                        
-                                        // XXX: Search folders...
-                                        getNode('/history/Outbox')
-                                        getNode('/history/Sent')
-                                        getNode('/history/Drafts')
-                                        getNode('/history/Today')
-                                        getNode('/history/Yesterday')
-                                        getNode('/history/This Week')
-                                        getNode('/history/Last Week')
-                                        getNode('/history/This Month')
-                                        getNode('/history/Deleted')
-//                                        historyTree.treeTableModel = new HistoryTreeTableModel(getNode('/history'))
-                                        historyTree.treeTableModel = new DefaultTreeTableModel(new HistoryTreeTableNode(getNode('/History')), ['Flags', 'Subject', 'From', 'Count', 'Last Updated'])
-                                        historyTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
-//                                        historyTree.selectionModel.valueChanged = {
-                                        historyTree.packAll()
-                                        historyTree.focusLost = {
-                                            historyTree.clearSelection()
-                                        }
-*/
-                                        table(showHorizontalLines: false, id: 'historyTable', columnControlVisible: true)
-                                        historyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                        
-                                        def historyList = new BasicEventList()
-//                                        historyList.add 'Today'
-//                                        historyList.add 'Older Items'
-                                        def historyTree = new TreeList(historyList, new HistoryTreeListFormat(), TreeList.NODES_START_EXPANDED)
-                                        historyTable.model = new EventTableModel(historyTree, new HistoryTableFormat())
-                                        TreeTableSupport.install(historyTable, historyTree, 0)
-                                        historyTable.setSortOrder(3, SortOrder.DESCENDING)
-                                        historyTable.setDefaultRenderer(Date, new DateCellRenderer(getNode('/feeds')))
-                                        
-                                        for (node in getNode('/feeds').nodes) {
-                                            try {
-                                                // lock for list modification..
-                                                historyList.readWriteLock.writeLock().lock()
-                                                historyList.add node
-                                            }
-                                            finally {
-                                                // unlock post-list modification..
-                                                historyList.readWriteLock.writeLock().unlock()
-                                            }
-                                        }
-                                        historyTable.packAll()
-                                     }
-                                 }
                                  panel(name: 'Feeds', border: emptyBorder(10)) {
                                      borderLayout()
 
@@ -1918,59 +1924,6 @@ public class Coucou{
                                          }
                                          feedList.focusLost = {
                                              feedList.clearSelection()
-                                         }
-                                     }
-                                 }
-                                 panel(name: 'Notes', border: emptyBorder(10)) {
-                                     borderLayout()
-
-                                     scrollPane(border: null) {
-                                         table(showHorizontalLines: false, id: 'noteList')
-                                         noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
-                                         noteList.model = new NoteTableModel(getNode('/notes'))
-                                         noteList.packAll()
-                                         noteList.setDefaultRenderer(Date, new DateCellRenderer(getNode('/notes')))
-                                         noteList.setSortOrder(2, SortOrder.DESCENDING)
-                                         noteList.sortsOnUpdates = true
-                                         filterableLists << noteList
-                                         noteList.selectionModel.valueChanged = { e ->
-                                             if (!e.valueIsAdjusting) {
-                                                 if (noteList.selectedRow >= 0) {
-                                                     def notes = getNode('/notes').nodes
-                                                     notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
-                                                     def note = notes.nextNode()
-                                                     swing.edt {
-                                                         editContext.delete = {
-                                                             if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
-                                                                 println "Deleting note: ${note}"
-                                                                 removeNode note
-        //                                                         swing.edt {
-        //                                                             noteList.model.fireTableDataChanged()
-        //                                                         }
-                                                             }
-                                                         }
-                                                     }
-    //                                                 editContext.enabled = true
-                                                     log.log delete_enabled, note
-                                                 }
-                                                 else {
-                                                     swing.edt {
-                                                         editContext.delete = null
-                                                     }
-    //                                                 editContext.enabled = false
-                                                 }
-                                             }
-                                         }
-                                         noteList.mouseClicked = { e ->
-                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && noteList.selectedRow >= 0) {
-                                                def notes = getNode('/notes').nodes
-                                                notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
-                                                def note = notes.nextNode()
-                                                openNoteView(tabs, note)
-                                            }
-                                         }
-                                         noteList.focusLost = {
-                                             noteList.clearSelection()
                                          }
                                      }
                                  }
@@ -2066,6 +2019,59 @@ public class Coucou{
                                          journalTree.packAll()
                                          journalTree.focusLost = {
                                              journalTree.clearSelection()
+                                         }
+                                     }
+                                 }
+                                 panel(name: 'Notes', border: emptyBorder(10)) {
+                                     borderLayout()
+
+                                     scrollPane(border: null) {
+                                         table(showHorizontalLines: false, id: 'noteList')
+                                         noteList.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+                                         noteList.model = new NoteTableModel(getNode('/notes'))
+                                         noteList.packAll()
+                                         noteList.setDefaultRenderer(Date, new DateCellRenderer(getNode('/notes')))
+                                         noteList.setSortOrder(2, SortOrder.DESCENDING)
+                                         noteList.sortsOnUpdates = true
+                                         filterableLists << noteList
+                                         noteList.selectionModel.valueChanged = { e ->
+                                             if (!e.valueIsAdjusting) {
+                                                 if (noteList.selectedRow >= 0) {
+                                                     def notes = getNode('/notes').nodes
+                                                     notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                     def note = notes.nextNode()
+                                                     swing.edt {
+                                                         editContext.delete = {
+                                                             if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(coucouFrame, "Delete note: ${note}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                                                 println "Deleting note: ${note}"
+                                                                 removeNode note
+        //                                                         swing.edt {
+        //                                                             noteList.model.fireTableDataChanged()
+        //                                                         }
+                                                             }
+                                                         }
+                                                     }
+    //                                                 editContext.enabled = true
+                                                     log.log delete_enabled, note
+                                                 }
+                                                 else {
+                                                     swing.edt {
+                                                         editContext.delete = null
+                                                     }
+    //                                                 editContext.enabled = false
+                                                 }
+                                             }
+                                         }
+                                         noteList.mouseClicked = { e ->
+                                            if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && noteList.selectedRow >= 0) {
+                                                def notes = getNode('/notes').nodes
+                                                notes.skip(noteList.convertRowIndexToModel(noteList.selectedRow))
+                                                def note = notes.nextNode()
+                                                openNoteView(tabs, note)
+                                            }
+                                         }
+                                         noteList.focusLost = {
+                                             noteList.clearSelection()
                                          }
                                      }
                                  }
@@ -2276,7 +2282,7 @@ public class Coucou{
                  tabs.putClientProperty(LafWidget.TABBED_PANE_PREVIEW_PAINTER, new TabPreviewPainterImpl())
              
                  statusBar(constraints: BorderLayout.SOUTH, border:emptyBorder([0, 4, 0, 4]), id: 'cStatusBar') {
-                     label(id: 'statusMessage', text: 'Ready', constraints: new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL))
+                     label(id: 'statusMessage', text: 'Ready', constraints: new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL), border: emptyBorder(3))
                     toggleButton(busyAction,
                             text: null,
                             toolTipText: 'Busy',
@@ -2749,8 +2755,8 @@ class HistoryTableFormat implements AdvancedTableFormat<Object> {
         try {
             switch(column) {
                 case 0:
-                    if (node instanceof javax.jcr.Node && node.hasProperty("flag")) {
-                        if (node.getProperty("flag").getBoolean()) {
+                    if (node instanceof javax.jcr.Node) {
+                        if (node.hasProperty("flag") && node.getProperty("flag").getBoolean()) {
                             value = "*";
                         }
                     }
@@ -2817,19 +2823,21 @@ class HistoryTreeListFormat implements TreeList.Format<Object> {
     }
     
     Comparator<? extends Object> getComparator(int depth) {
-        if (depth == 0) {
+//        if (depth == 0) {
 //            return GlazedLists.comparableComparator();
-            return { a, b -> b <=> a } as Comparator
-        }
+//            return { a, b -> b <=> a } as Comparator
+//        }
         return GlazedLists.comparableComparator()
     }
     
     void getPath(List<Object> path, Object element) {
-        if (element.getProperty('date').date.time.before(today)) {
-            path.add('Older Items')
-        }
-        else {
-            path.add('Today')
+        if (element instanceof javax.jcr.Node) {
+            if (!element.hasProperty('date') || element.getProperty('date').date.time.before(today)) {
+                path.add('Older Items')
+            }
+            else {
+                path.add('Today')
+            }
         }
         path.add(element)
     }
