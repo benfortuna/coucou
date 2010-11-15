@@ -14,6 +14,8 @@ import javax.mail.URLName;
 import javax.mail.Authenticator
 import javax.mail.PasswordAuthentication
 
+import org.apache.commons.lang.time.DurationFormatUtils;
+
 /**
  * @author fortuna
  *
@@ -58,10 +60,10 @@ class Mailbox {
 		for (folder in importStore.defaultFolder.list()) {
 			folder.open(Folder.READ_ONLY)
 			try {
-				def messages = folder.messages
-				for (message in messages) {
-					println message.subject
-				}
+//				def messages = folder.messages
+//				for (message in messages) {
+//					println message.subject
+//				}
 				def localStore = mailSession.store
 				localStore.connect()
 				def inbox = localStore.defaultFolder.getFolder('Inbox')
@@ -69,7 +71,22 @@ class Mailbox {
 					inbox.create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES)
 				}
 				inbox.open(Folder.READ_WRITE)
-				inbox.appendMessages(messages)
+				
+				int interval = 500;
+				long start = -1, init = System.currentTimeMillis();
+				for (int i = 1; i <= folder.getMessageCount();) {
+					int end = Math.min(interval + i - 1, folder.getMessageCount());
+//					LOG.info("Appending messages: " + i + " - " + (end));
+					start = System.currentTimeMillis();
+					inbox.appendMessages(folder.getMessages(i, end));
+//					LOG.info((1f / ((System.currentTimeMillis() - start) / (1000 * interval)))
+//							+ " message(s)/s. Est. completion: "
+//							+ DurationFormatUtils.formatDurationHMS((((System.currentTimeMillis() - init) / end)
+//									* (initFolder.getMessageCount() - end))));
+					i += interval;
+				}
+
+//				inbox.appendMessages(messages)
 				inbox.close(false)
 				localStore.close()
 			} catch (MessagingException e) {

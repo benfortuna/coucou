@@ -19,6 +19,7 @@ import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.mail.internet.MailDateFormat;
 import javax.naming.InitialContext;
 import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
@@ -133,6 +134,11 @@ if (!session.rootNode.hasNode('Mail')) {
 }
 def mailNode = session.getNode('/Mail')
 
+if (!mailNode.hasNode('folders')) {
+	mailNode.addNode('folders')
+	mailNode.save()
+}
+
 //if (mailNode.hasNode('Attachments')) {
 //	mailNode.getNode('Attachments').remove()
 //}
@@ -161,6 +167,8 @@ if (!mailNode.hasNode('Attachments')) {
 
 def mailbox = new Mailbox()
 mailbox.start()
+
+def mailDateFormat = new MailDateFormat()
 
 def editContext = [:] as ObservableMap
 
@@ -422,7 +430,7 @@ ousia.edt {
 			// Treetable renderering..
 			def ttsupport
 
-			splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
+			splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true, oneTouchExpandable: true) {
 				
 				scrollPane(constraints: 'left', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null, viewportBorder: null, id: 'sp') {
 	//				sp.viewport.background = Color.RED
@@ -607,7 +615,13 @@ ousia.edt {
 								 item['title'] = it.value.getProperty('title').string
 							 }
 							 else if (it.value.hasNode('headers')) {
-								 item['title'] = it.value.getNode('headers').getProperty('Subject').string
+								 def headers = it.value.getNode('headers')
+								 if (headers.hasProperty('Subject')) {
+									 item['title'] = headers.getProperty('Subject').string
+								 }
+								 else {
+									 item['title'] = '<No Subject>'
+								 }
 							 }
 							 else {
 								 item['title'] = it.value.name
@@ -622,7 +636,13 @@ ousia.edt {
 								 }
 							 }
 							 else if (it.value.hasNode('headers')) {
-								 item['source'] = it.value.getNode('headers').getProperty('From').string
+								 def headers = it.value.getNode('headers')
+								 if (headers.hasProperty('From')) {
+									 item['source'] = headers.getProperty('From').string
+								 }
+								 else {
+									 item['source'] = '<Unknown Sender>'
+								 }
 							 }
 							 else {
 								 item['source'] = it.value.parent.name
@@ -634,7 +654,17 @@ ousia.edt {
 							 else if (it.value.hasProperty('received')) {
 								 item['date'] = it.value.getProperty('received').date.time
 							 }
-							 
+							 else if (it.value.hasNode('headers')) {
+								 def headers = it.value.getNode('headers')
+								 if (headers.hasProperty('Date')) {
+									 try {
+										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
+									 }
+									 catch (Exception e) {
+									 }
+								 }
+							 }
+
 							 item['node'] = it.value
 
 							 doLater {							 
