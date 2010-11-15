@@ -45,6 +45,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<id>modularity-snapshots</id>
+			<name>Modularity Snapshots</name>
+			<url>http://m2.modularity.net.au/snapshots</url>
+		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -67,11 +75,6 @@
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-feed</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.mnode.base</groupId>
-			<artifactId>base-xmpp</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
