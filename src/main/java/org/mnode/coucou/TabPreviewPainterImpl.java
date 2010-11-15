@@ -21,8 +21,8 @@ package org.mnode.coucou;
 
 import javax.swing.JTabbedPane;
 
-import org.jvnet.lafwidget.tabbed.DefaultTabPreviewPainter;
-import org.jvnet.lafwidget.utils.LafConstants.TabOverviewKind;
+import org.pushingpixels.lafwidget.tabbed.DefaultTabPreviewPainter;
+import org.pushingpixels.lafwidget.utils.LafConstants.TabOverviewKind;
 
 /**
  * @author Ben

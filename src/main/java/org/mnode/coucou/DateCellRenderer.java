@@ -21,9 +21,11 @@ package org.mnode.coucou;
 
 import java.awt.Component;
 import java.util.Date;
+import java.util.Map;
 
-import javax.jcr.Node;
 import javax.swing.JTable;
+
+import ca.odell.glazedlists.TreeList;
 
 import com.ocpsoft.pretty.time.PrettyTime;
 
@@ -37,8 +39,8 @@ public class DateCellRenderer extends DefaultNodeTableCellRenderer {
     
     private final PrettyTime df = new PrettyTime();
     
-    public DateCellRenderer(Node parent) {
-        super(parent);
+    public DateCellRenderer(TreeList<Map<String, ?>> items) {
+        super(items);
     }
     
     @Override

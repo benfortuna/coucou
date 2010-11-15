@@ -19,13 +19,17 @@
 
 package org.mnode.coucou;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.util.Arrays;
+import java.util.Map;
 
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
+
+import ca.odell.glazedlists.TreeList;
 
 /**
  * @author Ben
@@ -38,12 +42,19 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     private final Font defaultFont;
     private final Font unreadFont;
     
-    private final Node parent;
+    private final Color defaultForeground;
+    private final Color nonItemForeground;
     
-    public DefaultNodeTableCellRenderer(Node parent) {
+//    private final Node parent;
+    private final TreeList<Map<String, ?>> items;
+    
+    public DefaultNodeTableCellRenderer(TreeList<Map<String, ?>> items) {
         defaultFont = getFont();
         unreadFont = getFont().deriveFont(Font.BOLD);
-        this.parent = parent;
+        defaultForeground = Color.BLACK;
+        nonItemForeground = Color.LIGHT_GRAY;
+//        this.parent = parent;
+        this.items = items;
     }
     
     @Override
@@ -52,19 +63,29 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
         
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         try {
-//            Node node = ((AbstractNodeTableModel) table.getModel()).getNodeAt(table.convertRowIndexToModel(row));
-            NodeIterator nodes = parent.getNodes();
-            nodes.skip(table.convertRowIndexToModel(row));
-            Node node = nodes.nextNode();
-            if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
-                setFont(unreadFont);
-            }
-            else {
-                setFont(defaultFont);
-            }
+//        	if (Arrays.asList(null, "", "Today", "Older Items").contains(value)) {
+        	if (Arrays.asList("Today", "Older Items").contains(value)) {
+        		setFont(defaultFont);
+        		setForeground(nonItemForeground);
+        	}
+        	else {
+//              Node node = ((AbstractNodeTableModel) table.getModel()).getNodeAt(table.convertRowIndexToModel(row));
+//                NodeIterator nodes = parent.getNodes();
+//                nodes.skip(table.convertRowIndexToModel(row));
+//                Node node = nodes.nextNode();
+        		Node node = (Node) items.get(table.convertRowIndexToModel(row)).get("node");
+                if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
+                    setFont(unreadFont);
+                }
+                else {
+                    setFont(defaultFont);
+                }
+        		setForeground(defaultForeground);
+        	}
         }
         catch (Exception e) {
             setFont(defaultFont);
+    		setForeground(defaultForeground);
         }
         return this;
     }
