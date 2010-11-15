@@ -430,7 +430,7 @@ ousia.edt {
 			// Treetable renderering..
 			def ttsupport
 
-			splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true, oneTouchExpandable: true) {
+			splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true, oneTouchExpandable: true, dividerSize: 10) {
 				
 				scrollPane(constraints: 'left', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null, viewportBorder: null, id: 'sp') {
 	//				sp.viewport.background = Color.RED
@@ -651,9 +651,6 @@ ousia.edt {
 							 if (it.value.hasProperty('date')) {
 								 item['date'] = it.value.getProperty('date').date.time
 							 }
-							 else if (it.value.hasProperty('received')) {
-								 item['date'] = it.value.getProperty('received').date.time
-							 }
 							 else if (it.value.hasNode('headers')) {
 								 def headers = it.value.getNode('headers')
 								 if (headers.hasProperty('Date')) {
@@ -663,6 +660,9 @@ ousia.edt {
 									 catch (Exception e) {
 									 }
 								 }
+							 }
+							 else if (it.value.hasProperty('received')) {
+								 item['date'] = it.value.getProperty('received').date.time
 							 }
 
 							 item['node'] = it.value
