@@ -1,5 +1,7 @@
 package org.mnode.coucou
 
+import groovyx.gpars.Asynchronizer;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -98,7 +100,11 @@ Runtime.getRuntime().addShutdownHook({
 })
 
 // initialise feeds..
-def feedsNode = session.getNode('/feeds')
+if (!session.rootNode.hasNode('Feeds')) {
+	session.rootNode.addNode('Feeds')
+	session.rootNode.save()
+}
+def feedsNode = session.getNode('/Feeds')
 
 //if (feedsNode.hasNode('All Items')) {
 //	feedsNode.getNode('All Items').remove()
@@ -109,8 +115,8 @@ if (!feedsNode.hasNode('All Items')) {
 		query(
 			source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
 			constraint: and(
-				constraint1: descendantNode(selectorName: 'all_nodes', path: '/feeds'),
-				constraint2: not(childNode(selectorName: 'all_nodes', path: '/feeds')))
+				constraint1: descendantNode(selectorName: 'all_nodes', path: '/Feeds'),
+				constraint2: not(childNode(selectorName: 'all_nodes', path: '/Feeds')))
 		)
 	}
 	def allItemsNode = feedsNode.addNode('All Items')
@@ -121,6 +127,10 @@ if (!feedsNode.hasNode('All Items')) {
 def aggregator = new Aggregator(rootNode: feedsNode)
 aggregator.start()
 
+if (!session.rootNode.hasNode('Mail')) {
+	session.rootNode.addNode('Mail')
+	session.rootNode.save()
+}
 def mailNode = session.getNode('/Mail')
 
 //if (mailNode.hasNode('Attachments')) {
