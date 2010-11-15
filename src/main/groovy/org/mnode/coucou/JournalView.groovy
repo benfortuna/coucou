@@ -18,8 +18,9 @@
  */
 package org.mnode.coucou
 
-import org.jdesktop.swingx.JXPanel
-import groovy.swing.SwingXBuilderimport java.awt.BorderLayout
+import org.jdesktop.swingx.JXPanel;
+import org.mnode.ousia.OusiaBuilder;
+
 
 /**
  * @author Ben
@@ -30,7 +31,7 @@ public class JournalView extends JXPanel {
     def editJournalEntry
     
     JournalView(def node) {
-        def swing = new SwingXBuilder()
+        def swing = new OusiaBuilder()
         
         layout = swing.borderLayout()
         name = node.getProperty('subject').string

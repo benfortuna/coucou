@@ -18,8 +18,14 @@
  */
 package org.mnode.coucou
 
-import org.jdesktop.swingx.JXPanel
-import groovy.swing.SwingXBuilderimport javax.swing.JSplitPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport ca.odell.glazedlists.swing.EventTableModelimport javax.swing.SortOrderimport java.awt.event.MouseEventimport org.mnode.base.desktop.HyperlinkListenerImplimport java.awt.Desktopimport javax.swing.Action
+import javax.swing.JSplitPane;
+
+import org.jdesktop.swingx.JXPanel;
+import org.mnode.ousia.HyperlinkBrowser;
+import org.mnode.ousia.OusiaBuilder;
+
+import ca.odell.glazedlists.swing.EventTableModel;
+
 
 /**
  * @author Ben
@@ -30,7 +36,7 @@ public class FeedView extends JXPanel {
     def markNodeRead
     
     FeedView(def node, def resultList, def editContext, def defaultEditorKit) {
-        def swing = new SwingXBuilder()
+        def swing = new OusiaBuilder()
         
         layout = swing.borderLayout()
         name = node.getProperty('title').string
@@ -144,7 +150,7 @@ public class FeedView extends JXPanel {
             scrollPane(constraints: 'right') {
                 contentView = editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
             }
-            contentView.addHyperlinkListener(new HyperlinkListenerImpl())
+            contentView.addHyperlinkListener(new HyperlinkBrowser())
             contentView.focusLost = { e ->
                 if (e.oppositeComponent != entryList && e.oppositeComponent != contentViewPopup) {
                     entryList.clearSelection()

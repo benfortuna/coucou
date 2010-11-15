@@ -19,7 +19,9 @@
 package org.mnode.coucou
 
 import org.jdesktop.swingx.JXPanel
-import groovy.swing.SwingXBuilderimport org.jdesktop.swingx.treetable.DefaultTreeTableModelimport javax.swing.JSplitPaneimport javax.swing.ListSelectionModelimport javax.swing.JOptionPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport javax.swing.table.DefaultTableModel
+import org.jdesktop.swingx.treetable.DefaultTreeTableModelimport javax.swing.JSplitPaneimport javax.swing.ListSelectionModelimport javax.swing.JOptionPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport org.mnode.ousia.OusiaBuilder;
+
+import javax.swing.table.DefaultTableModel
 
 /**
  * @author Ben
@@ -30,7 +32,7 @@ public class ExplorerView extends JXPanel{
     private static final def EMPTY_TABLE_MODEL = new DefaultTableModel()
 
     ExplorerView(def rootNode, def parentWindow, def editContext) {
-        def swing = new SwingXBuilder()
+        def swing = new OusiaBuilder()
         
         layout = swing.borderLayout()
         name = 'Repository Explorer'
@@ -74,7 +76,7 @@ public class ExplorerView extends JXPanel{
             }
             scrollPane(constraints: 'right') {
                 table(showHorizontalLines: false, id: 'propertyTable')
-                propertyTable.addHighlighter(simpleStripingHighlighter(stripeBackground: HighlighterFactory.GENERIC_GRAY))
+//                propertyTable.addHighlighter(HighlighterFactory.createSimpleStriping(HighlighterFactory.GENERIC_GRAY))
             }
         }
     }

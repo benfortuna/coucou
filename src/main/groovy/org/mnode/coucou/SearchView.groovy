@@ -18,8 +18,12 @@
  */
 package org.mnode.coucou
 
-import org.jdesktop.swingx.JXPanel
-import groovy.swing.SwingXBuilderimport ca.odell.glazedlists.swing.EventListModelimport ca.odell.glazedlists.SortedListimport javax.swing.JScrollPaneimport org.jdesktop.swingx.decorator.HighlighterFactoryimport java.awt.event.MouseEvent
+import org.jdesktop.swingx.JXPanel;
+import org.mnode.ousia.OusiaBuilder;
+
+import ca.odell.glazedlists.SortedList;
+import ca.odell.glazedlists.swing.EventListModel;
+
 
 /**
  * @author Ben
@@ -30,7 +34,7 @@ public class SearchView extends JXPanel {
     def showItem
     
     SearchView(def title, def resultList, def comparator) {
-        def swing = new SwingXBuilder()
+        def swing = new OusiaBuilder()
         
         layout = swing.borderLayout()
         name = title
