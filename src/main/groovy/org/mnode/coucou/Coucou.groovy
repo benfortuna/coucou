@@ -441,7 +441,7 @@ ousia.edt {
 										edt {
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-												def content = entry['node'].getProperty('description').string //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+												def content = entry['node'].getProperty('description').string.replaceAll(/http:\/\/.+:.*(?=")/, '') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
 												contentView.text = content
 												contentView.caretPosition = 0
 											}
@@ -629,6 +629,7 @@ ousia.edt {
 									 // lock for list modification..
 									 activities.readWriteLock.writeLock().lock()
 									 activities.add(item)
+									 statusMessage.text = "${activities.size()} items"
 								 }
 								 finally {
 									 // unlock post-list modification..
@@ -669,7 +670,7 @@ ousia.edt {
 //		bind(source: viewAccounts, sourceProperty:'selected', target: accounts, targetProperty:'available')
 
 		statusBar(constraints: BorderLayout.SOUTH, id: 'statusBar') {
-			label(text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
+			label(id: 'statusMessage', text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
 //			bind(source: viewStatusBar, sourceProperty:'selected', target:statusBar, targetProperty:'visible')
 		}
 	}
