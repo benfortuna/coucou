@@ -488,6 +488,11 @@ ousia.edt {
 								else if (selectedItem.node.hasProperty('title')) {
 									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getProperty('title').string, selectedItem.node))
 								}
+								else if (selectedItem.node.hasNode('jcr:content')) {
+									def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
+									file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
+									Desktop.desktop.open(file)
+								}
 		                    }
 		                }
 						
