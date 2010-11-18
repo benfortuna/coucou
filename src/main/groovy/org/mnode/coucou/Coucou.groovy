@@ -582,6 +582,15 @@ ousia.edt {
 									 item['source'] = '<Unknown Sender>'
 								 }
 							 }
+							 else if (it.value.parent.name == 'attachments') {
+								 def headers = it.value.parent.parent.getNode('headers')
+								 if (headers.hasProperty('From')) {
+									 item['source'] = headers.getProperty('From').string
+								 }
+								 else {
+									 item['source'] = '<Unknown Sender>'
+								 }
+							 }
 							 else {
 								 item['source'] = it.value.parent.name
 							 }
@@ -601,6 +610,16 @@ ousia.edt {
 							 }
 							 else if (it.value.hasProperty('received')) {
 								 item['date'] = it.value.getProperty('received').date.time
+							 }
+							 else if (it.value.parent.name == 'attachments') {
+								 def headers = it.value.parent.parent.getNode('headers')
+								 if (headers.hasProperty('Date')) {
+									 try {
+										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
+									 }
+									 catch (Exception e) {
+									 }
+								 }
 							 }
 
 							 item['node'] = it.value
