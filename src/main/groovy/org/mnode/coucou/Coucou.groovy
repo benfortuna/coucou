@@ -1,5 +1,6 @@
 package org.mnode.coucou
 
+import groovy.xml.MarkupBuilder;
 import groovyx.gpars.Asynchronizer;
 
 import java.awt.BorderLayout;
@@ -203,6 +204,25 @@ ousia.edt {
 			}
 		}
 		
+		action id: 'exportFeedsAction', name: rs('Feeds'), closure: {
+			if (chooser.showSaveDialog() == JFileChooser.APPROVE_OPTION) {
+				doOutside {
+			        def writer = new FileWriter(chooser.selectedFile)
+			        def opmlBuilder = new MarkupBuilder(writer)
+			        opmlBuilder.opml(version: '1.0') {
+			            body {
+			                for (feedNode in session.rootNode.getNode('Feeds').nodes) {
+								if (!feedNode.hasNode('query')) {
+				                    outline(title: "${feedNode.getProperty('title').string}",
+				                        xmlUrl: "${feedNode.getProperty('url').string}")
+								}
+			                }
+			            }
+			        }
+				}
+			}
+		}
+
 		// import email..
 		action id: 'importMailAction', name: rs('Email'), closure: {
 			if (dirChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
@@ -329,6 +349,8 @@ ousia.edt {
 			importMenu.addSecondaryMenuGroup 'Import external data', importMail, importFeeds
 
 			ribbonApplicationMenuEntryPrimary(id: 'exportMenu', icon: forwardIcon, text: rs('Export'), kind: CommandButtonKind.POPUP_ONLY)
+			ribbonApplicationMenuEntrySecondary(id: 'exportFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exportFeedsAction)
+			exportMenu.addSecondaryMenuGroup 'Export data', exportFeeds
 			appMenu.addMenuSeparator()
 			
 			ribbonApplicationMenuEntryPrimary(icon: exitIcon, text: rs('Exit'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exitAction)
