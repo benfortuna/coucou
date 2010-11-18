@@ -15,7 +15,6 @@ import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
 import javax.jcr.PropertyType;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.observation.EventListener;
-import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
@@ -101,71 +100,10 @@ Runtime.getRuntime().addShutdownHook({
 })
 
 // initialise feeds..
-if (!session.rootNode.hasNode('Feeds')) {
-	session.rootNode.addNode('Feeds')
-	session.rootNode.save()
-}
-def feedsNode = session.getNode('/Feeds')
-
-//if (feedsNode.hasNode('All Items')) {
-//	feedsNode.getNode('All Items').remove()
-//}
-
-if (!feedsNode.hasNode('All Items')) {
-	def allItems = new QueryBuilder(session.workspace.queryManager).with {
-		query(
-			source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-			constraint: and(
-				constraint1: descendantNode(selectorName: 'all_nodes', path: '/Feeds'),
-				constraint2: not(childNode(selectorName: 'all_nodes', path: '/Feeds')))
-		)
-	}
-	def allItemsNode = feedsNode.addNode('All Items')
-	allItems.storeAsNode("${allItemsNode.path}/query")
-	feedsNode.save()
-}
-
-def aggregator = new Aggregator(rootNode: feedsNode)
+def aggregator = new Aggregator(session, 'Feeds')
 aggregator.start()
 
-if (!session.rootNode.hasNode('Mail')) {
-	session.rootNode.addNode('Mail')
-	session.rootNode.save()
-}
-def mailNode = session.getNode('/Mail')
-
-if (!mailNode.hasNode('folders')) {
-	mailNode.addNode('folders')
-	mailNode.save()
-}
-
-//if (mailNode.hasNode('Attachments')) {
-//	mailNode.getNode('Attachments').remove()
-//}
-
-if (!mailNode.hasNode('Attachments')) {
-	def attachments = new QueryBuilder(session.workspace.queryManager).with {
-		query(
-			source: selector(nodeType: 'nt:file', name: 'files'),
-			constraint: and(
-				constraint1: descendantNode(selectorName: 'files', path: '/Mail'),
-				constraint2: and(
-					constraint1: not(comparison(
-						operand1: nodeName(selectorName: 'files'),
-						operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
-						operand2: literal(session.valueFactory.createValue('part')))),
-					constraint2: not(comparison(
-						operand1: nodeName(selectorName: 'files'),
-						operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
-						operand2: literal(session.valueFactory.createValue('data'))))))
-		)
-	}
-	def attachmentsNode = mailNode.addNode('Attachments')
-	attachments.storeAsNode("${attachmentsNode.path}/query")
-	mailNode.save()
-}
-
-def mailbox = new Mailbox()
+def mailbox = new Mailbox(session, 'Mail')
 mailbox.start()
 
 def mailDateFormat = new MailDateFormat()

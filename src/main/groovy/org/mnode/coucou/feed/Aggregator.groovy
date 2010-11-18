@@ -8,7 +8,10 @@ import groovyx.gpars.Asynchronizer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.jcr.Session;
+
 import org.apache.jackrabbit.util.Text;
+import org.mnode.juicer.query.QueryBuilder;
 
 import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.XmlReader;
@@ -23,8 +26,34 @@ class Aggregator {
 
 	def updateThread
 		
-	Aggregator() {
-	   updateThread = Executors.newSingleThreadScheduledExecutor()
+	Aggregator(Session session, String nodeName) {
+		if (!session.rootNode.hasNode(nodeName)) {
+			rootNode = session.rootNode.addNode(nodeName)
+			session.rootNode.save()
+		}
+		else {
+			rootNode = session.rootNode.getNode(nodeName)
+		}
+		
+		//if (feedsNode.hasNode('All Items')) {
+		//	feedsNode.getNode('All Items').remove()
+		//}
+		
+		if (!rootNode.hasNode('All Items')) {
+			def allItems = new QueryBuilder(session.workspace.queryManager).with {
+				query(
+					source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
+					constraint: and(
+						constraint1: descendantNode(selectorName: 'all_nodes', path: "/${nodeName}"),
+						constraint2: not(childNode(selectorName: 'all_nodes', path: "/${nodeName}")))
+				)
+			}
+			def allItemsNode = rootNode.addNode('All Items')
+			allItems.storeAsNode("${allItemsNode.path}/query")
+			rootNode.save()
+		}
+		
+		updateThread = Executors.newSingleThreadScheduledExecutor()
 	}
 	
 	void start() {
