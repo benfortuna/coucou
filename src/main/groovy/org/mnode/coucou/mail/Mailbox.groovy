@@ -6,6 +6,7 @@ package org.mnode.coucou.mail
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.mail.Folder;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -15,13 +16,14 @@ import javax.mail.Authenticator
 import javax.mail.PasswordAuthentication
 
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.mnode.coucou.AbstractManager;
 import org.mnode.juicer.query.QueryBuilder;
 
 /**
  * @author fortuna
  *
  */
-class Mailbox {
+class Mailbox extends AbstractManager {
 	
 //	def rootNode
 
@@ -33,7 +35,7 @@ class Mailbox {
 		def mailNode
 		if (!session.rootNode.hasNode(nodeName)) {
 			mailNode = session.rootNode.addNode(nodeName)
-			session.rootNode.save()
+//			session.rootNode.save()
 		}
 		else {
 			mailNode = session.rootNode.getNode(nodeName)
@@ -41,8 +43,10 @@ class Mailbox {
 		
 		if (!mailNode.hasNode('folders')) {
 			mailNode.addNode('folders')
-			mailNode.save()
+//			mailNode.save()
 		}
+		
+//		save mailNode
 		
 		//if (mailNode.hasNode('Attachments')) {
 		//	mailNode.getNode('Attachments').remove()
@@ -56,19 +60,21 @@ class Mailbox {
 						constraint1: descendantNode(selectorName: 'files', path: "/${nodeName}"),
 						constraint2: and(
 							constraint1: not(comparison(
-								operand1: nodeName(selectorName: 'files'),
+								operand1: nodeNamex(selectorName: 'files'),
 								operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
 								operand2: literal(session.valueFactory.createValue('part')))),
 							constraint2: not(comparison(
-								operand1: nodeName(selectorName: 'files'),
+								operand1: nodeNamex(selectorName: 'files'),
 								operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
 								operand2: literal(session.valueFactory.createValue('data'))))))
 				)
 			}
 			def attachmentsNode = mailNode.addNode('Attachments')
 			attachments.storeAsNode("${attachmentsNode.path}/query")
-			mailNode.save()
+//			mailNode.save()
 		}
+		
+		save mailNode
 		
 		// email init..
 		def mailSessionProps = new Properties()
@@ -98,6 +104,9 @@ class Mailbox {
 		def now = Calendar.instance
 		
 		for (folder in importStore.defaultFolder.list()) {
+//			if (folder.name != 'Sent') {
+//				continue
+//			}
 			folder.open(Folder.READ_ONLY)
 			try {
 //				def messages = folder.messages
@@ -106,7 +115,7 @@ class Mailbox {
 //				}
 				def localStore = mailSession.store
 				localStore.connect()
-				def inbox = localStore.defaultFolder.getFolder('Inbox')
+				def inbox = localStore.defaultFolder.getFolder(folder.name)
 				if (!inbox.exists()) {
 					inbox.create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES)
 				}
