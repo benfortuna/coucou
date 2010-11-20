@@ -1,14 +1,13 @@
 package org.mnode.coucou
 
 import groovy.xml.MarkupBuilder;
-import groovyx.gpars.Asynchronizer;
+import groovyx.gpars.GParsExecutorsPool;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
@@ -19,42 +18,33 @@ import javax.jcr.observation.EventListener;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MailDateFormat;
 import javax.naming.InitialContext;
-import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.UIManager;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.text.html.StyleSheet;
 import javax.swing.JSplitPane;
 
 
-import org.apache.jackrabbit.core.TransientRepository;
-import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.core.jndi.RegistryHelper;
 import org.jdesktop.swingx.JXErrorPane;
-import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.error.ErrorInfo;
 import org.mnode.coucou.activity.DateExpansionModel;
 import org.mnode.coucou.breadcrumb.NodeCallback;
+import org.mnode.coucou.contacts.ContactsManager;
 import org.mnode.coucou.feed.Aggregator;
 import org.mnode.coucou.mail.Mailbox;
-import org.mnode.juicer.query.QueryBuilder;
 import org.mnode.ousia.HTMLEditorKitExt;
 import org.mnode.ousia.HyperlinkBrowser;
 import org.mnode.ousia.OusiaBuilder;
-import org.noos.xing.mydoggy.ToolWindowAnchor;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.ribbon.JRibbonBand;
-import org.pushingpixels.flamingo.api.ribbon.RibbonApplicationMenuEntryFooter;
-import org.pushingpixels.flamingo.api.ribbon.RibbonApplicationMenuEntryPrimary;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask;
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies;
@@ -67,14 +57,12 @@ import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem;
 
 
 import ca.odell.glazedlists.BasicEventList;
-import ca.odell.glazedlists.GlazedLists;
 import ca.odell.glazedlists.TreeList;
 import ca.odell.glazedlists.TreeList.Format;
 import ca.odell.glazedlists.gui.TableFormat;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TreeTableSupport;
 
-import com.ocpsoft.pretty.time.PrettyTime;
 import org.mnode.base.log.FormattedLogEntry;
 import org.mnode.base.log.LogEntry.Level;
 import org.mnode.base.log.LogEntry;
@@ -100,64 +88,36 @@ Runtime.getRuntime().addShutdownHook({
     RegistryHelper.unregisterRepository(context, 'coucou')
 })
 
-// initialise feeds..
-def aggregator = new Aggregator(session, 'Feeds')
-aggregator.start()
-
 def mailbox = new Mailbox(session, 'Mail')
 mailbox.start()
 
 def mailDateFormat = new MailDateFormat()
 
+def contactsManager = new ContactsManager(session, 'Contacts')
+
+def newContact = { events ->
+	for (event in events) {
+		println "Node added: ${event.path}"
+		def message = session.getNode(event.path)
+		if (message.hasNode('headers')) {
+			def headers = message.getNode('headers')
+			def to = new InternetAddress(headers.getProperty('To').string)
+			def contactNode = contactsManager.add(to)
+			println "Added contact: ${contactNode.path}"
+		}
+	}
+} as EventListener
+
+session.workspace.observationManager.addEventListener(newContact, 1, '/Mail/folders/Sent', true, null, null, false)
+
+// initialise feeds..
+def aggregator = new Aggregator(session, 'Feeds')
+aggregator.start()
+
 def editContext = [:] as ObservableMap
 
 def ousia = new OusiaBuilder()
 
-
-def addFeed = { url ->
-	ousia.doOutside {
-		 def feedNode = null
-		 def feedUrl
-		 try {
-			 feedUrl = new URL(url)
-		 }
-		 catch (MalformedURLException e) {
-			 try {
-				 feedUrl = new URL("http://${url}")
-			 }
-			 catch (MalformedURLException e1) {
-				 doLater {
-					 JOptionPane.showMessageDialog(frame, "Invalid URL: ${url}")
-				 }
-			 }
-		 }
-		 if (feedUrl) {
-			 try {
-				 feedNode = aggregator.updateFeed(url)
-			 }
-			 catch (Exception e) {
-				  try {
-					  html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
-					  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
-					  println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
-					  if (!feeds.isEmpty()) {
-						  feedNode = aggregator.updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
-					  }
-					  else {
-						  doLater {
-							  JOptionPane.showMessageDialog(frame, "No feeds found for site: ${url}")
-						  }
-					  }
-				  }
-				  catch (Exception e2) {
-					  doLater {
-						  JXErrorPane.showDialog(e2);
-					  }
-				  }
-			 }
-		 }
-	}
-}
 
 ousia.edt {
 //	lookAndFeel('substance-nebula')
@@ -167,6 +127,29 @@ ousia.edt {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
         }
+		
+		action id: 'addFeedAction', name: rs('Feed'), closure: {
+			url = JOptionPane.showInputDialog(frame, rs('URL'))
+			if (url) {
+				doOutside {
+					try {
+						aggregator.addFeed(url)
+					}
+					catch (MalformedURLException e) {
+						doLater {
+							JOptionPane.showMessageDialog(frame, "Invalid URL: ${url}")
+						}
+					}
+					catch (Exception e2) {
+						doLater {
+							def error = new ErrorInfo('Error', "${e2.message}",
+								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null)
+							JXErrorPane.showDialog(frame, error);
+						}
+					}
+				}
+			}
+		}
 		
 		action id: 'importFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
@@ -180,7 +163,7 @@ ousia.edt {
 					def errorMap = [:]
 					for (feed in feeds) {
 						try {
-							Asynchronizer.doParallel {
+							GParsExecutorsPool.withPool {
 								def future = aggregator.updateFeed.callAsync(feed)
 //	                            future.get()
 //	                            doLater {
@@ -333,12 +316,7 @@ ousia.edt {
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
 //				['groupTitle': 'New Items', 'entries': [
-			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: {
-				url = JOptionPane.showInputDialog(frame, rs('URL'))
-				if (url) {
-					addFeed(url)
-				}
-			} as ActionListener) //]]
+			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction) //]]
 //			}
 			newMenu.addSecondaryMenuGroup 'Create a new item', newFeed
 			
@@ -463,7 +441,7 @@ ousia.edt {
 										edt {
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-												def content = entry['node'].getProperty('description').string.replaceAll(/http:\/\/.+:.*(?=")/, '') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+												def content = entry['node'].getProperty('description').string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, '') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
 												contentView.text = content
 												contentView.caretPosition = 0
 											}
