@@ -3,7 +3,7 @@
  */
 package org.mnode.coucou.feed
 
-import groovyx.gpars.Asynchronizer;
+import groovyx.gpars.GParsExecutorsPool;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Session;
 
 import org.apache.jackrabbit.util.Text;
+import org.jdesktop.swingx.JXErrorPane;
+import org.mnode.coucou.AbstractManager;
 import org.mnode.juicer.query.QueryBuilder;
 
 import com.sun.syndication.io.SyndFeedInput;
@@ -20,7 +22,7 @@ import com.sun.syndication.io.XmlReader;
  * @author fortuna
  *
  */
-class Aggregator {
+class Aggregator extends AbstractManager {
 
 	def rootNode
 
@@ -29,7 +31,7 @@ class Aggregator {
 	Aggregator(Session session, String nodeName) {
 		if (!session.rootNode.hasNode(nodeName)) {
 			rootNode = session.rootNode.addNode(nodeName)
-			session.rootNode.save()
+//			session.rootNode.save()
 		}
 		else {
 			rootNode = session.rootNode.getNode(nodeName)
@@ -50,8 +52,10 @@ class Aggregator {
 			}
 			def allItemsNode = rootNode.addNode('All Items')
 			allItems.storeAsNode("${allItemsNode.path}/query")
-			rootNode.save()
+//			rootNode.save()
 		}
+		
+		save rootNode
 		
 		updateThread = Executors.newSingleThreadScheduledExecutor()
 	}
@@ -63,7 +67,7 @@ class Aggregator {
 					try {
 						println "Updating feed: ${node.getProperty('title').value.string}"
 					
-						Asynchronizer.doParallel(5) {
+						GParsExecutorsPool.withPool(5) {
 							def future = updateFeed.callAsync(node.getProperty('url').value.string)
 						}
 					}
@@ -97,39 +101,41 @@ class Aggregator {
 	}
 */
 	
-	def getNode = { path, referenceable = false ->
-		if (!rootNode.hasNode(path)) {
-//			log.log init_node, path
-			println "Adding path: ${path}"
-			def node = rootNode.addNode(path)
-			if (referenceable) {
-				node.addMixin('mix:referenceable')
-			}
-		}
-		return rootNode.getNode(path)
+	def addFeed = { url ->
+		 def feedNode = null
+		 def feedUrl
+		 try {
+			 feedUrl = new URL(url)
+		 }
+		 catch (MalformedURLException e) {
+			 feedUrl = new URL("http://${url}")
+		 }
+		 
+		 try {
+			 feedNode = updateFeed(url)
+		 }
+		 catch (Exception e) {
+			  def html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
+			  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
+			  println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+			  if (!feeds.isEmpty()) {
+				  feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+			  }
+			  else {
+//				  doLater {
+//					  JOptionPane.showMessageDialog(frame, "No feeds found for site: ${url}")
+//				  }
+				  throw new IllegalArgumentException("No feeds found for site: ${url}")
+			  }
+		 }
 	}
 	
-	def updateProperty = { aNode, propertyName, value ->
-		if (value && (!aNode.hasProperty(propertyName) || aNode.getProperty(propertyName).string != value)) {
-			aNode.setProperty(propertyName, value)
-		}
-	}
-
-	// save a node hierarchy..
-	def saveNode = { node ->
-		def parent = node.parent
-		while (parent.isNew()) {
-			parent = parent.parent
-		}
-		parent.save()
-	}
-
 	def updateFeed = { url ->
 		// rome uses Thread.contextClassLoader..
 		Thread.currentThread().contextClassLoader = Aggregator.classLoader
 		
 		def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
-		def feedNode = getNode(Text.escapeIllegalJcrChars(feed.title), true)
+		def feedNode = getNode(rootNode, Text.escapeIllegalJcrChars(feed.title), true)
 		updateProperty(feedNode, 'url', url)
 		updateProperty(feedNode, 'title', feed?.title)
 
@@ -145,13 +151,13 @@ class Aggregator {
 		for (entry in feed.entries) {
 			def entryNode
 			if (entry.uri) {
-				entryNode = getNode("${feedNode.name}/${Text.escapeIllegalJcrChars(entry.uri)}")
+				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.uri)}")
 			}
 			else if (entry.link) {
-				entryNode = getNode("${feedNode.name}/${Text.escapeIllegalJcrChars(entry.link)}")
+				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.link)}")
 			}
 			else {
-				entryNode = getNode("${feedNode.name}/${Text.escapeIllegalJcrChars(entry.title)}")
+				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.title)}")
 			}
 			updateProperty(entryNode, 'title', entry?.title)
 			if (entry?.description) {
@@ -201,7 +207,7 @@ class Aggregator {
 				entryNode.setProperty('date', now)
 			}
 		}
-		saveNode feedNode
+		save feedNode
 		return feedNode
 	}
 
