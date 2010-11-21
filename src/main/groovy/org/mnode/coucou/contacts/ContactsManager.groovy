@@ -3,7 +3,7 @@
  */
 package org.mnode.coucou.contacts
 
-import javax.jcr.Session;
+import javax.jcr.Repository;
 
 import org.mnode.coucou.AbstractManager;
 
@@ -13,16 +13,17 @@ import org.mnode.coucou.AbstractManager;
  */
 class ContactsManager extends AbstractManager {
 
-	javax.jcr.Node rootNode
+//	javax.jcr.Node rootNode
 	
-	ContactsManager(Session session, String nodeName) {
-		if (!session.rootNode.hasNode(nodeName)) {
-			rootNode = session.rootNode.addNode(nodeName)
-			session.rootNode.save()
-		}
-		else {
-			rootNode = session.rootNode.getNode(nodeName)
-		}		
+	ContactsManager(Repository repository, String nodeName) {
+//		if (!session.rootNode.hasNode(nodeName)) {
+//			rootNode = session.rootNode.addNode(nodeName)
+//			session.rootNode.save()
+//		}
+//		else {
+//			rootNode = session.rootNode.getNode(nodeName)
+//		}		
+		super(repository, 'contacts', nodeName)
 	}
 	
 	javax.jcr.Node add(def address) {

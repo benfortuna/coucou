@@ -6,16 +6,15 @@ package org.mnode.coucou.mail
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.jcr.Repository;
 import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.mail.Folder;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
-import javax.mail.URLName;
 import javax.mail.Authenticator
 import javax.mail.PasswordAuthentication
 
-import org.apache.commons.lang.time.DurationFormatUtils;
 import org.mnode.coucou.AbstractManager;
 import org.mnode.juicer.query.QueryBuilder;
 
@@ -31,28 +30,25 @@ class Mailbox extends AbstractManager {
 	
 	def updateThread
 		
-	Mailbox(javax.jcr.Session session, String nodeName) {
-		def mailNode
-		if (!session.rootNode.hasNode(nodeName)) {
-			mailNode = session.rootNode.addNode(nodeName)
-//			session.rootNode.save()
-		}
-		else {
-			mailNode = session.rootNode.getNode(nodeName)
-		}
+	Mailbox(Repository repository, String nodeName) {
+//		def mailNode
+//		if (!session.rootNode.hasNode(nodeName)) {
+//			mailNode = session.rootNode.addNode(nodeName)
+//		}
+//		else {
+//			mailNode = session.rootNode.getNode(nodeName)
+//		}
+		super(repository, 'mail', nodeName)
 		
-		if (!mailNode.hasNode('folders')) {
-			mailNode.addNode('folders')
-//			mailNode.save()
+		if (!rootNode.hasNode('folders')) {
+			rootNode.addNode('folders')
 		}
-		
-//		save mailNode
 		
 		//if (mailNode.hasNode('Attachments')) {
 		//	mailNode.getNode('Attachments').remove()
 		//}
 		
-		if (!mailNode.hasNode('Attachments')) {
+		if (!rootNode.hasNode('Attachments')) {
 			def attachments = new QueryBuilder(session.workspace.queryManager).with {
 				query(
 					source: selector(nodeType: 'nt:file', name: 'files'),
@@ -69,12 +65,12 @@ class Mailbox extends AbstractManager {
 								operand2: literal(session.valueFactory.createValue('data'))))))
 				)
 			}
-			def attachmentsNode = mailNode.addNode('Attachments')
+			def attachmentsNode = rootNode.addNode('Attachments')
 			attachments.storeAsNode("${attachmentsNode.path}/query")
 //			mailNode.save()
 		}
 		
-		save mailNode
+		save rootNode
 		
 		// email init..
 		def mailSessionProps = new Properties()

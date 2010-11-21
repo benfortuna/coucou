@@ -39,6 +39,7 @@ import org.mnode.coucou.breadcrumb.NodeCallback;
 import org.mnode.coucou.contacts.ContactsManager;
 import org.mnode.coucou.feed.Aggregator;
 import org.mnode.coucou.mail.Mailbox;
+import org.mnode.coucou.planner.Planner;
 import org.mnode.ousia.HTMLEditorKitExt;
 import org.mnode.ousia.HyperlinkBrowser;
 import org.mnode.ousia.OusiaBuilder;
@@ -82,18 +83,18 @@ RegistryHelper.registerRepository(context, 'coucou', Coucou.getResource("/config
 	 new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
 def repository = context.lookup('coucou')
 
-def session = repository.login(new SimpleCredentials('admin', ''.toCharArray()))
+def session = repository.login(new SimpleCredentials('readonly', ''.toCharArray()))
 Runtime.getRuntime().addShutdownHook({
 //	session.logout()
     RegistryHelper.unregisterRepository(context, 'coucou')
 })
 
-def mailbox = new Mailbox(session, 'Mail')
+def mailbox = new Mailbox(repository, 'Mail')
 mailbox.start()
 
 def mailDateFormat = new MailDateFormat()
 
-def contactsManager = new ContactsManager(session, 'Contacts')
+def contactsManager = new ContactsManager(repository, 'Contacts')
 
 def newContact = { events ->
 	for (event in events) {
@@ -110,8 +111,10 @@ def newContact = { events ->
 
 session.workspace.observationManager.addEventListener(newContact, 1, '/Mail/folders/Sent', true, null, null, false)
 
+def planner = new Planner(repository, 'Planner')
+
 // initialise feeds..
-def aggregator = new Aggregator(session, 'Feeds')
+def aggregator = new Aggregator(repository, 'Feeds')
 aggregator.start()
 
 def editContext = [:] as ObservableMap
@@ -161,19 +164,19 @@ ousia.edt {
 					}
 					println "Feeds: ${feeds}"
 					def errorMap = [:]
-					for (feed in feeds) {
-						try {
-							GParsExecutorsPool.withPool {
+					GParsExecutorsPool.withPool(10) {
+						for (feed in feeds) {
+							try {
 								def future = aggregator.updateFeed.callAsync(feed)
 //	                            future.get()
 //	                            doLater {
 //	                                feedList.model.fireTableDataChanged()
 //	                            }
 							}
-						}
-						catch (Exception ex) {
-							log.log unexpected_error, ex
-							errorMap.put(feed, ex)
+							catch (Exception ex) {
+								log.log unexpected_error, ex
+								errorMap.put(feed, ex)
+							}
 						}
 					}
 					if (!errorMap.isEmpty()) {
@@ -483,6 +486,7 @@ ousia.edt {
 		                        if (selectedItem.node.hasProperty('link')) {
 		                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
 		                            selectedItem.node.setProperty('seen', true)
+									// XXX: JCR sessions not thread-safe, so should ensure all updates are synchronized..
 		                            selectedItem.node.save()
 		                        }
 								else if (selectedItem.node.hasProperty('title')) {

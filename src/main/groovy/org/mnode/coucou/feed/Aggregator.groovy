@@ -8,10 +8,9 @@ import groovyx.gpars.GParsExecutorsPool;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.jcr.Session;
+import javax.jcr.Repository;
 
 import org.apache.jackrabbit.util.Text;
-import org.jdesktop.swingx.JXErrorPane;
 import org.mnode.coucou.AbstractManager;
 import org.mnode.juicer.query.QueryBuilder;
 
@@ -24,18 +23,18 @@ import com.sun.syndication.io.XmlReader;
  */
 class Aggregator extends AbstractManager {
 
-	def rootNode
+//	def rootNode
 
 	def updateThread
 		
-	Aggregator(Session session, String nodeName) {
-		if (!session.rootNode.hasNode(nodeName)) {
-			rootNode = session.rootNode.addNode(nodeName)
-//			session.rootNode.save()
-		}
-		else {
-			rootNode = session.rootNode.getNode(nodeName)
-		}
+	Aggregator(Repository repository, String nodeName) {
+//		if (!session.rootNode.hasNode(nodeName)) {
+//			rootNode = session.rootNode.addNode(nodeName)
+//		}
+//		else {
+//			rootNode = session.rootNode.getNode(nodeName)
+//		}
+		super(repository, 'feeds', nodeName)
 		
 		//if (feedsNode.hasNode('All Items')) {
 		//	feedsNode.getNode('All Items').remove()
@@ -67,7 +66,7 @@ class Aggregator extends AbstractManager {
 					try {
 						println "Updating feed: ${node.getProperty('title').value.string}"
 					
-						GParsExecutorsPool.withPool(5) {
+						GParsExecutorsPool.withPool(10) {
 							def future = updateFeed.callAsync(node.getProperty('url').value.string)
 						}
 					}
@@ -191,20 +190,20 @@ class Aggregator extends AbstractManager {
 			
 			if (entryNode.isNew()) {
 				if (!feedNode.hasProperty('date') || feedNode.getProperty('date')?.date.time.before(now.time)) {
-					feedNode.setProperty('date', now)
+					updateProperty(feedNode, 'date', now)
 				}
-				entryNode.setProperty('seen', false)
-				entryNode.setProperty('source', feedNode)
+				updateProperty(entryNode, 'seen', false)
+				updateProperty(entryNode, 'source', feedNode)
 			}
 			
 			// XXX: future published dates are ignored..
 			if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time.after(entry.publishedDate.time))) {
 				def publishedDate = Calendar.instance
 				publishedDate.time = entry.publishedDate
-				entryNode.setProperty('date', publishedDate)
+				updateProperty(entryNode, 'date', publishedDate)
 			}
 			else if (entryNode.isNew()) {
-				entryNode.setProperty('date', now)
+				updateProperty(entryNode, 'date', now)
 			}
 		}
 		save feedNode
