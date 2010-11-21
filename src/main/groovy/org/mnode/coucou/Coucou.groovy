@@ -554,9 +554,11 @@ ousia.edt {
 
 						 items.each {
 							 def item = [:]
+							 // feeds / items..
 							 if (it.value.hasProperty('title')) {
 								 item['title'] = it.value.getProperty('title').string
 							 }
+							 // mail messages..
 							 else if (it.value.hasNode('headers')) {
 								 def headers = it.value.getNode('headers')
 								 if (headers.hasProperty('Subject')) {
@@ -565,6 +567,10 @@ ousia.edt {
 								 else {
 									 item['title'] = '<No Subject>'
 								 }
+							 }
+							 // contacts..
+							 else if (it.value.hasProperty('personal')) {
+								 item['title'] = it.value.getProperty('personal').string
 							 }
 							 else {
 								 item['title'] = it.value.name
@@ -578,23 +584,36 @@ ousia.edt {
 									 item['source'] = it.value.getProperty('source').string
 								 }
 							 }
+							 // mail messages..
 							 else if (it.value.hasNode('headers')) {
 								 def headers = it.value.getNode('headers')
-								 if (headers.hasProperty('From')) {
+								 if (it.value.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
+									 item['source'] = headers.getProperty('To').string
+								 }
+								 else if (headers.hasProperty('From')) {
 									 item['source'] = headers.getProperty('From').string
 								 }
 								 else {
 									 item['source'] = '<Unknown Sender>'
 								 }
 							 }
+							 // attachments..
 							 else if (it.value.parent.name == 'attachments') {
-								 def headers = it.value.parent.parent.getNode('headers')
-								 if (headers.hasProperty('From')) {
+								 def message = it.value.parent.parent
+								 def headers = message.getNode('headers')
+								 if (message.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
+									 item['source'] = headers.getProperty('To').string
+								 }
+								 else if (headers.hasProperty('From')) {
 									 item['source'] = headers.getProperty('From').string
 								 }
 								 else {
 									 item['source'] = '<Unknown Sender>'
 								 }
+							 }
+							 // contacts..
+							 else if (it.value.hasProperty('email')) {
+								 item['source'] = it.value.getProperty('email').string
 							 }
 							 else {
 								 item['source'] = it.value.parent.name
@@ -603,6 +622,7 @@ ousia.edt {
 							 if (it.value.hasProperty('date')) {
 								 item['date'] = it.value.getProperty('date').date.time
 							 }
+							 // mail messages..
 							 else if (it.value.hasNode('headers')) {
 								 def headers = it.value.getNode('headers')
 								 if (headers.hasProperty('Date')) {
@@ -616,6 +636,7 @@ ousia.edt {
 							 else if (it.value.hasProperty('received')) {
 								 item['date'] = it.value.getProperty('received').date.time
 							 }
+							 // attachments..
 							 else if (it.value.parent.name == 'attachments') {
 								 def headers = it.value.parent.parent.getNode('headers')
 								 if (headers.hasProperty('Date')) {
