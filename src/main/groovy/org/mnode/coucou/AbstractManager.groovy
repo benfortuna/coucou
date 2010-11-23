@@ -27,6 +27,7 @@ abstract class AbstractManager {
 	AbstractManager(Repository repository, String user, String nodeName) {
 		session = repository.login(new SimpleCredentials(user, ''.toCharArray()))
 		rootNode = getNode(session.rootNode, nodeName)
+		save rootNode
 	}
 	
 	def getNode = { rootNode, path, referenceable = false ->
@@ -49,7 +50,7 @@ abstract class AbstractManager {
 	}
 
 	def updateProperty = { aNode, propertyName, value ->
-		if (value != null && (!aNode.hasProperty(propertyName) || aNode.getProperty(propertyName).string != value)) {
+		if (value != null) { // && (!aNode.hasProperty(propertyName)) || aNode.getProperty(propertyName).string != value)) {
 			// lock to avoid concurrent modification..
 			try {
 				lock.writeLock().lock()
