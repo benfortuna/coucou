@@ -94,6 +94,10 @@ mailbox.start()
 
 def mailDateFormat = new MailDateFormat()
 
+// initialise feeds..
+def aggregator = new Aggregator(repository, 'Feeds')
+aggregator.start()
+
 def contactsManager = new ContactsManager(repository, 'Contacts')
 
 def newContact = { events ->
@@ -112,10 +116,6 @@ def newContact = { events ->
 session.workspace.observationManager.addEventListener(newContact, 1, '/Mail/folders/Sent', true, null, null, false)
 
 def planner = new Planner(repository, 'Planner')
-
-// initialise feeds..
-def aggregator = new Aggregator(repository, 'Feeds')
-aggregator.start()
 
 def editContext = [:] as ObservableMap
 
@@ -483,15 +483,22 @@ ousia.edt {
 		                activityTable.mouseClicked = { e ->
 		                    if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && activityTable.selectedRow >= 0) {
 		                        def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+								// feed item..
 		                        if (selectedItem.node.hasProperty('link')) {
 		                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
 		                            selectedItem.node.setProperty('seen', true)
 									// XXX: JCR sessions not thread-safe, so should ensure all updates are synchronized..
 		                            selectedItem.node.save()
 		                        }
+								// feed subscription..
 								else if (selectedItem.node.hasProperty('title')) {
 									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getProperty('title').string, selectedItem.node))
 								}
+								// mail folder..
+								else if (selectedItem.node.hasProperty('folderName')) {
+									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getProperty('folderName').string, selectedItem.node))
+								}
+								// mail attachment..
 								else if (selectedItem.node.hasNode('jcr:content')) {
 									def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
 									file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
