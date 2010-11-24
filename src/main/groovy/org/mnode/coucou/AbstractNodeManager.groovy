@@ -16,7 +16,7 @@ import org.apache.poi.poifs.property.Parent;
  * @author fortuna
  *
  */
-abstract class AbstractManager {
+abstract class AbstractNodeManager {
 	
 	static ReadWriteLock lock = new ReentrantReadWriteLock()
 	
@@ -24,7 +24,7 @@ abstract class AbstractManager {
 	
 	javax.jcr.Node rootNode
 	
-	AbstractManager(Repository repository, String user, String nodeName) {
+	AbstractNodeManager(Repository repository, String user, String nodeName) {
 		session = repository.login(new SimpleCredentials(user, ''.toCharArray()))
 		rootNode = getNode(session.rootNode, nodeName)
 		save rootNode

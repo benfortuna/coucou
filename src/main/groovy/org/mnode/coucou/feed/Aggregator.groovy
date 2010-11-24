@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 
 import org.apache.jackrabbit.util.Text;
-import org.mnode.coucou.AbstractManager;
+import org.mnode.coucou.AbstractNodeManager;
 import org.mnode.juicer.query.QueryBuilder;
 
 import com.sun.syndication.io.SyndFeedInput;
@@ -21,7 +21,7 @@ import com.sun.syndication.io.XmlReader;
  * @author fortuna
  *
  */
-class Aggregator extends AbstractManager {
+class Aggregator extends AbstractNodeManager {
 
 //	def rootNode
 

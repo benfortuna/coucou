@@ -5,13 +5,13 @@ package org.mnode.coucou.contacts
 
 import javax.jcr.Repository;
 
-import org.mnode.coucou.AbstractManager;
+import org.mnode.coucou.AbstractNodeManager;
 
 /**
  * @author fortuna
  *
  */
-class ContactsManager extends AbstractManager {
+class ContactsManager extends AbstractNodeManager {
 
 //	javax.jcr.Node rootNode
 	
