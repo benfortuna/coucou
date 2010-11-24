@@ -286,6 +286,7 @@ ousia.edt {
 	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
 	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
 	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
+	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
 		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame', iconImage: imageIcon('/globe.png').image,
@@ -338,6 +339,7 @@ ousia.edt {
 			ribbonApplicationMenuEntryFooter(text: rs('Preferences'))
 		}
 		frame.ribbon.applicationMenu = appMenu
+		frame.ribbon.configureHelp helpIcon, aboutAction
  
 		avatarBand = new JRibbonBand(rs('Avatar'), null, null)
 //		avatarBand.resizePolicies = CoreRibbonResizePolicies.getCorePoliciesNone(avatarBand)
