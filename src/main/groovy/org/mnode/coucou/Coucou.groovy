@@ -264,8 +264,8 @@ ousia.edt {
 								systemProps.add([property: propName, value: System.properties.getProperty(propName)])
 							}
 							tableModel(list: systemProps) {
-								propertyColumn(header: rs('Property'), propertyName:'property')
-								propertyColumn(header: rs('Value'), propertyName:'value')
+								propertyColumn(header: rs('Property'), propertyName: 'property', editable: false)
+								propertyColumn(header: rs('Value'), propertyName: 'value', editable: false)
 							}
 						}
 					}
@@ -359,10 +359,10 @@ ousia.edt {
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
-		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Filter'), itemsBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Action'), replyBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
 		
 		panel {
@@ -673,7 +673,7 @@ ousia.edt {
 									 // lock for list modification..
 									 activities.readWriteLock.writeLock().lock()
 									 activities.add(item)
-									 statusMessage.text = "${activities.size()} items"
+									 statusMessage.text = "${activities.size()} ${rs('items')}"
 								 }
 								 finally {
 									 // unlock post-list modification..
@@ -683,6 +683,9 @@ ousia.edt {
 						}
 						
 						 doLater {
+							 if (activities.size() == 0) {
+								 statusMessage.text = rs('Nothing to see here')
+							 }
 							 frame.contentPane.cursor = Cursor.defaultCursor
 						 }
 						 
