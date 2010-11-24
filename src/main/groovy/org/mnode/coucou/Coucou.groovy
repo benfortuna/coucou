@@ -366,6 +366,7 @@ ousia.edt {
 		panel {
 			borderLayout()
 //			breadcrumbFileSelector(path: new File(System.getProperty('user.home')), constraints: BorderLayout.NORTH)
+			
 			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			// Treetable renderering..
@@ -497,6 +498,10 @@ ousia.edt {
 								// mail folder..
 								else if (selectedItem.node.hasProperty('folderName')) {
 									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getProperty('folderName').string, selectedItem.node))
+								}
+								// mail message..
+								else if (selectedItem.node.parent.name == 'messages') {
+									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getNode('headers').getProperty('Subject').string, selectedItem.node))
 								}
 								// mail attachment..
 								else if (selectedItem.node.hasNode('jcr:content')) {
