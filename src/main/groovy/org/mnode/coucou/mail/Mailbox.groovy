@@ -15,14 +15,14 @@ import javax.mail.Store;
 import javax.mail.Authenticator
 import javax.mail.PasswordAuthentication
 
-import org.mnode.coucou.AbstractManager;
+import org.mnode.coucou.AbstractNodeManager;
 import org.mnode.juicer.query.QueryBuilder;
 
 /**
  * @author fortuna
  *
  */
-class Mailbox extends AbstractManager {
+class Mailbox extends AbstractNodeManager {
 	
 //	def rootNode
 
@@ -30,6 +30,8 @@ class Mailbox extends AbstractManager {
 	
 	def updateThread
 		
+//	Query relatedMessages
+	
 	Mailbox(Repository repository, String nodeName) {
 //		def mailNode
 //		if (!session.rootNode.hasNode(nodeName)) {
@@ -82,6 +84,24 @@ class Mailbox extends AbstractManager {
 		mailSession = Session.getInstance(mailSessionProps, {new PasswordAuthentication('mail', '')} as Authenticator)
 
 		updateThread = Executors.newSingleThreadScheduledExecutor()
+/*
+		relatedMessages = new QueryBuilder(session.workspace.queryManager).with {
+			query(
+				source: selector(nodeType: 'nt:unstructured', name: 'messages'),
+				constraint: and(
+					constraint1: descendantNode(selectorName: 'messages', path: "/${nodeName}"),
+//						constraint2: or(
+						constraint2: comparison(
+							operand1: propertyValue(selectorName: 'messages', propertyName: 'inReplyTo'),
+							operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+							operand2: bindVariable(name: 'messageId'))),
+//							constraint2: not(comparison(
+//								operand1: nodeNamex(selectorName: 'files'),
+//								operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+//								operand2: bindVariable(name: 'messageId')))))
+			)
+		}
+*/
 	}
 
 	void start() {
