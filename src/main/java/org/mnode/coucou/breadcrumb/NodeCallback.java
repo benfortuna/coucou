@@ -59,8 +59,9 @@ public class NodeCallback extends BreadcrumbBarCallBack<Node> {
 			}
 			else {
 				final Node lastPathNode = path.get(path.size() - 1).getData();
-				// if last node is a message, don't add children..
-				if (!"messages".equals(lastPathNode.getParent().getName())) {
+				// if last node is a message or a feed, don't add children..
+				if (!"messages".equals(lastPathNode.getParent().getName())
+						&& !"Feeds".equals(lastPathNode.getParent().getName())) {
 					final NodeIterator nodes = lastPathNode.getNodes();
 					while (nodes.hasNext()) {
 						final Node node = nodes.nextNode();
@@ -174,6 +175,15 @@ public class NodeCallback extends BreadcrumbBarCallBack<Node> {
 	                
 	                for (Node messageNode : messages.values()) {
 		        		leafs.add(new StringValuePair<Node>(messageNode.getName(), messageNode));
+	                }
+				}
+				// feed nodes..
+				else if ("Feeds".equals(lastPathNode.getParent().getName())) {
+	                leafs = new ArrayList<StringValuePair<Node>>();
+	                final NodeIterator nodes = lastPathNode.getNodes();
+	                while (nodes.hasNext()) {
+	                	final Node itemNode = nodes.nextNode();
+						leafs.add(new StringValuePair<Node>(itemNode.getProperty("title").getString(), itemNode));
 	                }
 				}
 			}
