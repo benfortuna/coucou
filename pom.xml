@@ -11,7 +11,7 @@
 	<name>Coucou</name>
 	<version>0.0.1-SNAPSHOT</version>
 	<description>Online communications tool</description>
-	<url>http://basetools.org/coucou</url>
+	<url>http://code.google.com/p/coucou</url>
 	<repositories>
 		<repository>
 			<id>modularity-releases</id>
@@ -247,8 +247,8 @@
         </dependency>
 	</dependencies>
 	<scm>
-		<connection>scm:svn:http://svn.mnode.org/base/coucou/trunk</connection>
-		<developerConnection>scm:svn:http://svn.mnode.org/base/coucou/trunk</developerConnection>
+		<connection>scm:hg:https://coucou.googlecode.com/hg/</connection>
+		<developerConnection>scm:hg:https://coucou.googlecode.com/hg/</developerConnection>
 	</scm>
 
 	<build>
