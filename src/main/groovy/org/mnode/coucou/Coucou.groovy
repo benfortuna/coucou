@@ -9,6 +9,8 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
@@ -354,8 +356,18 @@ ousia.edt {
 		
 		filterBand = new JRibbonBand(rs('Filter'), forwardIcon, null)
 		filterBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(filterBand.controlPanel)]
-		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type to filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField'))
+		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type to filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
+		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
+		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
+		showHideBand = new JRibbonBand(rs('Show/Hide'), forwardIcon, null)
+		showHideBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(showHideBand.controlPanel)]
+		showHideBand.addCommandButton(commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener), RibbonElementPriority.MEDIUM)
+		
+		viewModeBand = new JRibbonBand(rs('Mode'), forwardIcon, null)
+		viewModeBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(viewModeBand.controlPanel)]
+		viewModeBand.addCommandButton(commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction), RibbonElementPriority.MEDIUM)
+
 		contactsBand = new JRibbonBand(rs('Contacts'), forwardIcon, null)
 		contactsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(contactsBand.controlPanel)]
 		
@@ -366,7 +378,7 @@ ousia.edt {
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
-		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand))
+		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, showHideBand, viewModeBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Action'), replyBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
@@ -536,11 +548,11 @@ ousia.edt {
 		                    }
 		                }
 						
-						activityTable.focusLost = { e ->
-							if (e.oppositeComponent != contentView) {
-								activityTable.clearSelection()
-							}
-						}
+//						activityTable.focusLost = { e ->
+//							if (e.oppositeComponent != contentView) {
+//								activityTable.clearSelection()
+//							}
+//						}
 					}
 				}
 				
@@ -560,6 +572,7 @@ ousia.edt {
 
 			breadcrumb.model.addPathListener({
 					edt {
+						filterTextField.text = null
 						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
 					}
 				
@@ -740,7 +753,7 @@ ousia.edt {
 
 		statusBar(constraints: BorderLayout.SOUTH, id: 'statusBar') {
 			label(id: 'statusMessage', text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
-//			bind(source: viewStatusBar, sourceProperty:'selected', target:statusBar, targetProperty:'visible')
+//			bind(source: viewStatusBar, sourceProperty: 'selected', target: statusBar, targetProperty:'visible')
 		}
 	}
 /*
