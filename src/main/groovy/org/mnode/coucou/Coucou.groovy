@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Desktop;
+import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.MouseEvent;
 
@@ -34,6 +35,8 @@ import org.apache.jackrabbit.core.jndi.RegistryHelper;
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.error.ErrorInfo;
+import org.jdesktop.swingx.prompt.PromptSupport;
+import org.jdesktop.swingx.prompt.PromptSupport.FocusBehavior;
 import org.mnode.coucou.activity.DateExpansionModel;
 import org.mnode.coucou.breadcrumb.NodeCallback;
 import org.mnode.coucou.contacts.ContactsManager;
@@ -58,10 +61,13 @@ import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem;
 
 
 import ca.odell.glazedlists.BasicEventList;
+import ca.odell.glazedlists.TextFilterator;
 import ca.odell.glazedlists.TreeList;
 import ca.odell.glazedlists.TreeList.Format;
+import ca.odell.glazedlists.event.ListEventListener;
 import ca.odell.glazedlists.gui.TableFormat;
 import ca.odell.glazedlists.swing.EventTableModel;
+import ca.odell.glazedlists.swing.TextComponentMatcherEditor;
 import ca.odell.glazedlists.swing.TreeTableSupport;
 
 import org.mnode.base.log.FormattedLogEntry;
@@ -346,8 +352,9 @@ ousia.edt {
 		avatarBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(avatarBand.controlPanel)]
 		avatarBand.addCommandButton(commandButton(forwardIcon), RibbonElementPriority.MEDIUM)
 		
-		itemsBand = new JRibbonBand(rs('Items'), forwardIcon, null)
-		itemsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(itemsBand.controlPanel)]
+		filterBand = new JRibbonBand(rs('Filter'), forwardIcon, null)
+		filterBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(filterBand.controlPanel)]
+		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type to filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField'))
 		
 		contactsBand = new JRibbonBand(rs('Contacts'), forwardIcon, null)
 		contactsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(contactsBand.controlPanel)]
@@ -359,7 +366,7 @@ ousia.edt {
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
-		frame.ribbon.addTask(new RibbonTask(rs('Filter'), itemsBand))
+		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Action'), replyBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
@@ -381,7 +388,22 @@ ousia.edt {
 					table(gridColor: Color.LIGHT_GRAY, showHorizontalLines: false, opaque: false, border: null, id: 'activityTable') {
 						activities = new BasicEventList<?>()
 						
-						treeList(sortedList(activities, comparator: {a, b -> b.date <=> a.date} as Comparator, id: 'sortedActivities'),
+						filterList(activities, id: 'filteredActivities', matcherEditor: new TextComponentMatcherEditor(filterTextField, { baseList, e ->
+							baseList << e['title']
+						} as TextFilterator, true))
+						
+						filteredActivities.addListEventListener({
+							doLater {
+								if (filteredActivities.size() > 0) {
+									statusMessage.text = "${filteredActivities.size()} ${rs('items')}"
+								}
+								else {
+									statusMessage.text = rs('Nothing to see here')
+								}
+							}
+						} as ListEventListener)
+
+						treeList(sortedList(filteredActivities, comparator: {a, b -> b.date <=> a.date} as Comparator, id: 'sortedActivities'),
 							 expansionModel: new DateExpansionModel(), format: [
 						        allowsChildren: {element -> true},
 						        getComparator: {depth -> },
@@ -673,7 +695,7 @@ ousia.edt {
 									 // lock for list modification..
 									 activities.readWriteLock.writeLock().lock()
 									 activities.add(item)
-									 statusMessage.text = "${activities.size()} ${rs('items')}"
+//									 statusMessage.text = "${activities.size()} ${rs('items')}"
 								 }
 								 finally {
 									 // unlock post-list modification..
@@ -683,9 +705,9 @@ ousia.edt {
 						}
 						
 						 doLater {
-							 if (activities.size() == 0) {
-								 statusMessage.text = rs('Nothing to see here')
-							 }
+//							 if (activities.size() == 0) {
+//								 statusMessage.text = rs('Nothing to see here')
+//							 }
 							 frame.contentPane.cursor = Cursor.defaultCursor
 						 }
 						 
