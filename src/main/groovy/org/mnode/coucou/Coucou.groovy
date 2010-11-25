@@ -333,6 +333,12 @@ ousia.edt {
 			newMenu.addSecondaryMenuGroup 'Create a new item', newFeed
 			
 			appMenu.addMenuSeparator()
+			ribbonApplicationMenuEntryPrimary(id: 'saveAsMenu', icon: forwardIcon, text: rs('Save As'), kind: CommandButtonKind.ACTION_AND_POPUP_MAIN_ACTION)
+			ribbonApplicationMenuEntrySecondary(id: 'saveAsFile', icon: feedIcon, text: rs('File'), kind: CommandButtonKind.ACTION_ONLY)
+			ribbonApplicationMenuEntrySecondary(id: 'saveAsTemplate', icon: feedIcon, text: rs('Template'), kind: CommandButtonKind.ACTION_ONLY)
+			saveAsMenu.addSecondaryMenuGroup 'Save Item', saveAsFile, saveAsTemplate
+
+			appMenu.addMenuSeparator()
 			ribbonApplicationMenuEntryPrimary(id: 'importMenu', icon: forwardIcon, text: rs('Import'), kind: CommandButtonKind.POPUP_ONLY)
 			ribbonApplicationMenuEntrySecondary(id: 'importMail', icon: mailIcon, text: rs('Email'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importMailAction)
 			ribbonApplicationMenuEntrySecondary(id: 'importFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importFeedsAction)
@@ -360,10 +366,14 @@ ousia.edt {
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
+		groupByBand = new JRibbonBand(rs('Group By'), forwardIcon, null)
+		groupByBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(groupByBand.controlPanel)]
+		groupByBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false))
+		
 		sortBand = new JRibbonBand(rs('Sort'), forwardIcon, null)
 		sortBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(sortBand.controlPanel)]
 		sortBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Ascending'), rs('Descending')] as Object[], editable: false))
-		
+
 		showHideBand = new JRibbonBand(rs('Show/Hide'), forwardIcon, null)
 		showHideBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(showHideBand.controlPanel)]
 		showHideBand.addCommandButton(commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener), RibbonElementPriority.MEDIUM)
@@ -388,6 +398,11 @@ ousia.edt {
 		updateBand.addCommandButton(commandButton(rs('Mark All Read')), RibbonElementPriority.MEDIUM)
 		updateBand.addCommandButton(commandButton(rs('Delete')), RibbonElementPriority.MEDIUM)
 		
+		organiseBand = new JRibbonBand(rs('Organise'), forwardIcon, null)
+		organiseBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(organiseBand.controlPanel)]
+		organiseBand.addCommandButton(commandButton(rs('Move To')), RibbonElementPriority.MEDIUM)
+		organiseBand.addCommandButton(commandButton(rs('Archive')), RibbonElementPriority.MEDIUM)
+
 		flagTagBand = new JRibbonBand(rs('Flag/Tag'), forwardIcon, null)
 		flagTagBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(flagTagBand.controlPanel)]
 		flagTagBand.addCommandButton(commandButton(rs('Flag')), RibbonElementPriority.MEDIUM)
@@ -402,9 +417,9 @@ ousia.edt {
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
-		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, sortBand, showHideBand, viewModeBand))
+		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, flagTagBand, actionExtrasBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, flagTagBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
 		
