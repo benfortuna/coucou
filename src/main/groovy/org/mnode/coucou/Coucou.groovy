@@ -360,6 +360,10 @@ ousia.edt {
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
+		sortBand = new JRibbonBand(rs('Sort'), forwardIcon, null)
+		sortBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(sortBand.controlPanel)]
+		sortBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Ascending'), rs('Descending')] as Object[], editable: false))
+		
 		showHideBand = new JRibbonBand(rs('Show/Hide'), forwardIcon, null)
 		showHideBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(showHideBand.controlPanel)]
 		showHideBand.addCommandButton(commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener), RibbonElementPriority.MEDIUM)
@@ -371,16 +375,36 @@ ousia.edt {
 		contactsBand = new JRibbonBand(rs('Contacts'), forwardIcon, null)
 		contactsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(contactsBand.controlPanel)]
 		
-		replyBand = new JRibbonBand(rs('Reply'), forwardIcon, null)
-		replyBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(replyBand.controlPanel)]
+		respondBand = new JRibbonBand(rs('Respond'), forwardIcon, null)
+		respondBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(respondBand.controlPanel)]
+		respondBand.addCommandButton(commandButton(rs('Reply')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(rs('Reply To All')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(rs('Forward')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(rs('Chat')), RibbonElementPriority.MEDIUM)
 		
+		updateBand = new JRibbonBand(rs('Update'), forwardIcon, null)
+		updateBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(updateBand.controlPanel)]
+		updateBand.addCommandButton(commandButton(rs('Mark As Read')), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(rs('Mark All Read')), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(rs('Delete')), RibbonElementPriority.MEDIUM)
+		
+		flagTagBand = new JRibbonBand(rs('Flag/Tag'), forwardIcon, null)
+		flagTagBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(flagTagBand.controlPanel)]
+		flagTagBand.addCommandButton(commandButton(rs('Flag')), RibbonElementPriority.MEDIUM)
+		flagTagBand.addCommandButton(commandButton(rs('Tag')), RibbonElementPriority.MEDIUM)
+		
+		actionExtrasBand = new JRibbonBand(rs('Extras'), forwardIcon, null)
+		actionExtrasBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(actionExtrasBand.controlPanel)]
+		actionExtrasBand.addCommandButton(commandButton(rs('Copy')), RibbonElementPriority.MEDIUM)
+		actionExtrasBand.addCommandButton(commandButton(rs('Add To Planner')), RibbonElementPriority.MEDIUM)
+
 		toolsBand = new JRibbonBand(rs('Tools'), taskIcon, null)
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
-		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, showHideBand, viewModeBand))
+		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, sortBand, showHideBand, viewModeBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Action'), replyBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, flagTagBand, actionExtrasBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
 		
