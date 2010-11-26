@@ -26,7 +26,7 @@ class Mailbox extends AbstractNodeManager {
 	
 //	def rootNode
 
-	Session mailSession
+	javax.mail.Session mailSession
 	
 	def updateThread
 		
@@ -81,7 +81,7 @@ class Mailbox extends AbstractNodeManager {
 		mailSessionProps.setProperty('mstor.repository.create', 'true')
 		mailSessionProps.setProperty('mail.store.protocol', 'mstor')
 		
-		mailSession = Session.getInstance(mailSessionProps, {new PasswordAuthentication('mail', '')} as Authenticator)
+		mailSession = javax.mail.Session.getInstance(mailSessionProps, {new PasswordAuthentication('mail', '')} as Authenticator)
 
 		updateThread = Executors.newSingleThreadScheduledExecutor()
 /*
