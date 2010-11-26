@@ -629,6 +629,7 @@ ousia.edt {
 			breadcrumb.model.addPathListener({
 					edt {
 						filterTextField.text = null
+						frame.title = "${breadcrumb.model.items[-1].data.path} - ${rs('Coucou')}"
 						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
 					}
 				

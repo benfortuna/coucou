@@ -63,16 +63,16 @@ class Aggregator extends AbstractNodeManager {
 	   updateThread.scheduleAtFixedRate({
 		   for (node in rootNode.nodes) {
 			   if (node.hasProperty('url')) {
-					try {
-						println "Updating feed: ${node.getProperty('title').value.string}"
-					
-						GParsExecutorsPool.withPool(10) {
+					println "Updating feed: ${node.getProperty('title').value.string}"
+				
+					GParsExecutorsPool.withPool(10) {
+						try {
 							def future = updateFeed.callAsync(node.getProperty('url').value.string)
 						}
-					}
-					catch (Exception e) {
-//						log.log unexpected_error, e
-						e.printStackTrace()
+						catch (Exception e) {
+	//						log.log unexpected_error, e
+							e.printStackTrace()
+						}
 					}
 				}
 			}
@@ -197,7 +197,7 @@ class Aggregator extends AbstractNodeManager {
 			}
 			
 			// XXX: future published dates are ignored..
-			if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date')?.date.time.after(entry.publishedDate.time))) {
+			if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date').date.time.after(entry.publishedDate))) {
 				def publishedDate = Calendar.instance
 				publishedDate.time = entry.publishedDate
 				updateProperty(entryNode, 'date', publishedDate)

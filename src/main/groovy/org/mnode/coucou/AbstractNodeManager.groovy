@@ -30,20 +30,30 @@ abstract class AbstractNodeManager {
 		save rootNode
 	}
 	
+	def lock() {
+		lock.writeLock().lock()
+//		println '*** Save lock obtained'
+	}
+
+	def unlock() {
+		lock.writeLock().unlock()
+//		println '*** Save lock released'
+	}
+
 	def getNode = { rootNode, path, referenceable = false ->
 		if (!rootNode.hasNode(path)) {
 //			log.log init_node, path
 			println "Adding path: ${path}"
 			// lock to avoid concurrent modification..
 			try {
-				lock.writeLock().lock()
+				lock()
 				def node = rootNode.addNode(path)
 				if (referenceable) {
 					node.addMixin('mix:referenceable')
 				}
 			}
 			finally {
-				lock.writeLock().unlock()
+				unlock()
 			}
 		}
 		return rootNode.getNode(path)
@@ -53,17 +63,18 @@ abstract class AbstractNodeManager {
 		if (value != null) { // && (!aNode.hasProperty(propertyName)) || aNode.getProperty(propertyName).string != value)) {
 			// lock to avoid concurrent modification..
 			try {
-				lock.writeLock().lock()
+				lock()
 				aNode.setProperty(propertyName, value)
 			}
 			finally {
-				lock.writeLock().unlock()
+				unlock()
 			}
 		}
 	}
 
 	// save a node hierarchy..
 	def save = { node ->
+		println "Saving node: ${node.path}"
 		def parent = node
 		while (parent.isNew()) {
 			parent = parent.parent
@@ -72,13 +83,12 @@ abstract class AbstractNodeManager {
 //		parent.save()
 		try {
 //			parent.session.workspace.lockManager.lock(parent.path, true, true, 5, getClass().name)
-			lock.writeLock().lock()
+			lock()
 			parent.save()
 		}
 		finally {
 //			parent.session.workspace.lockManager.unlock(parent.path)
-			lock.writeLock().unlock()
+			unlock()
 		}
 	}
-
 }
