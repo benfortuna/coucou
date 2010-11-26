@@ -50,6 +50,8 @@ import org.mnode.ousia.HyperlinkBrowser;
 import org.mnode.ousia.OusiaBuilder;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonPopupOrientationKind;
+import org.pushingpixels.flamingo.api.common.popup.PopupPanelCallback;
 import org.pushingpixels.flamingo.api.ribbon.JRibbonBand;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask;
@@ -362,7 +364,7 @@ ousia.edt {
 		
 		filterBand = new JRibbonBand(rs('Filter'), forwardIcon, null)
 		filterBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(filterBand.controlPanel)]
-		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type to filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
+		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
@@ -370,9 +372,15 @@ ousia.edt {
 		groupByBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(groupByBand.controlPanel)]
 		groupByBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false))
 		
-		sortBand = new JRibbonBand(rs('Sort'), forwardIcon, null)
+		sortBand = new JRibbonBand(rs('Sort By'), forwardIcon, null)
 		sortBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(sortBand.controlPanel)]
-		sortBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Ascending'), rs('Descending')] as Object[], editable: false))
+		sortBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Date'), rs('Title'), rs('Source')] as Object[], editable: false))
+		sortBand.addRibbonComponent ribbonComponent(commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: { 
+				commandPopupMenu() {
+					commandToggleMenuButton(rs('Ascending'))
+					commandToggleMenuButton(rs('Descending'))
+				}
+			} as PopupPanelCallback))
 
 		showHideBand = new JRibbonBand(rs('Show/Hide'), forwardIcon, null)
 		showHideBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(showHideBand.controlPanel)]
@@ -381,9 +389,17 @@ ousia.edt {
 		viewModeBand = new JRibbonBand(rs('Mode'), forwardIcon, null)
 		viewModeBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(viewModeBand.controlPanel)]
 		viewModeBand.addCommandButton(commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction), RibbonElementPriority.MEDIUM)
-
-		contactsBand = new JRibbonBand(rs('Contacts'), forwardIcon, null)
-		contactsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(contactsBand.controlPanel)]
+		
+		quickSearchBand = new JRibbonBand(rs('Quick Search'), forwardIcon, null)
+		quickSearchBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(quickSearchBand.controlPanel)]
+		quickSearchBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Search All Items..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
+		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
+		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
+		
+		advancedSearchBand = new JRibbonBand(rs('Advanced'), forwardIcon, null)
+		advancedSearchBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(advancedSearchBand.controlPanel)]
+		advancedSearchBand.addCommandButton(commandButton(rs('New Search')), RibbonElementPriority.MEDIUM)
+		advancedSearchBand.addCommandButton(commandButton(rs('Saved Searches')), RibbonElementPriority.MEDIUM)
 		
 		respondBand = new JRibbonBand(rs('Respond'), forwardIcon, null)
 		respondBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(respondBand.controlPanel)]
@@ -400,13 +416,13 @@ ousia.edt {
 		
 		organiseBand = new JRibbonBand(rs('Organise'), forwardIcon, null)
 		organiseBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(organiseBand.controlPanel)]
+		organiseBand.addCommandButton(commandButton(rs('Flag')), RibbonElementPriority.MEDIUM)
+		organiseBand.addCommandButton(commandButton(rs('Tag')), RibbonElementPriority.MEDIUM)
 		organiseBand.addCommandButton(commandButton(rs('Move To')), RibbonElementPriority.MEDIUM)
 		organiseBand.addCommandButton(commandButton(rs('Archive')), RibbonElementPriority.MEDIUM)
 
-		flagTagBand = new JRibbonBand(rs('Flag/Tag'), forwardIcon, null)
-		flagTagBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(flagTagBand.controlPanel)]
-		flagTagBand.addCommandButton(commandButton(rs('Flag')), RibbonElementPriority.MEDIUM)
-		flagTagBand.addCommandButton(commandButton(rs('Tag')), RibbonElementPriority.MEDIUM)
+//		flagTagBand = new JRibbonBand(rs('Flag/Tag'), forwardIcon, null)
+//		flagTagBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(flagTagBand.controlPanel)]
 		
 		actionExtrasBand = new JRibbonBand(rs('Extras'), forwardIcon, null)
 		actionExtrasBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(actionExtrasBand.controlPanel)]
@@ -418,8 +434,8 @@ ousia.edt {
 		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
 		
 		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Search'), contactsBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, flagTagBand, organiseBand, actionExtrasBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
 		
@@ -445,6 +461,7 @@ ousia.edt {
 						
 						filteredActivities.addListEventListener({
 							doLater {
+								activityTable.clearSelection()
 								if (filteredActivities.size() > 0) {
 									statusMessage.text = "${filteredActivities.size()} ${rs('items')}"
 								}
