@@ -10,11 +10,13 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.Query;
 import javax.mail.Folder;
 
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
+import org.mnode.coucou.search.SearchPathResult;
 
 /**
  * @author fortuna
@@ -22,11 +24,20 @@ import org.mnode.coucou.PathResultException;
  */
 public class FolderNodePathResult extends NodePathResult {
 
+	private Query attachmentsQuery;
+	
 	/**
 	 * @param node
 	 */
 	public FolderNodePathResult(Node node) {
 		super(node);
+		try {
+			attachmentsQuery = node.getSession().getWorkspace().getQueryManager().createQuery(
+					String.format("SELECT * FROM [nt:file] AS files WHERE ISDESCENDANTNODE(files, [%s]) AND (NOT NAME(files) = 'part') AND (NOT NAME(files) = 'data')", node.getPath()), Query.JCR_JQOM);
+		}
+		catch (RepositoryException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -41,6 +52,11 @@ public class FolderNodePathResult extends NodePathResult {
 	@Override
 	public List<PathResult<?, Node>> getChildren() throws PathResultException {
 		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+		
+		if (attachmentsQuery != null) {
+			children.add(new SearchPathResult(attachmentsQuery, "Attachments"));
+		}
+		
 		try {
 			if ((Folder.HOLDS_FOLDERS & getElement().getProperty("type").getLong()) > 0) {
 				// add folders..
