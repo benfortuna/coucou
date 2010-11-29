@@ -137,7 +137,7 @@ class Mailbox extends AbstractNodeManager {
 				}
 				inbox.open(Folder.READ_WRITE)
 				
-				int interval = 500;
+				int interval = 100;
 				long start = -1, init = System.currentTimeMillis();
 				for (int i = 1; i <= folder.getMessageCount();) {
 					int end = Math.min(interval + i - 1, folder.getMessageCount());
