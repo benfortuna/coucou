@@ -37,14 +37,15 @@ import org.apache.jackrabbit.core.jndi.RegistryHelper;
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.error.ErrorInfo;
-import org.jdesktop.swingx.prompt.PromptSupport;
 import org.jdesktop.swingx.prompt.PromptSupport.FocusBehavior;
 import org.mnode.coucou.activity.DateExpansionModel;
-import org.mnode.coucou.breadcrumb.NodeCallback;
+import org.mnode.coucou.breadcrumb.PathResultCallback;
 import org.mnode.coucou.contacts.ContactsManager;
 import org.mnode.coucou.feed.Aggregator;
 import org.mnode.coucou.mail.Mailbox;
 import org.mnode.coucou.planner.Planner;
+import org.mnode.coucou.search.SearchPathResult;
+import org.mnode.juicer.query.QueryBuilder;
 import org.mnode.ousia.HTMLEditorKitExt;
 import org.mnode.ousia.HyperlinkBrowser;
 import org.mnode.ousia.OusiaBuilder;
@@ -127,10 +128,11 @@ session.workspace.observationManager.addEventListener(newContact, 1, '/Mail/fold
 
 def planner = new Planner(repository, 'Planner')
 
-def editContext = [:] as ObservableMap
+//def searchManager = new SearchManager(session)
+
+def actionContext = [:] as ObservableMap
 
 def ousia = new OusiaBuilder()
-
 
 ousia.edt {
 //	lookAndFeel('substance-nebula')
@@ -235,7 +237,7 @@ ousia.edt {
 
 		action id: 'openExplorerView', name: rs('Repository Explorer'), closure: {
 			frame(title: rs('Repository Explorer'), size: [320, 240], show: true, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE) {
-				widget(new ExplorerView(session.rootNode, frame, editContext))
+				widget(new ExplorerView(session.rootNode, frame, actionContext))
 			}
 		}
 		
@@ -281,6 +283,26 @@ ousia.edt {
 					}
 				}
 			}
+		}
+		
+		action id: 'quickSearchAction', name: rs('Search Items'), closure: {
+//			def result = searchManager.searchFeeds(quickSearchField.text)
+			def searchQuery = new QueryBuilder(session.workspace.queryManager, session.valueFactory).with {
+				query(
+					source: selector(nodeType: 'nt:unstructured', name: 'items'),
+					constraint: and(
+						constraint1: descendantNode(selectorName: 'items', path: breadcrumb.model.items[-1].data.element.path),
+						constraint2: fullTextSearch(selectorName: 'items', propertyName: 'description', searchTerms: quickSearchField.text)
+					)
+				)
+			}
+			final PathResult<?, javax.jcr.Node> pr = new SearchPathResult(searchQuery, quickSearchField.text)
+//			breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, Node>>(pr.name, pr))
+			breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr))
+		}
+		
+		action id: 'markAsReadAction', name: rs('Mark As Read'), closure: {
+			actionContext.markAsRead()
 		}
 	}
 
@@ -392,7 +414,9 @@ ousia.edt {
 		
 		quickSearchBand = new JRibbonBand(rs('Quick Search'), forwardIcon, null)
 		quickSearchBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(quickSearchBand.controlPanel)]
-		quickSearchBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Search All Items..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
+		quickSearchBand.addRibbonComponent ribbonComponent(textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
+			 keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
+		quickSearchField.addActionListener quickSearchAction
 		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
 		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
@@ -410,7 +434,7 @@ ousia.edt {
 		
 		updateBand = new JRibbonBand(rs('Update'), forwardIcon, null)
 		updateBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(updateBand.controlPanel)]
-		updateBand.addCommandButton(commandButton(rs('Mark As Read')), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(rs('Mark As Read'), actionPerformed: markAsReadAction), RibbonElementPriority.MEDIUM)
 		updateBand.addCommandButton(commandButton(rs('Mark All Read')), RibbonElementPriority.MEDIUM)
 		updateBand.addCommandButton(commandButton(rs('Delete')), RibbonElementPriority.MEDIUM)
 		
@@ -443,7 +467,8 @@ ousia.edt {
 			borderLayout()
 //			breadcrumbFileSelector(path: new File(System.getProperty('user.home')), constraints: BorderLayout.NORTH)
 			
-			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
+//			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
+			breadcrumbBar(new PathResultCallback(session.rootNode), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			// Treetable renderering..
 			def ttsupport
@@ -534,6 +559,19 @@ ousia.edt {
 								if (activityTable.selectedRow >= 0) {
 									def entry = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
 									if (entry && entry instanceof Map) {
+										// update action context..
+										if (entry['node'].hasProperty('link')) {
+											actionContext.markAsRead = {
+												aggregator.markNodeRead entry['node']
+			                                    if (activityTable.selectedRow < activityTable.rowCount - 1) {
+			                                        activityTable.setRowSelectionInterval(activityTable.selectedRow + 1, activityTable.selectedRow + 1)
+			                                    }
+											}
+										}
+										else {
+											actionContext.markAsRead = null
+										}
+										
 										edt {
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
@@ -563,12 +601,14 @@ ousia.edt {
 									}
 									else {
 										contentView.text = null
+										actionContext.markAsRead = null
 									}
 								}
 								else {
 									edt {
 										contentView.text = null
 									}
+									actionContext.markAsRead = null
 								}
 							}
 						}
@@ -579,10 +619,9 @@ ousia.edt {
 								// feed item..
 		                        if (selectedItem.node.hasProperty('link')) {
 		                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
-		                            selectedItem.node.setProperty('seen', true)
-									// XXX: JCR sessions not thread-safe, so should ensure all updates are synchronized..
-		                            selectedItem.node.save()
+									aggregator.markNodeRead selectedItem.node
 		                        }
+								/*
 								// feed subscription..
 								else if (selectedItem.node.hasProperty('title')) {
 									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getProperty('title').string, selectedItem.node))
@@ -595,11 +634,18 @@ ousia.edt {
 								else if (selectedItem.node.parent.name == 'messages') {
 									breadcrumb.model.addLast(new BreadcrumbItem<Node>(selectedItem.node.getNode('headers').getProperty('Subject').string, selectedItem.node))
 								}
+								*/
 								// mail attachment..
 								else if (selectedItem.node.hasNode('jcr:content')) {
 									def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
 									file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
 									Desktop.desktop.open(file)
+								}
+								else {
+									doLater {
+										final PathResult<?, javax.jcr.Node> pr = breadcrumb.model.items[-1].data.getChild(selectedItem.node)
+										breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr))
+									}
 								}
 		                    }
 		                }
@@ -629,12 +675,17 @@ ousia.edt {
 			breadcrumb.model.addPathListener({
 					edt {
 						filterTextField.text = null
-						frame.title = "${breadcrumb.model.items[-1].data.path} - ${rs('Coucou')}"
+						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
 						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+						
+						// enable/disable ribbon tasks..
+						quickSearchField.text = null
+						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
 					}
 				
 					doOutside {
-						def items = breadcrumb.callback.getLeafs(breadcrumb.model.items)
+//						def items = breadcrumb.callback.getLeafs(breadcrumb.model.items)
+						def items = breadcrumb.model.items[-1].data.results
 
 						doLater {
 							// install new renderer..
@@ -665,12 +716,12 @@ ousia.edt {
 						 items.each {
 							 def item = [:]
 							 // feeds / items..
-							 if (it.value.hasProperty('title')) {
-								 item['title'] = it.value.getProperty('title').string
+							 if (it.hasProperty('title')) {
+								 item['title'] = it.getProperty('title').string
 							 }
 							 // mail messages..
-							 else if (it.value.hasNode('headers')) {
-								 def headers = it.value.getNode('headers')
+							 else if (it.hasNode('headers')) {
+								 def headers = it.getNode('headers')
 								 if (headers.hasProperty('Subject')) {
 									 item['title'] = headers.getProperty('Subject').string
 								 }
@@ -679,25 +730,25 @@ ousia.edt {
 								 }
 							 }
 							 // contacts..
-							 else if (it.value.hasProperty('personal')) {
-								 item['title'] = it.value.getProperty('personal').string
+							 else if (it.hasProperty('personal')) {
+								 item['title'] = it.getProperty('personal').string
 							 }
 							 else {
-								 item['title'] = it.value.name
+								 item['title'] = it.name
 							 }
 							 
-							 if (it.value.hasProperty('source')) {
-								 if (it.value.getProperty('source').type == PropertyType.REFERENCE) {
-									 item['source'] = it.value.getProperty('source').getNode().getProperty('title').string
+							 if (it.hasProperty('source')) {
+								 if (it.getProperty('source').type == PropertyType.REFERENCE) {
+									 item['source'] = it.getProperty('source').getNode().getProperty('title').string
 								 }
 								 else {
-									 item['source'] = it.value.getProperty('source').string
+									 item['source'] = it.getProperty('source').string
 								 }
 							 }
 							 // mail messages..
-							 else if (it.value.hasNode('headers')) {
-								 def headers = it.value.getNode('headers')
-								 if (it.value.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
+							 else if (it.hasNode('headers')) {
+								 def headers = it.getNode('headers')
+								 if (it.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
 									 item['source'] = headers.getProperty('To').string
 								 }
 								 else if (headers.hasProperty('From')) {
@@ -708,8 +759,8 @@ ousia.edt {
 								 }
 							 }
 							 // attachments..
-							 else if (it.value.parent.name == 'attachments') {
-								 def message = it.value.parent.parent
+							 else if (it.parent.name == 'attachments') {
+								 def message = it.parent.parent
 								 def headers = message.getNode('headers')
 								 if (message.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
 									 item['source'] = headers.getProperty('To').string
@@ -722,19 +773,19 @@ ousia.edt {
 								 }
 							 }
 							 // contacts..
-							 else if (it.value.hasProperty('email')) {
-								 item['source'] = it.value.getProperty('email').string
+							 else if (it.hasProperty('email')) {
+								 item['source'] = it.getProperty('email').string
 							 }
 							 else {
-								 item['source'] = it.value.parent.name
+								 item['source'] = it.parent.name
 							 }
 
-							 if (it.value.hasProperty('date')) {
-								 item['date'] = it.value.getProperty('date').date.time
+							 if (it.hasProperty('date')) {
+								 item['date'] = it.getProperty('date').date.time
 							 }
 							 // mail messages..
-							 else if (it.value.hasNode('headers')) {
-								 def headers = it.value.getNode('headers')
+							 else if (it.hasNode('headers')) {
+								 def headers = it.getNode('headers')
 								 if (headers.hasProperty('Date')) {
 									 try {
 										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
@@ -743,12 +794,12 @@ ousia.edt {
 									 }
 								 }
 							 }
-							 else if (it.value.hasProperty('received')) {
-								 item['date'] = it.value.getProperty('received').date.time
+							 else if (it.hasProperty('received')) {
+								 item['date'] = it.getProperty('received').date.time
 							 }
 							 // attachments..
-							 else if (it.value.parent.name == 'attachments') {
-								 def headers = it.value.parent.parent.getNode('headers')
+							 else if (it.parent.name == 'attachments') {
+								 def headers = it.parent.parent.getNode('headers')
 								 if (headers.hasProperty('Date')) {
 									 try {
 										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
@@ -758,7 +809,7 @@ ousia.edt {
 								 }
 							 }
 
-							 item['node'] = it.value
+							 item['node'] = it
 
 							 doLater {							 
 								 try {
@@ -787,11 +838,13 @@ ousia.edt {
 //							activityTable.model.fireTableDataChanged()
 						} as EventListener
 					
-						def path = breadcrumb.model.items[-1].data.path
-
-						session.workspace.observationManager.removeEventListener(tableUpdater)
-						session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
-						println "Listening for changes: ${path}"
+						if (breadcrumb.model.items[-1].data.element instanceof javax.jcr.Node) {
+							def path = breadcrumb.model.items[-1].data.element.path
+	
+							session.workspace.observationManager.removeEventListener(tableUpdater)
+							session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
+							println "Listening for changes: ${path}"
+						}
 					}
 					
 				} as BreadcrumbPathListener)
