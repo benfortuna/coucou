@@ -52,7 +52,12 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 			}
 		}
 		catch (PathResultException pre) {
-			throw new BreadcrumbBarException(pre);
+			if (throwsExceptions) {
+				throw new BreadcrumbBarException(pre);
+			}
+			else {
+				pre.printStackTrace();
+			}
 		}
 		
 		return pathChoices;
