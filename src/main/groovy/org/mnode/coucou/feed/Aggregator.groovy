@@ -210,4 +210,8 @@ class Aggregator extends AbstractNodeManager {
 		return feedNode
 	}
 
+	def markNodeRead = { node ->
+        node.setProperty('seen', true)
+        save node
+	}
 }
