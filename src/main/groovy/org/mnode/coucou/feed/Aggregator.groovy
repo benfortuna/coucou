@@ -216,7 +216,8 @@ class Aggregator extends AbstractNodeManager {
 	}
 	
 	def delete = { node ->
+		def parent = node.parent
 		node.remove()
-//		save node.parent
+		save parent
 	}
 }
