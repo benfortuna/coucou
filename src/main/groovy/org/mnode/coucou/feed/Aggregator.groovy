@@ -214,4 +214,9 @@ class Aggregator extends AbstractNodeManager {
         node.setProperty('seen', true)
         save node
 	}
+	
+	def delete = { node ->
+		node.remove()
+//		save node.parent
+	}
 }
