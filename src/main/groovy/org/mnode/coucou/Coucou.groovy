@@ -37,6 +37,7 @@ import org.apache.jackrabbit.core.jndi.RegistryHelper;
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.error.ErrorInfo;
+import org.jdesktop.swingx.prompt.BuddySupport;
 import org.jdesktop.swingx.prompt.PromptSupport.FocusBehavior;
 import org.mnode.coucou.activity.DateExpansionModel;
 import org.mnode.coucou.breadcrumb.PathResultCallback;
@@ -286,7 +287,6 @@ ousia.edt {
 		}
 		
 		action id: 'quickSearchAction', name: rs('Search Items'), closure: {
-//			def result = searchManager.searchFeeds(quickSearchField.text)
 			def searchQuery = new QueryBuilder(session.workspace.queryManager, session.valueFactory).with {
 				query(
 					source: selector(nodeType: 'nt:unstructured', name: 'items'),
@@ -296,13 +296,22 @@ ousia.edt {
 					)
 				)
 			}
-			final PathResult<?, javax.jcr.Node> pr = new SearchPathResult(searchQuery, quickSearchField.text)
-//			breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, Node>>(pr.name, pr))
-			breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr))
+			def pr = new SearchPathResult(searchQuery, quickSearchField.text)
+			def searchResult = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
+			searchResult.icon = searchIcon
+			breadcrumb.model.addLast(searchResult)
 		}
 		
 		action id: 'markAsReadAction', name: rs('Mark As Read'), closure: {
 			actionContext.markAsRead()
+		}
+		
+		action id: 'markAllReadAction', name: rs('Mark All Read'), closure: {
+			actionContext.markAllRead()
+		}
+
+		action id: 'deleteAction', name: rs('Delete'), closure: {
+			actionContext.delete()
 		}
 	}
 
@@ -319,36 +328,15 @@ ousia.edt {
 	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
 	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
 	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
+	resizableIcon('/ok.svg', size: [16, 16], id: 'okIcon')
+	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
+	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
+	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
 		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame', iconImage: imageIcon('/globe.png').image,
 		applicationIcon: logoIcon) {
-/*		
-		menuBar {
-			menu(text: rs('File'), mnemonic: 'F') {
-				menuItem(exitAction)
-			}
-			menu(text: rs('Edit'), mnemonic: 'E') {
-			}
-			menu(text: rs('View'), mnemonic: 'V') {
-				menu(rs('Sidebar')) {
-					checkBoxMenuItem(text: rs("Navigator"), id: 'viewNavigator')
-					checkBoxMenuItem(text: rs("Aggregator"), id: 'viewAggregator')
-					checkBoxMenuItem(text: rs("Accounts"), id: 'viewAccounts')
-				}
-				checkBoxMenuItem(text: rs("Status Bar"), id: 'viewStatusBar')
-				checkBoxMenuItem(fullScreenAction)
-			}
-			menu(text: rs("Tools"), mnemonic: 'T') {
-			}
-			menu(text: rs("Help"), mnemonic: 'H') {
-				menuItem(onlineHelpAction)
-	//                menuItem(showTipsAction)
-				separator()
-				menuItem(aboutAction)
-			}
-		}
-*/	
+
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
 //				['groupTitle': 'New Items', 'entries': [
@@ -417,6 +405,7 @@ ousia.edt {
 		quickSearchBand.addRibbonComponent ribbonComponent(textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
 			 keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
 		quickSearchField.addActionListener quickSearchAction
+		quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
 		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
 		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
@@ -434,9 +423,9 @@ ousia.edt {
 		
 		updateBand = new JRibbonBand(rs('Update'), forwardIcon, null)
 		updateBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(updateBand.controlPanel)]
-		updateBand.addCommandButton(commandButton(rs('Mark As Read'), actionPerformed: markAsReadAction), RibbonElementPriority.MEDIUM)
-		updateBand.addCommandButton(commandButton(rs('Mark All Read')), RibbonElementPriority.MEDIUM)
-		updateBand.addCommandButton(commandButton(rs('Delete')), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(okIcon, action: markAsReadAction), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(okAllIcon, action: markAllReadAction), RibbonElementPriority.MEDIUM)
+		updateBand.addCommandButton(commandButton(cancelIcon, action: deleteAction), RibbonElementPriority.MEDIUM)
 		
 		organiseBand = new JRibbonBand(rs('Organise'), forwardIcon, null)
 		organiseBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(organiseBand.controlPanel)]
@@ -468,7 +457,7 @@ ousia.edt {
 //			breadcrumbFileSelector(path: new File(System.getProperty('user.home')), constraints: BorderLayout.NORTH)
 			
 //			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
-			breadcrumbBar(new PathResultCallback(session.rootNode), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
+			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), searchPathIcon: searchIcon), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			// Treetable renderering..
 			def ttsupport
@@ -557,15 +546,21 @@ ousia.edt {
 						activityTable.selectionModel.valueChanged = { e ->
 							if (!e.valueIsAdjusting) {
 								if (activityTable.selectedRow >= 0) {
-									def entry = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+									int entryIndex = activityTable.convertRowIndexToModel(activityTable.selectedRow)
+									def entry = activityTree[entryIndex]
 									if (entry && entry instanceof Map) {
 										// update action context..
 										if (entry['node'].hasProperty('link')) {
 											actionContext.markAsRead = {
 												aggregator.markNodeRead entry['node']
-			                                    if (activityTable.selectedRow < activityTable.rowCount - 1) {
-			                                        activityTable.setRowSelectionInterval(activityTable.selectedRow + 1, activityTable.selectedRow + 1)
+			                                    if (entryIndex < activityTree.size() - 1) {
+													int nextIndex = activityTable.convertRowIndexToView(entryIndex + 1)
+			                                        activityTable.setRowSelectionInterval(nextIndex, nextIndex)
 			                                    }
+											}
+											actionContext.delete = {
+												aggregator.delete entry['node']
+												activityTree.remove entryIndex
 											}
 										}
 										else {
@@ -681,6 +676,7 @@ ousia.edt {
 						// enable/disable ribbon tasks..
 						quickSearchField.text = null
 						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
+						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
 					}
 				
 					doOutside {
