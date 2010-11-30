@@ -10,12 +10,12 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="23.761"
-   height="27.119001"
+   width="31.120001"
+   height="31.120001"
    id="svg14470"
    version="1.1"
-   inkscape:version="0.47 r22583"
-   sodipodi:docname="New document 2">
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="exit.svg">
   <defs
      id="defs14472">
     <inkscape:perspective
@@ -106,17 +106,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="-18.83379"
-     inkscape:cy="-3.5833526"
+     inkscape:zoom="11.2"
+     inkscape:cx="21.572312"
+     inkscape:cy="18.619697"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="585"
-     inkscape:window-height="462"
-     inkscape:window-x="779"
-     inkscape:window-y="253"
-     inkscape:window-maximized="0" />
+     inkscape:window-width="1366"
+     inkscape:window-height="695"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-top="2"
+     fit-margin-bottom="2"
+     fit-margin-left="0"
+     fit-margin-right="0" />
   <metadata
      id="metadata14475">
     <rdf:RDF>
@@ -125,7 +129,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -133,9 +137,9 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-393.83379,-501.65983)">
+     transform="translate(-393.83379,-499.65883)">
     <g
-       transform="translate(-106.61821,273.65583)"
+       transform="translate(-102.77892,273.65583)"
        id="g4321">
       <linearGradient
          id="linearGradient14448"
@@ -164,7 +168,8 @@
       <path
          d="m 515.646,231.833 v 3.559 c 3.06,1.292 5.206,4.32 5.206,7.85 0,4.705 -3.814,8.519 -8.519,8.519 -4.705,0 -8.519,-3.814 -8.519,-8.519 0,-3.53 2.146,-6.558 5.205,-7.85 v -3.559 c -4.949,1.435 -8.567,5.998 -8.567,11.41 0,6.561 5.318,11.88 11.88,11.88 6.562,0 11.881,-5.319 11.881,-11.88 0.001,-5.412 -3.618,-9.975 -8.567,-11.41 z"
          id="path4332"
-         style="fill:url(#linearGradient12102)" />
+         style="fill:url(#linearGradient12102)"
+         inkscape:connector-curvature="0" />
       <linearGradient
          id="linearGradient14459"
          gradientUnits="userSpaceOnUse"

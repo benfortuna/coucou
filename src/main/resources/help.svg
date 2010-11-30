@@ -10,12 +10,12 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="25.912983"
-   height="25.698002"
+   width="29.912983"
+   height="29.698002"
    id="svg14783"
    version="1.1"
    inkscape:version="0.48.0 r9654"
-   sodipodi:docname="New document 4">
+   sodipodi:docname="help.svg">
   <defs
      id="defs14785">
     <linearGradient
@@ -323,21 +323,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="36.52792"
-     inkscape:cy="-10.008145"
+     inkscape:zoom="11.2"
+     inkscape:cx="9.9564919"
+     inkscape:cy="13.315279"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0"
-     inkscape:window-width="449"
-     inkscape:window-height="406"
-     inkscape:window-x="207"
-     inkscape:window-y="121"
-     inkscape:window-maximized="0" />
+     fit-margin-top="2"
+     fit-margin-left="2"
+     fit-margin-right="2"
+     fit-margin-bottom="2"
+     inkscape:window-width="1366"
+     inkscape:window-height="695"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata14788">
     <rdf:RDF>
@@ -346,7 +346,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -354,7 +354,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-338.47208,-496.65604)">
+     transform="translate(-336.47208,-494.65604)">
     <g
        transform="translate(-36.110928,268.65303)"
        id="g7067">

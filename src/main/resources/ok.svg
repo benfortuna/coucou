@@ -10,12 +10,12 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24.034"
-   height="18.677"
+   width="28.030001"
+   height="28.030001"
    id="svg14777"
    version="1.1"
-   inkscape:version="0.47 r22583"
-   sodipodi:docname="New document 5">
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="ok.svg">
   <defs
      id="defs14779">
     <inkscape:perspective
@@ -180,17 +180,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="112.73129"
-     inkscape:cy="-50.661503"
+     inkscape:zoom="11.2"
+     inkscape:cx="9.8853818"
+     inkscape:cy="20.049175"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="550"
-     inkscape:window-height="483"
-     inkscape:window-x="69"
-     inkscape:window-y="69"
-     inkscape:window-maximized="0" />
+     inkscape:window-width="1366"
+     inkscape:window-height="695"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-left="2"
+     fit-margin-right="2"
+     fit-margin-top="0"
+     fit-margin-bottom="0" />
   <metadata
      id="metadata14782">
     <rdf:RDF>
@@ -199,7 +203,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -207,9 +211,9 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-262.26871,-463.02368)">
+     transform="translate(-260.26871,-453.67068)">
     <g
-       transform="translate(-158.91229,230.77368)"
+       transform="translate(-158.91229,226.39868)"
        id="g6980">
       <linearGradient
          id="linearGradient14733"
@@ -237,7 +241,7 @@
            id="stop14741" />
       </linearGradient>
       <polygon
-         points="423.86,240.213 421.181,242.892 426.538,248.249 429.216,245.57 "
+         points="426.538,248.249 429.216,245.57 423.86,240.213 421.181,242.892 "
          id="polygon6991"
          style="fill:url(#linearGradient12080)" />
       <linearGradient
@@ -266,7 +270,7 @@
            id="stop14752" />
       </linearGradient>
       <polygon
-         points="442.537,232.25 429.216,245.57 431.895,248.249 445.215,234.928 "
+         points="431.895,248.249 445.215,234.928 442.537,232.25 429.216,245.57 "
          id="polygon7002"
          style="fill:url(#linearGradient12082)" />
       <linearGradient
@@ -295,7 +299,7 @@
            id="stop14763" />
       </linearGradient>
       <polygon
-         points="426.538,248.249 429.217,250.927 431.895,248.249 429.216,245.57 "
+         points="431.895,248.249 429.216,245.57 426.538,248.249 429.217,250.927 "
          id="polygon7013"
          style="fill:url(#linearGradient12084)" />
       <linearGradient
@@ -324,7 +328,7 @@
            id="stop14774" />
       </linearGradient>
       <polygon
-         points="426.538,248.249 429.217,250.927 431.895,248.249 429.216,245.57 "
+         points="431.895,248.249 429.216,245.57 426.538,248.249 429.217,250.927 "
          id="polygon7024"
          style="fill:url(#linearGradient12086)" />
     </g>
