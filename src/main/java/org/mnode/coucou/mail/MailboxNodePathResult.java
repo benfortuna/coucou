@@ -10,11 +10,13 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.Query;
 
+import org.apache.jackrabbit.util.Text;
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
-import org.mnode.coucou.QueryNodePathResult;
+import org.mnode.coucou.search.SearchPathResult;
 
 /**
  * @author fortuna
@@ -41,7 +43,9 @@ public class MailboxNodePathResult extends NodePathResult {
 //					children.add(new NodePathResult(node));
 //				}
 				if (node.hasNode("query")) {
-					children.add(new QueryNodePathResult(node));
+		            final Query query = node.getSession().getWorkspace().getQueryManager().getQuery(
+		            		node.getNode("query"));
+					children.add(new SearchPathResult(query, Text.unescapeIllegalJcrChars(node.getName())));
 				}
 			}
 			
