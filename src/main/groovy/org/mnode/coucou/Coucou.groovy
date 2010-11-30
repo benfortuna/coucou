@@ -67,11 +67,14 @@ import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem;
 
 
 import ca.odell.glazedlists.BasicEventList;
+import ca.odell.glazedlists.Filterator;
 import ca.odell.glazedlists.TextFilterator;
 import ca.odell.glazedlists.TreeList;
 import ca.odell.glazedlists.TreeList.Format;
 import ca.odell.glazedlists.event.ListEventListener;
 import ca.odell.glazedlists.gui.TableFormat;
+import ca.odell.glazedlists.matchers.CompositeMatcherEditor;
+import ca.odell.glazedlists.matchers.MatcherEditor;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TextComponentMatcherEditor;
 import ca.odell.glazedlists.swing.TreeTableSupport;
@@ -375,7 +378,7 @@ ousia.edt {
 		filterBand = new JRibbonBand(rs('Filter'), forwardIcon, null)
 		filterBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(filterBand.controlPanel)]
 		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
-		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
+		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'))
 		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
 		
 		groupByBand = new JRibbonBand(rs('Group By'), forwardIcon, null)
@@ -469,9 +472,17 @@ ousia.edt {
 					table(gridColor: Color.LIGHT_GRAY, showHorizontalLines: false, opaque: false, border: null, id: 'activityTable') {
 						activities = new BasicEventList<?>()
 						
-						filterList(activities, id: 'filteredActivities', matcherEditor: new TextComponentMatcherEditor(filterTextField, { baseList, e ->
+						def filters = new BasicEventList<MatcherEditor<?>>()
+						filters << new TextComponentMatcherEditor(filterTextField, { baseList, e ->
 							baseList << e['title']
-						} as TextFilterator, true))
+						} as TextFilterator, true)
+						filters << new JCheckboxMatcherEditor(unreadFilterCheckbox, { baseList, e ->
+							if (e['node'].hasProperty('seen')) {
+								baseList << !e['node'].getProperty('seen').boolean
+							}
+						} as Filterator)
+
+						filterList(activities, id: 'filteredActivities', matcherEditor: new CompositeMatcherEditor<?>(filters))
 						
 						filteredActivities.addListEventListener({
 							doLater {
