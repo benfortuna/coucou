@@ -574,8 +574,16 @@ ousia.edt {
 												activityTree.remove entryIndex
 											}
 										}
+										else if (entry['node'].parent.path == '/Feeds') {
+											actionContext.markAsRead = null
+											actionContext.delete = {
+												aggregator.delete entry['node']
+												activityTree.remove entryIndex
+											}
+										}
 										else {
 											actionContext.markAsRead = null
+											actionContext.delete = null
 										}
 										
 										edt {
