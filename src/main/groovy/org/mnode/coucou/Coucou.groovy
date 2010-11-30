@@ -327,7 +327,6 @@ ousia.edt {
 	resizableIcon('/add.svg', size: [16, 16], id: 'newIcon')
 	resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
 	resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
-	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
 	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
 	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
 	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
@@ -335,6 +334,15 @@ ousia.edt {
 	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
 	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
 	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
+	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
+	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
+	resizableIcon('/reply.svg', size: [16, 16], id: 'replyIcon')
+	resizableIcon('/replyAll.svg', size: [16, 16], id: 'replyAllIcon')
+	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
+	resizableIcon('/copy.svg', size: [16, 16], id: 'copyIcon')
+	resizableIcon('/document.svg', size: [16, 16], id: 'documentIcon')
+	resizableIcon('/import.svg', size: [16, 16], id: 'importIcon')
+	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
 		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame', iconImage: imageIcon('/globe.png').image,
@@ -349,17 +357,17 @@ ousia.edt {
 			
 			appMenu.addMenuSeparator()
 			ribbonApplicationMenuEntryPrimary(id: 'saveAsMenu', icon: forwardIcon, text: rs('Save As'), kind: CommandButtonKind.ACTION_AND_POPUP_MAIN_ACTION)
-			ribbonApplicationMenuEntrySecondary(id: 'saveAsFile', icon: feedIcon, text: rs('File'), kind: CommandButtonKind.ACTION_ONLY)
-			ribbonApplicationMenuEntrySecondary(id: 'saveAsTemplate', icon: feedIcon, text: rs('Template'), kind: CommandButtonKind.ACTION_ONLY)
+			ribbonApplicationMenuEntrySecondary(id: 'saveAsFile', icon: documentIcon, text: rs('File'), kind: CommandButtonKind.ACTION_ONLY)
+			ribbonApplicationMenuEntrySecondary(id: 'saveAsTemplate', icon: documentIcon, text: rs('Template'), kind: CommandButtonKind.ACTION_ONLY)
 			saveAsMenu.addSecondaryMenuGroup 'Save Item', saveAsFile, saveAsTemplate
 
 			appMenu.addMenuSeparator()
-			ribbonApplicationMenuEntryPrimary(id: 'importMenu', icon: forwardIcon, text: rs('Import'), kind: CommandButtonKind.POPUP_ONLY)
+			ribbonApplicationMenuEntryPrimary(id: 'importMenu', icon: importIcon, text: rs('Import'), kind: CommandButtonKind.POPUP_ONLY)
 			ribbonApplicationMenuEntrySecondary(id: 'importMail', icon: mailIcon, text: rs('Email'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importMailAction)
 			ribbonApplicationMenuEntrySecondary(id: 'importFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importFeedsAction)
 			importMenu.addSecondaryMenuGroup 'Import external data', importMail, importFeeds
 
-			ribbonApplicationMenuEntryPrimary(id: 'exportMenu', icon: forwardIcon, text: rs('Export'), kind: CommandButtonKind.POPUP_ONLY)
+			ribbonApplicationMenuEntryPrimary(id: 'exportMenu', icon: exportIcon, text: rs('Export'), kind: CommandButtonKind.POPUP_ONLY)
 			ribbonApplicationMenuEntrySecondary(id: 'exportFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exportFeedsAction)
 			exportMenu.addSecondaryMenuGroup 'Export data', exportFeeds
 			appMenu.addMenuSeparator()
@@ -419,10 +427,10 @@ ousia.edt {
 		
 		respondBand = new JRibbonBand(rs('Respond'), forwardIcon, null)
 		respondBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(respondBand.controlPanel)]
-		respondBand.addCommandButton(commandButton(rs('Reply')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(rs('Reply To All')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(rs('Forward')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(rs('Chat')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(replyIcon, text: rs('Reply')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(replyAllIcon, text: rs('Reply To All')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(forwardIcon, text: rs('Forward')), RibbonElementPriority.MEDIUM)
+		respondBand.addCommandButton(commandButton(chatIcon, text: rs('Chat')), RibbonElementPriority.MEDIUM)
 		
 		updateBand = new JRibbonBand(rs('Update'), forwardIcon, null)
 		updateBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(updateBand.controlPanel)]
@@ -442,8 +450,8 @@ ousia.edt {
 		
 		actionExtrasBand = new JRibbonBand(rs('Extras'), forwardIcon, null)
 		actionExtrasBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(actionExtrasBand.controlPanel)]
-		actionExtrasBand.addCommandButton(commandButton(rs('Copy')), RibbonElementPriority.MEDIUM)
-		actionExtrasBand.addCommandButton(commandButton(rs('Add To Planner')), RibbonElementPriority.MEDIUM)
+		actionExtrasBand.addCommandButton(commandButton(copyIcon, text: rs('Copy')), RibbonElementPriority.MEDIUM)
+		actionExtrasBand.addCommandButton(commandButton(eventIcon, text: rs('Add To Planner')), RibbonElementPriority.MEDIUM)
 
 		toolsBand = new JRibbonBand(rs('Tools'), taskIcon, null)
 		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]

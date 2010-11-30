@@ -9,12 +9,12 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="22.285999"
-   height="25.989"
+   width="29.99"
+   height="29.99"
    id="svg22174"
    version="1.1"
-   inkscape:version="0.47 r22583"
-   sodipodi:docname="New document 7">
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="event.svg">
   <defs
      id="defs22176">
     <inkscape:perspective
@@ -39,17 +39,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="100.42871"
-     inkscape:cy="-44.148358"
+     inkscape:zoom="7.9195959"
+     inkscape:cx="0.42870984"
+     inkscape:cy="12.543463"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="550"
-     inkscape:window-height="483"
-     inkscape:window-x="23"
-     inkscape:window-y="23"
-     inkscape:window-maximized="0" />
+     inkscape:window-width="1366"
+     inkscape:window-height="695"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-top="2"
+     fit-margin-bottom="2"
+     fit-margin-left="0"
+     fit-margin-right="0" />
   <metadata
      id="metadata22179">
     <rdf:RDF>
@@ -58,7 +62,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -66,20 +70,22 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-274.57129,-462.22482)">
+     transform="translate(-274.57129,-460.22382)">
     <g
-       transform="translate(166.61429,55.655825)"
+       transform="translate(170.40236,55.655825)"
        id="g17030">
       <path
          d="m 119.1,412.363 c -4.999,0 -9.053,4.054 -9.053,9.053 0,5 4.054,9.053 9.053,9.053 5,0 9.053,-4.054 9.053,-9.053 0,-4.999 -4.053,-9.053 -9.053,-9.053 z m 0.871,9.923 h -0.638 -1.104 V 413 h 1.741 v 7.545 h 7.023 v 1.741 h -7.022 z"
          id="path17032"
-         style="fill:none" />
+         style="fill:none"
+         inkscape:connector-curvature="0" />
       <path
          d="m 121.733,410.588 v -4.019 h -5.266 v 4.019 c -4.883,1.185 -8.51,5.581 -8.51,10.827 0,6.153 4.989,11.143 11.143,11.143 6.154,0 11.143,-4.989 11.143,-11.143 0,-5.246 -3.627,-9.642 -8.51,-10.827 z m -2.633,19.881 c -4.999,0 -9.053,-4.054 -9.053,-9.053 0,-4.999 4.054,-9.053 9.053,-9.053 5,0 9.053,4.054 9.053,9.053 0,4.999 -4.053,9.053 -9.053,9.053 z"
          id="path17034"
-         style="fill:#404040" />
+         style="fill:#404040"
+         inkscape:connector-curvature="0" />
       <polygon
-         points="119.333,422.286 119.971,422.286 126.994,422.286 126.994,420.545 119.971,420.545 119.971,413 118.229,413 118.229,422.286 "
+         points="119.971,413 118.229,413 118.229,422.286 119.333,422.286 119.971,422.286 126.994,422.286 126.994,420.545 119.971,420.545 "
          id="polygon17036"
          style="fill:#404040" />
     </g>
