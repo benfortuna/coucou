@@ -32,7 +32,6 @@ import javax.swing.UIManager;
 import javax.swing.text.html.StyleSheet;
 import javax.swing.JSplitPane;
 
-
 import org.apache.jackrabbit.core.jndi.RegistryHelper;
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.JXStatusBar;
@@ -55,6 +54,7 @@ import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonPopupOrientationKind;
 import org.pushingpixels.flamingo.api.common.popup.PopupPanelCallback;
 import org.pushingpixels.flamingo.api.ribbon.JRibbonBand;
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask;
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies;
@@ -137,6 +137,35 @@ def planner = new Planner(repository, 'Planner')
 def actionContext = [:] as ObservableMap
 
 def ousia = new OusiaBuilder()
+
+def dateGroup = { date ->
+	today = Calendar.instance
+	today.clearTime()
+	if (date < today.time) {
+		return 'Older Items'
+	}
+	else {
+		return 'Today'
+	}
+}
+
+def groupComparators = [:]
+groupComparators[ousia.rs('Date')] = {a, b -> dateGroup(b.date) <=> dateGroup(a.date)} as Comparator
+groupComparators[ousia.rs('Source')] = {a, b -> b.source <=> a.source} as Comparator
+
+def sortComparators = [:]
+sortComparators[ousia.rs('Date')] = {a, b ->
+	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	(groupSort != 0) ? groupSort : b.date <=> a.date
+} as Comparator
+sortComparators[ousia.rs('Title')] = {a, b ->
+	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	(groupSort != 0) ? groupSort : b.title <=> a.title
+} as Comparator
+sortComparators[ousia.rs('Source')] = {a, b ->
+	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	(groupSort != 0) ? groupSort : b.source <=> a.source
+} as Comparator
 
 ousia.edt {
 //	lookAndFeel('substance-nebula')
@@ -378,88 +407,117 @@ ousia.edt {
 		frame.ribbon.applicationMenu = appMenu
 		frame.ribbon.configureHelp helpIcon, aboutAction
  
-		avatarBand = new JRibbonBand(rs('Avatar'), null, null)
-//		avatarBand.resizePolicies = CoreRibbonResizePolicies.getCorePoliciesNone(avatarBand)
-		avatarBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(avatarBand.controlPanel)]
-		avatarBand.addCommandButton(commandButton(forwardIcon), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Avatar'), id: 'avatarBand') {
+			commandButton(forwardIcon)
+		}
 		
-		filterBand = new JRibbonBand(rs('Filter'), forwardIcon, null)
-		filterBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(filterBand.controlPanel)]
-		filterBand.addRibbonComponent ribbonComponent(textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
-		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'))
-		filterBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
+		ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand') {
+			textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null})
+			checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox')
+			checkBox(text: rs('Important Items'), id: 'importantFilterCheckbox')
+		}
 		
-		groupByBand = new JRibbonBand(rs('Group By'), forwardIcon, null)
-		groupByBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(groupByBand.controlPanel)]
-		groupByBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false))
+		ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand') {
+			comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false)
+		}
 		
-		sortBand = new JRibbonBand(rs('Sort By'), forwardIcon, null)
-		sortBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(sortBand.controlPanel)]
-		sortBand.addRibbonComponent ribbonComponent(comboBox(items: [rs('Date'), rs('Title'), rs('Source')] as Object[], editable: false))
-		sortBand.addRibbonComponent ribbonComponent(commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: { 
-				commandPopupMenu() {
-					commandToggleMenuButton(rs('Ascending'))
-					commandToggleMenuButton(rs('Descending'))
+		ribbonBand(rs('Sort By'), icon: forwardIcon, id: 'sortBand') {
+			comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
+				doLater {
+					sortedActivities.comparator = sortComparators[e.source.selectedItem]
 				}
-			} as PopupPanelCallback))
+			})
+//			commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: {
+//				commandPopupMenu() {
+//					commandToggleMenuButton(rs('Ascending'))
+//					commandToggleMenuButton(rs('Descending'))
+//				}
+//			} as PopupPanelCallback)
+		}
 
-		showHideBand = new JRibbonBand(rs('Show/Hide'), forwardIcon, null)
-		showHideBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(showHideBand.controlPanel)]
-		showHideBand.addCommandButton(commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand') {
+			commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener)
+		}
 		
-		viewModeBand = new JRibbonBand(rs('Mode'), forwardIcon, null)
-		viewModeBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(viewModeBand.controlPanel)]
-		viewModeBand.addCommandButton(commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand') {
+			commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction)
+		}
 		
-		quickSearchBand = new JRibbonBand(rs('Quick Search'), forwardIcon, null)
-		quickSearchBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(quickSearchBand.controlPanel)]
-		quickSearchBand.addRibbonComponent ribbonComponent(textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
-			 keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}))
-		quickSearchField.addActionListener quickSearchAction
-		quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
-		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Unread Items')))
-		quickSearchBand.addRibbonComponent ribbonComponent(checkBox(text: rs('Important Items')))
+		ribbonBand(rs('Quick Search'), icon: forwardIcon, id: 'quickSearchBand') {
+			textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
+				keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
+				
+				quickSearchField.addActionListener quickSearchAction
+				quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
+			}
+			
+			checkBox(text: rs('Unread Items'))
+			checkBox(text: rs('Important Items'))
+		}
 		
-		advancedSearchBand = new JRibbonBand(rs('Advanced'), forwardIcon, null)
-		advancedSearchBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(advancedSearchBand.controlPanel)]
-		advancedSearchBand.addCommandButton(commandButton(rs('New Search')), RibbonElementPriority.MEDIUM)
-		advancedSearchBand.addCommandButton(commandButton(rs('Saved Searches')), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Advanced'), id: 'advancedSearchBand') {
+			commandButton(rs('New Search'))
+			commandButton(rs('Saved Searches'))
+		}
 		
-		respondBand = new JRibbonBand(rs('Respond'), forwardIcon, null)
-		respondBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(respondBand.controlPanel)]
-		respondBand.addCommandButton(commandButton(replyIcon, text: rs('Reply')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(replyAllIcon, text: rs('Reply To All')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(forwardIcon, text: rs('Forward')), RibbonElementPriority.MEDIUM)
-		respondBand.addCommandButton(commandButton(chatIcon, text: rs('Chat')), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand') {
+			commandButton(replyIcon, text: rs('Reply'))
+			commandButton(replyAllIcon, text: rs('Reply To All'))
+			commandButton(forwardIcon, text: rs('Forward'))
+			commandButton(chatIcon, text: rs('Chat'))
+		}
 		
-		updateBand = new JRibbonBand(rs('Update'), forwardIcon, null)
-		updateBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(updateBand.controlPanel)]
-		updateBand.addCommandButton(commandButton(okIcon, action: markAsReadAction), RibbonElementPriority.MEDIUM)
-		updateBand.addCommandButton(commandButton(okAllIcon, action: markAllReadAction), RibbonElementPriority.MEDIUM)
-		updateBand.addCommandButton(commandButton(cancelIcon, action: deleteAction), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand') {
+			commandButton(okIcon, action: markAsReadAction)
+			commandButton(okAllIcon, action: markAllReadAction)
+			commandButton(cancelIcon, action: deleteAction)
+		}
 		
-		organiseBand = new JRibbonBand(rs('Organise'), forwardIcon, null)
-		organiseBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(organiseBand.controlPanel)]
-		organiseBand.addCommandButton(commandButton(rs('Flag')), RibbonElementPriority.MEDIUM)
-		organiseBand.addCommandButton(commandButton(rs('Tag')), RibbonElementPriority.MEDIUM)
-		organiseBand.addCommandButton(commandButton(rs('Move To')), RibbonElementPriority.MEDIUM)
-		organiseBand.addCommandButton(commandButton(rs('Archive')), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand') {
+			commandButton(rs('Flag'))
+			commandButton(rs('Tag'))
+			commandButton(rs('Move To'))
+			commandButton(rs('Archive'))
+		}
+		
+		ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand') {
+			commandButton(rs('Post To Buzz'), actionPerformed: {
+				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+				// feed item..
+				if (selectedItem.node.hasProperty('link')) {
+					Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
+				}
+			} as ActionListener)
+			commandButton(rs('Twitter'), actionPerformed: {
+				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+				// feed item..
+				if (selectedItem.node.hasProperty('link')) {
+					Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
+				}
+			} as ActionListener)
+			commandButton(rs('Facebook'), actionPerformed: {
+				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+				// feed item..
+				if (selectedItem.node.hasProperty('link')) {
+					Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
+				}
+			} as ActionListener)
+		}
 
-//		flagTagBand = new JRibbonBand(rs('Flag/Tag'), forwardIcon, null)
-//		flagTagBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(flagTagBand.controlPanel)]
-		
-		actionExtrasBand = new JRibbonBand(rs('Extras'), forwardIcon, null)
-		actionExtrasBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(actionExtrasBand.controlPanel)]
-		actionExtrasBand.addCommandButton(commandButton(copyIcon, text: rs('Copy')), RibbonElementPriority.MEDIUM)
-		actionExtrasBand.addCommandButton(commandButton(eventIcon, text: rs('Add To Planner')), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand') {
+			commandButton(copyIcon, text: rs('Copy'))
+			commandButton(eventIcon, text: rs('Add To Planner'))
+		}
 
-		toolsBand = new JRibbonBand(rs('Tools'), taskIcon, null)
-		toolsBand.resizePolicies = [new CoreRibbonResizePolicies.Mirror(toolsBand.controlPanel)]
-		toolsBand.addCommandButton(commandButton(taskIcon, actionPerformed: openExplorerView), RibbonElementPriority.MEDIUM)
+		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand') {
+			commandButton(taskIcon, actionPerformed: openExplorerView)
+		}
 		
 		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Action'), respondBand, updateBand, organiseBand, actionExtrasBand))
+//		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
+		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)))
+		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), shareBand, updateBand)))
 		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
 		
@@ -489,8 +547,15 @@ ousia.edt {
 								baseList << !e['node'].getProperty('seen').boolean
 							}
 						} as Filterator)
+						filters << new JCheckboxMatcherEditor(importantFilterCheckbox, { baseList, e ->
+							if (e['node'].hasProperty('flagged')) {
+								baseList << !e['node'].getProperty('flagged').boolean
+							}
+						} as Filterator)
 
-						filterList(activities, id: 'filteredActivities', matcherEditor: new CompositeMatcherEditor<?>(filters))
+						def filterMatcherEditor = new CompositeMatcherEditor<?>(filters)
+						filterMatcherEditor.mode = CompositeMatcherEditor.AND
+						filterList(activities, id: 'filteredActivities', matcherEditor: filterMatcherEditor)
 						
 						filteredActivities.addListEventListener({
 							doLater {
@@ -504,19 +569,12 @@ ousia.edt {
 							}
 						} as ListEventListener)
 
-						treeList(sortedList(filteredActivities, comparator: {a, b -> b.date <=> a.date} as Comparator, id: 'sortedActivities'),
+						treeList(sortedList(filteredActivities, comparator: sortComparators[rs('Date')], id: 'sortedActivities'),
 							 expansionModel: new DateExpansionModel(), format: [
 						        allowsChildren: {element -> true},
 						        getComparator: {depth -> },
 						        getPath: {path, element ->
-									today = Calendar.instance
-									today.clearTime()
-									if (element.date < today.time) {
-										path << 'Older Items'
-									}
-									else {
-										path << 'Today'
-									}
+									path << dateGroup(element.date)
 									path << element
 								 }
 						    ] as Format<?>, id: 'activityTree')
@@ -704,6 +762,20 @@ ousia.edt {
 						quickSearchField.text = null
 						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
 						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
+						
+						if (breadcrumb.model.items[0].data.element.path == '/Mail') {
+							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
+						}
+						else {
+							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), false
+						}
+						
+						if (breadcrumb.model.items[0].data.element.path == '/Feeds') {
+							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), true
+						}
+						else {
+							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
+						}
 					}
 				
 					doOutside {
