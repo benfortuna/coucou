@@ -28,7 +28,9 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.text.html.StyleSheet;
 import javax.swing.JSplitPane;
 
@@ -89,6 +91,12 @@ LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
 LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
 
 UIManager.put(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Nebula', 'substance-nebula'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Office Blue 2007', 'substance-office-blue-2007'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Office Silver 2007', 'substance-office-silver-2007'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Mariner', 'substance-mariner'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Black Steel', 'substance-business-black-steel'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Blue Steel', 'substance-business-blue-steel'))
 
 //def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
 //def repository = new TransientRepository(repoConfig)
@@ -296,6 +304,24 @@ ousia.edt {
 			Desktop.desktop.browse(URI.create('http://basetools.org/coucou'))
 		}
 		
+		action id: 'preferencesAction', name: rs('Preferences'), closure: {
+			dialog(title: rs('Preferences'), size: [350, 250], show: true, owner: frame, modal: true, locationRelativeTo: frame, id: 'preferencesDialog') {
+				borderLayout()
+				panel(constraints: BorderLayout.CENTER, border: emptyBorder(10)) {
+					label(text: rs('Look and Feel'))
+//					comboBox(items: ['system', 'substance-nebula', 'substance-office-blue-2007'] as Object[], editable: false, itemStateChanged: { e->
+					comboBox(items: UIManager.installedLookAndFeels, editable: false, renderer: new LookAndFeelInfoRenderer(),
+						itemStateChanged: { e->
+							doLater {
+								lookAndFeel(e.source.selectedItem.className, 'system')
+								SwingUtilities.updateComponentTreeUI(frame)
+								SwingUtilities.updateComponentTreeUI(preferencesDialog)
+							}
+						})
+				}
+			}
+		}
+		
 		action id: 'aboutAction', name: rs('About'), closure: {
 			dialog(title: rs('About Coucou'), size: [350, 250], show: true, owner: frame, modal: true, locationRelativeTo: frame) {
 				borderLayout()
@@ -402,7 +428,7 @@ ousia.edt {
 			appMenu.addMenuSeparator()
 			
 			ribbonApplicationMenuEntryPrimary(icon: exitIcon, text: rs('Exit'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exitAction)
-			ribbonApplicationMenuEntryFooter(text: rs('Preferences'))
+			ribbonApplicationMenuEntryFooter(text: rs('Preferences'), actionPerformed: preferencesAction)
 		}
 		frame.ribbon.applicationMenu = appMenu
 		frame.ribbon.configureHelp helpIcon, aboutAction
