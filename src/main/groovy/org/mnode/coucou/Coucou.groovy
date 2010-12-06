@@ -12,6 +12,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
 
@@ -97,6 +98,18 @@ UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Office Silver 2007',
 UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Mariner', 'substance-mariner'))
 UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Black Steel', 'substance-business-black-steel'))
 UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Blue Steel', 'substance-business-blue-steel'))
+
+def currentLookAndFeelInfo = {
+	for (laf in UIManager.installedLookAndFeels) {
+		if (UIManager.lookAndFeel.name == laf.name) {
+			return laf
+		}
+//		else {
+//			println "${UIManager.lookAndFeel.name} != ${it.name}"
+//		}
+	}
+	return new LookAndFeelInfo(UIManager.lookAndFeel.name, UIManager.lookAndFeel.ID)
+}
 
 //def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
 //def repository = new TransientRepository(repoConfig)
@@ -310,12 +323,13 @@ ousia.edt {
 				panel(constraints: BorderLayout.CENTER, border: emptyBorder(10)) {
 					label(text: rs('Look and Feel'))
 //					comboBox(items: ['system', 'substance-nebula', 'substance-office-blue-2007'] as Object[], editable: false, itemStateChanged: { e->
-					comboBox(items: UIManager.installedLookAndFeels, editable: false, renderer: new LookAndFeelInfoRenderer(),
+					comboBox(items: UIManager.installedLookAndFeels, editable: false, renderer: new LookAndFeelInfoRenderer(), selectedItem: currentLookAndFeelInfo(),
 						itemStateChanged: { e->
 							doLater {
 								lookAndFeel(e.source.selectedItem.className, 'system')
 								SwingUtilities.updateComponentTreeUI(frame)
 								SwingUtilities.updateComponentTreeUI(preferencesDialog)
+								e.source.selectedItem = currentLookAndFeelInfo()
 							}
 						})
 				}
@@ -554,6 +568,15 @@ ousia.edt {
 //			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
 			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), searchPathIcon: searchIcon), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
+			def activities = new BasicEventList<?>()
+			
+			// XXX: when look and feel changes the breadcrumb is reset..
+			UIManager.addPropertyChangeListener({ e ->
+				if (e.propertyName == 'lookAndFeel') {
+					activities.clear()
+				}
+			} as PropertyChangeListener)
+
 			// Treetable renderering..
 			def ttsupport
 
@@ -562,7 +585,6 @@ ousia.edt {
 				scrollPane(constraints: 'left', horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, border: null, viewportBorder: null, id: 'sp') {
 	//				sp.viewport.background = Color.RED
 					table(gridColor: Color.LIGHT_GRAY, showHorizontalLines: false, opaque: false, border: null, id: 'activityTable') {
-						activities = new BasicEventList<?>()
 						
 						def filters = new BasicEventList<MatcherEditor<?>>()
 						filters << new TextComponentMatcherEditor(filterTextField, { baseList, e ->
