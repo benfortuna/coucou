@@ -868,7 +868,7 @@ ousia.edt {
 						doLater {
 							// install new renderer..
 //							def defaultRenderer = new DefaultNodeTableCellRenderer(breadcrumb.model.items[-1].data)
-							def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree)
+							def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, ['Today', 'Yesterday', 'Older Items'])
 							defaultRenderer.background = Color.WHITE
 							
 //							def dateRenderer = new DateCellRenderer(breadcrumb.model.items[-1].data)

@@ -19,6 +19,7 @@
 package org.mnode.coucou;
 
 import java.awt.Component;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class DateCellRenderer extends DefaultNodeTableCellRenderer {
     private final PrettyTime df = new PrettyTime();
     
     public DateCellRenderer(TreeList<Map<String, ?>> items) {
-        super(items);
+        super(items, new ArrayList<String>());
     }
     
     @Override

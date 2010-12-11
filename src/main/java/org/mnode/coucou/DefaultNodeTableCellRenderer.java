@@ -21,7 +21,7 @@ package org.mnode.coucou;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Node;
@@ -47,13 +47,16 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
 //    private final Node parent;
     private final TreeList<Map<String, ?>> items;
     
-    public DefaultNodeTableCellRenderer(TreeList<Map<String, ?>> items) {
+    private final List<String> groupNames;
+    
+    public DefaultNodeTableCellRenderer(TreeList<Map<String, ?>> items, List<String> groupNames) {
         defaultFont = getFont();
         unreadFont = getFont().deriveFont(Font.BOLD);
         defaultForeground = Color.BLACK;
         nonItemForeground = Color.LIGHT_GRAY;
 //        this.parent = parent;
         this.items = items;
+        this.groupNames = groupNames;
     }
     
     @Override
@@ -63,7 +66,8 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         try {
 //        	if (Arrays.asList(null, "", "Today", "Older Items").contains(value)) {
-        	if (Arrays.asList("Today", "Yesterday", "Older Items").contains(value)) {
+//        	if (Arrays.asList("Today", "Yesterday", "Older Items").contains(value)) {
+        	if (column == 0 && groupNames.contains(value)) {
         		setFont(defaultFont);
         		setForeground(nonItemForeground);
         	}
