@@ -63,7 +63,7 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         try {
 //        	if (Arrays.asList(null, "", "Today", "Older Items").contains(value)) {
-        	if (Arrays.asList("Today", "Older Items").contains(value)) {
+        	if (Arrays.asList("Today", "Yesterday", "Older Items").contains(value)) {
         		setFont(defaultFont);
         		setForeground(nonItemForeground);
         	}

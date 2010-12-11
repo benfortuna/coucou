@@ -132,7 +132,7 @@ def currentLookAndFeelInfo = {
 //def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
 //def repository = new TransientRepository(repoConfig)
 
-new File(System.getProperty("user.home"), ".coucou").mkdir()
+new File(System.getProperty("user.home"), ".coucou/logs").mkdirs()
 def configFile = new File(System.getProperty("user.home"), ".coucou/config.xml")
 configFile.text = Coucou.getResourceAsStream("/config.xml").text
 
@@ -184,16 +184,27 @@ def ousia = new OusiaBuilder()
 def dateGroup = { date ->
 	today = Calendar.instance
 	today.clearTime()
-	if (date < today.time) {
+	yesterday = Calendar.instance
+	yesterday.add Calendar.DAY_OF_YEAR, -1
+	yesterday.clearTime()
+	if (date < yesterday.time) {
 		return 'Older Items'
+	}
+	else if (date < today.time) {
+		return 'Yesterday'
 	}
 	else {
 		return 'Today'
 	}
 }
 
+def dateGroupComparator = {a, b ->
+	groups = ['Today', 'Yesterday', 'Older Items']
+	groups.indexOf(a) - groups.indexOf(b)
+} as Comparator
+
 def groupComparators = [:]
-groupComparators[ousia.rs('Date')] = {a, b -> dateGroup(b.date) <=> dateGroup(a.date)} as Comparator
+groupComparators[ousia.rs('Date')] = {a, b -> dateGroupComparator.compare(dateGroup(a.date), dateGroup(b.date))} as Comparator
 groupComparators[ousia.rs('Source')] = {a, b -> b.source <=> a.source} as Comparator
 
 def sortComparators = [:]
@@ -203,11 +214,13 @@ sortComparators[ousia.rs('Date')] = {a, b ->
 } as Comparator
 sortComparators[ousia.rs('Title')] = {a, b ->
 	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
-	(groupSort != 0) ? groupSort : b.title <=> a.title
+	groupSort = (groupSort != 0) ? groupSort : b.title <=> a.title
+	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 sortComparators[ousia.rs('Source')] = {a, b ->
 	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
-	(groupSort != 0) ? groupSort : b.source <=> a.source
+	groupSort = (groupSort != 0) ? groupSort : b.source <=> a.source
+	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 
 ousia.edt {
