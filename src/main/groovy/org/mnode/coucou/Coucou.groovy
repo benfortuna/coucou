@@ -132,8 +132,12 @@ def currentLookAndFeelInfo = {
 //def repoConfig = RepositoryConfig.create(Coucou.getResource("/config.xml").toURI(), new File(System.getProperty("user.home"), ".coucou/data").absolutePath)
 //def repository = new TransientRepository(repoConfig)
 
+new File(System.getProperty("user.home"), ".coucou").mkdir()
+def configFile = new File(System.getProperty("user.home"), ".coucou/config.xml")
+configFile.text = Coucou.getResourceAsStream("/config.xml").text
+
 def context = new InitialContext()
-RegistryHelper.registerRepository(context, 'coucou', Coucou.getResource("/config.xml").file,
+RegistryHelper.registerRepository(context, 'coucou', configFile.absolutePath,
 	 new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
 def repository = context.lookup('coucou')
 
