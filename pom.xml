@@ -249,6 +249,30 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>com.google.code.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <configuration>
+                    <header>etc/header.txt</header>
+                    <failIfMissing>true</failIfMissing>
+                    <properties>
+                        <year>2010</year>
+                    </properties>
+                    <includes>
+                        <include>src/**</include>
+                    </includes>
+                </configuration>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
