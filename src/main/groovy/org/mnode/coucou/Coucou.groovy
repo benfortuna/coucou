@@ -206,21 +206,21 @@ def dateGroupComparator = {a, b ->
 } as Comparator
 
 def groupComparators = [:]
-groupComparators[ousia.rs('Date')] = {a, b -> dateGroupComparator.compare(dateGroup(a.date), dateGroup(b.date))} as Comparator
-groupComparators[ousia.rs('Source')] = {a, b -> b.source <=> a.source} as Comparator
+groupComparators['Date'] = {a, b -> dateGroupComparator.compare(dateGroup(a.date), dateGroup(b.date))} as Comparator
+groupComparators['Source'] = {a, b -> b.source <=> a.source} as Comparator
 
 def sortComparators = [:]
 sortComparators[ousia.rs('Date')] = {a, b ->
-	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	int groupSort = groupComparators['Date'].compare(a, b)
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 sortComparators[ousia.rs('Title')] = {a, b ->
-	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	int groupSort = groupComparators['Date'].compare(a, b)
 	groupSort = (groupSort != 0) ? groupSort : b.title <=> a.title
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 sortComparators[ousia.rs('Source')] = {a, b ->
-	int groupSort = groupComparators[ousia.rs('Date')].compare(a, b)
+	int groupSort = groupComparators['Date'].compare(a, b)
 	groupSort = (groupSort != 0) ? groupSort : b.source <=> a.source
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
@@ -257,6 +257,29 @@ ousia.edt {
 			}
 		}
 		
+		action id: 'addCalendarAction', name: rs('Calendar'), closure: {
+			url = JOptionPane.showInputDialog(frame, rs('URL'))
+			if (url) {
+				doOutside {
+					try {
+						planner.addCalendar(url)
+					}
+					catch (MalformedURLException e) {
+						doLater {
+							JOptionPane.showMessageDialog(frame, "Invalid URL: ${url}")
+						}
+					}
+					catch (Exception e2) {
+						doLater {
+							def error = new ErrorInfo('Error', "${e2.message}",
+								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null)
+							JXErrorPane.showDialog(frame, error);
+						}
+					}
+				}
+			}
+		}
+
 		action id: 'importFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
 				doOutside {
@@ -457,9 +480,10 @@ ousia.edt {
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
 //				['groupTitle': 'New Items', 'entries': [
-			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction) //]]
+			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction)
+			ribbonApplicationMenuEntrySecondary(id: 'newCalendar', icon: eventIcon, text: rs('Calendar'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addCalendarAction) //]]
 //			}
-			newMenu.addSecondaryMenuGroup 'Create a new item', newFeed
+			newMenu.addSecondaryMenuGroup 'Create a new item', newFeed, newCalendar
 			
 			appMenu.addMenuSeparator()
 			ribbonApplicationMenuEntryPrimary(id: 'saveAsMenu', icon: forwardIcon, text: rs('Save As'), kind: CommandButtonKind.ACTION_AND_POPUP_MAIN_ACTION)

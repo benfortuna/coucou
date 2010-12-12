@@ -203,6 +203,12 @@
         	<type>jar</type>
         	<scope>compile</scope>
         </dependency>
+        <dependency>
+        	<groupId>net.fortuna.ical4j</groupId>
+        	<artifactId>ical4j-connector</artifactId>
+        	<version>0.9.1-SNAPSHOT</version>
+        	<scope>compile</scope>
+        </dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:hg:https://coucou.googlecode.com/hg/</connection>

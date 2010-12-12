@@ -20,6 +20,11 @@ package org.mnode.coucou.planner
 
 import javax.jcr.Repository;
 
+import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection;
+import net.fortuna.ical4j.connector.jcr.JcrCalendarStore;
+import net.fortuna.ical4j.util.Calendars;
+
+import org.jcrom.Jcrom;
 import org.mnode.coucou.AbstractNodeManager;
 
 /**
@@ -28,7 +33,17 @@ import org.mnode.coucou.AbstractNodeManager;
  */
 class Planner extends AbstractNodeManager {
 
+	def repository
+	
 	Planner(Repository repository, String nodeName) {
 		super(repository, 'planner', nodeName)
+		this.repository = repository
+	}
+	
+	def addCalendar = {url ->
+		JcrCalendarStore store = new JcrCalendarStore(new Jcrom(), repository, rootNode.path)
+		store.connect 'planner', ''.toCharArray()
+		JcrCalendarCollection collection = store.addCollection('Public Calendars')
+		collection.addCalendar Calendars.load(new URL(url))
 	}
 }
