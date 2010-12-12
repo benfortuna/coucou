@@ -23,6 +23,7 @@ import javax.jcr.RepositoryException;
 
 import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.mail.MailboxNodePathResult;
+import org.mnode.coucou.planner.PlannerNodePathResult;
 
 /**
  * @author fortuna
@@ -45,6 +46,9 @@ public class RootNodePathResult extends NodePathResult {
 			}
 			else if ("/Feeds".equals(result.getPath())) {
 				return new FeedsNodePathResult(result);
+			}
+			else if ("/Planner".equals(result.getPath())) {
+				return new PlannerNodePathResult(result);
 			}
 		}
 		catch (RepositoryException re) {

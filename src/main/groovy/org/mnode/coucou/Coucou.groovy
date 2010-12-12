@@ -783,6 +783,11 @@ ousia.edt {
 												contentView.text = content
 												contentView.caretPosition = 0
 											}
+											else if (entry['node'].hasNode('description')) {
+												def content = entry['node'].getNode('description').getNode('text').getNode('jcr:content').getProperty('jcr:data').string
+												contentView.text = content
+												contentView.caretPosition = 0
+											}
 											else {
 												contentView.text = null
 											}
@@ -936,6 +941,10 @@ ousia.edt {
 							 // contacts..
 							 else if (it.hasProperty('personal')) {
 								 item['title'] = it.getProperty('personal').string
+							 }
+							 // calendars..
+							 else if (it.hasProperty('summary')) {
+								 item['title'] = it.getProperty('summary').string
 							 }
 							 else {
 								 item['title'] = it.name

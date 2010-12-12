@@ -20,6 +20,7 @@ package org.mnode.coucou.planner
 
 import javax.jcr.Repository;
 
+import net.fortuna.ical4j.connector.ObjectNotFoundException;
 import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection;
 import net.fortuna.ical4j.connector.jcr.JcrCalendarStore;
 import net.fortuna.ical4j.util.Calendars;
@@ -43,7 +44,18 @@ class Planner extends AbstractNodeManager {
 	def addCalendar = {url ->
 		JcrCalendarStore store = new JcrCalendarStore(new Jcrom(), repository, rootNode.path)
 		store.connect 'planner', ''.toCharArray()
-		JcrCalendarCollection collection = store.addCollection('Public Calendars')
-		collection.addCalendar Calendars.load(new URL(url))
+		def calendar = Calendars.load(new URL(url))
+		def collectionName = calendar.properties.getProperty('X-WR-CALNAME').value
+		JcrCalendarCollection collection
+		try {
+			collection = store.getCollection(collectionName)
+		}
+		catch (ObjectNotFoundException e) {
+			collection = store.addCollection(collectionName)
+		}
+		
+		Calendars.split(calendar).each {
+			collection.addCalendar it
+		}
 	}
 }
