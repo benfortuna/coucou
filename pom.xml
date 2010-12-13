@@ -307,6 +307,7 @@
 						-->
 						<!-- this is perhaps going to change -->
 						<mainClass>org.mnode.coucou.Coucou</mainClass>
+						<j2seVersion>1.6+</j2seVersion>
 					</jnlp>
 
 
