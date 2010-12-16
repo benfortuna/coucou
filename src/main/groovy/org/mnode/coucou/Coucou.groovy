@@ -508,10 +508,14 @@ ousia.edt {
 		frame.ribbon.applicationMenu = appMenu
 		frame.ribbon.configureHelp helpIcon, aboutAction
  
+		ribbonBand(rs('New Folder'), id: 'newFolderBand') {
+			commandButton(newIcon)
+		}
+		
 		ribbonBand(rs('Avatar'), id: 'avatarBand') {
 			commandButton(forwardIcon)
 		}
-		
+
 		ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand') {
 			textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null})
 			checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox')
@@ -552,8 +556,8 @@ ousia.edt {
 				quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
 			}
 			
-			checkBox(text: rs('Unread Items'))
-			checkBox(text: rs('Important Items'))
+			checkBox(text: rs('Include Archived Items'))
+			checkBox(text: rs('Include Deleted Items'))
 		}
 		
 		ribbonBand(rs('Advanced'), id: 'advancedSearchBand') {
@@ -615,12 +619,13 @@ ousia.edt {
 		}
 		
 		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Folder'), newFolderBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)))
 		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), shareBand, updateBand)))
-		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Tools'), toolsBand))
+//		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
+		frame.ribbon.addTask(new RibbonTask(rs('Tools'), avatarBand, toolsBand))
 		
 		panel {
 			borderLayout()
