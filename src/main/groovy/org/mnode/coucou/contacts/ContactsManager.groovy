@@ -18,16 +18,22 @@
  */
 package org.mnode.coucou.contacts
 
-import javax.jcr.Repository;
+import javax.jcr.Repository
 
-import org.mnode.coucou.AbstractNodeManager;
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.mnode.coucou.AbstractNodeManager
+import org.mnode.coucou.mail.Mailbox
+import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
  *
  */
 class ContactsManager extends AbstractNodeManager {
-
+	
+	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(ContactsManager))
+	
 //	javax.jcr.Node rootNode
 	
 	ContactsManager(Repository repository, String nodeName) {

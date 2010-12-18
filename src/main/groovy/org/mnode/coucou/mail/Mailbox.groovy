@@ -18,26 +18,31 @@
  */
 package org.mnode.coucou.mail
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-import javax.jcr.Repository;
-import javax.jcr.query.qom.QueryObjectModelConstants;
-import javax.mail.Folder;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Store;
+import javax.jcr.Repository
+import javax.jcr.query.qom.QueryObjectModelConstants
 import javax.mail.Authenticator
+import javax.mail.Folder
+import javax.mail.MessagingException
 import javax.mail.PasswordAuthentication
+import javax.mail.Session
+import javax.mail.Store
 
-import org.mnode.coucou.AbstractNodeManager;
-import org.mnode.juicer.query.QueryBuilder;
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.mnode.coucou.AbstractNodeManager
+import org.mnode.juicer.query.QueryBuilder
+import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
  *
  */
 class Mailbox extends AbstractNodeManager {
+	
+	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Mailbox))
 	
 //	def rootNode
 

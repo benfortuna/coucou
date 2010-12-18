@@ -18,15 +18,19 @@
  */
 package org.mnode.coucou.planner
 
-import javax.jcr.Repository;
+import javax.jcr.Repository
 
-import net.fortuna.ical4j.connector.ObjectNotFoundException;
-import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection;
-import net.fortuna.ical4j.connector.jcr.JcrCalendarStore;
-import net.fortuna.ical4j.util.Calendars;
+import net.fortuna.ical4j.connector.ObjectNotFoundException
+import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection
+import net.fortuna.ical4j.connector.jcr.JcrCalendarStore
+import net.fortuna.ical4j.util.Calendars
 
-import org.jcrom.Jcrom;
-import org.mnode.coucou.AbstractNodeManager;
+import org.jcrom.Jcrom
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.mnode.coucou.AbstractNodeManager
+import org.mnode.coucou.mail.Mailbox
+import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
@@ -34,6 +38,8 @@ import org.mnode.coucou.AbstractNodeManager;
  */
 class Planner extends AbstractNodeManager {
 
+	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Planner))
+	
 	def repository
 	
 	Planner(Repository repository, String nodeName) {

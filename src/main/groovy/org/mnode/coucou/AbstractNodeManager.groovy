@@ -18,14 +18,19 @@
  */
 package org.mnode.coucou
 
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import javax.jcr.Repository;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
+import javax.jcr.Repository
+import javax.jcr.Session
+import javax.jcr.SimpleCredentials
 
-import org.apache.poi.poifs.property.Parent;
+import org.mnode.base.log.FormattedLogEntry
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.LogEntry
+import org.mnode.base.log.LogEntry.Level
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
@@ -35,6 +40,10 @@ abstract class AbstractNodeManager {
 	
 	static ReadWriteLock lock = new ReentrantReadWriteLock()
 	
+	protected static LogEntry adding_path = new FormattedLogEntry(Level.Info, 'Adding path: %s')
+	protected static LogEntry saving_node = new FormattedLogEntry(Level.Info, 'Saving node: %s')
+	protected static LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
+
 	Session session
 	
 	javax.jcr.Node rootNode
@@ -57,8 +66,7 @@ abstract class AbstractNodeManager {
 
 	def getNode = { rootNode, path, referenceable = false ->
 		if (!rootNode.hasNode(path)) {
-//			log.log init_node, path
-			println "Adding path: ${path}"
+			log.log adding_path, path
 			// lock to avoid concurrent modification..
 			try {
 				lock()
@@ -89,7 +97,7 @@ abstract class AbstractNodeManager {
 
 	// save a node hierarchy..
 	def save = { node ->
-		println "Saving node: ${node.path}"
+		log.log saving_node, node.path
 		def parent = node
 		while (parent.isNew()) {
 			parent = parent.parent

@@ -26,8 +26,14 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 
 import org.apache.jackrabbit.util.Text;
+import org.mnode.base.log.FormattedLogEntry;
+import org.mnode.base.log.LogAdapter;
+import org.mnode.base.log.LogEntry;
+import org.mnode.base.log.LogEntry.Level;
+import org.mnode.base.log.adapter.Slf4jAdapter;
 import org.mnode.coucou.AbstractNodeManager;
 import org.mnode.juicer.query.QueryBuilder;
+import org.slf4j.LoggerFactory;
 
 import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.XmlReader;
@@ -37,7 +43,11 @@ import com.sun.syndication.io.XmlReader;
  *
  */
 class Aggregator extends AbstractNodeManager {
-
+	
+	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Aggregator))
+	private static LogEntry updating_feed = new FormattedLogEntry(Level.Info, 'Updating feed: %s')
+	private static LogEntry found_feeds = new FormattedLogEntry(Level.Info, 'Found %s feeds: %s')
+	
 //	def rootNode
 
 	def updateThread
@@ -78,15 +88,14 @@ class Aggregator extends AbstractNodeManager {
 	   updateThread.scheduleAtFixedRate({
 		   for (node in rootNode.nodes) {
 			   if (node.hasProperty('url')) {
-					println "Updating feed: ${node.getProperty('title').value.string}"
-				
+					log.log updating_feed, node.getProperty('title').value.string
+					
 					GParsExecutorsPool.withPool(10) {
 						try {
 							def future = updateFeed.callAsync(node.getProperty('url').value.string)
 						}
 						catch (Exception e) {
-	//						log.log unexpected_error, e
-							e.printStackTrace()
+							log.log unexpected_error, e
 						}
 					}
 				}
@@ -131,7 +140,7 @@ class Aggregator extends AbstractNodeManager {
 		 catch (Exception e) {
 			  def html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
 			  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
-			  println "Found ${feeds.size()} feeds: ${feeds.collect { it.@href.text() } }"
+			  log.log found_feeds, feeds.size(), feeds.collect { it.@href.text() }
 			  if (!feeds.isEmpty()) {
 				  feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
 			  }
