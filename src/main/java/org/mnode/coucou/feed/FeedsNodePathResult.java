@@ -49,10 +49,13 @@ public class FeedsNodePathResult extends NodePathResult {
 	            		result.getNode("query"));
 				return new SearchPathResult(query, Text.unescapeIllegalJcrChars(result.getName()));
 			}
+			else if (result.hasProperty("url")) {
+				return new FeedNodePathResult(result);
+			}
 		}
 		catch (RepositoryException re) {
 			throw new PathResultException(re);
 		}
-		return new FeedNodePathResult(result);
+		return new FeedsNodePathResult(result);
 	}
 }
