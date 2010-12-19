@@ -228,13 +228,35 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 ousia.edt {
 //	lookAndFeel('substance-nebula')
 	lookAndFeel('system')
+	
+	// icons..
+	resizableIcon('/logo.svg', size: [20, 20], id: 'logoIcon')
+	resizableIcon('/add.svg', size: [16, 16], id: 'newIcon')
+	resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
+	resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
+	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
+	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
+	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
+	resizableIcon('/ok.svg', size: [16, 16], id: 'okIcon')
+	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
+	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
+	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
+	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
+	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
+	resizableIcon('/reply.svg', size: [16, 16], id: 'replyIcon')
+	resizableIcon('/replyAll.svg', size: [16, 16], id: 'replyAllIcon')
+	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
+	resizableIcon('/copy.svg', size: [16, 16], id: 'copyIcon')
+	resizableIcon('/document.svg', size: [16, 16], id: 'documentIcon')
+	resizableIcon('/import.svg', size: [16, 16], id: 'importIcon')
+	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
 
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
         }
 		
-		action id: 'addFeedAction', name: rs('Feed'), closure: {
+		action id: 'addFeedAction', name: rs('Add Feed'), SmallIcon: feedIcon, closure: {
 			url = JOptionPane.showInputDialog(frame, rs('URL'))
 			if (url) {
 				doOutside {
@@ -445,45 +467,31 @@ ousia.edt {
 		action id: 'deleteAction', name: rs('Delete'), closure: {
 			actionContext.delete()
 		}
+
+		action id: 'newFolderAction', name: rs('New Folder'), closure: {
+			folderName = JOptionPane.showInputDialog(frame, rs('Folder Name'))
+			if (folderName && actionContext.addFolder) {
+				actionContext.addFolder(folderName)
+			}
+		}
 	}
 
 	fileChooser(id: 'chooser')
 	fileChooser(id: 'imageChooser', fileFilter: new ImageFileFilter())
 	fileChooser(id: 'dirChooser', fileSelectionMode: JFileChooser.FILES_AND_DIRECTORIES)
-
-	// icons..
-	resizableIcon('/logo.svg', size: [20, 20], id: 'logoIcon')
-	resizableIcon('/add.svg', size: [16, 16], id: 'newIcon')
-	resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
-	resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
-	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
-	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
-	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
-	resizableIcon('/ok.svg', size: [16, 16], id: 'okIcon')
-	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
-	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
-	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
-	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
-	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
-	resizableIcon('/reply.svg', size: [16, 16], id: 'replyIcon')
-	resizableIcon('/replyAll.svg', size: [16, 16], id: 'replyAllIcon')
-	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
-	resizableIcon('/copy.svg', size: [16, 16], id: 'copyIcon')
-	resizableIcon('/document.svg', size: [16, 16], id: 'documentIcon')
-	resizableIcon('/import.svg', size: [16, 16], id: 'importIcon')
-	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
-		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame', iconImage: imageIcon('/globe.png').image,
+		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame',
+		iconImages: [imageIcon('/globe64.png').image, imageIcon('/globe48.png').image, imageIcon('/globe32.png').image, imageIcon('/globe16.png').image],
 		applicationIcon: logoIcon) {
 
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
 //				['groupTitle': 'New Items', 'entries': [
-			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction)
+//			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction)
 			ribbonApplicationMenuEntrySecondary(id: 'newCalendar', icon: eventIcon, text: rs('Calendar'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addCalendarAction) //]]
 //			}
-			newMenu.addSecondaryMenuGroup 'Create a new item', newFeed, newCalendar
+			newMenu.addSecondaryMenuGroup 'Create a new item', newCalendar
 			
 			appMenu.addMenuSeparator()
 			ribbonApplicationMenuEntryPrimary(id: 'saveAsMenu', icon: forwardIcon, text: rs('Save As'), kind: CommandButtonKind.ACTION_AND_POPUP_MAIN_ACTION)
@@ -494,11 +502,11 @@ ousia.edt {
 			appMenu.addMenuSeparator()
 			ribbonApplicationMenuEntryPrimary(id: 'importMenu', icon: importIcon, text: rs('Import'), kind: CommandButtonKind.POPUP_ONLY)
 			ribbonApplicationMenuEntrySecondary(id: 'importMail', icon: mailIcon, text: rs('Email'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importMailAction)
-			ribbonApplicationMenuEntrySecondary(id: 'importFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importFeedsAction)
+			ribbonApplicationMenuEntrySecondary(id: 'importFeeds', icon: feedIcon, text: rs('Feed Subscriptions'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importFeedsAction)
 			importMenu.addSecondaryMenuGroup 'Import external data', importMail, importFeeds
 
 			ribbonApplicationMenuEntryPrimary(id: 'exportMenu', icon: exportIcon, text: rs('Export'), kind: CommandButtonKind.POPUP_ONLY)
-			ribbonApplicationMenuEntrySecondary(id: 'exportFeeds', icon: feedIcon, text: rs('Feeds'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exportFeedsAction)
+			ribbonApplicationMenuEntrySecondary(id: 'exportFeeds', icon: feedIcon, text: rs('Feed Subscriptions'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: exportFeedsAction)
 			exportMenu.addSecondaryMenuGroup 'Export data', exportFeeds
 			appMenu.addMenuSeparator()
 			
@@ -509,7 +517,7 @@ ousia.edt {
 		frame.ribbon.configureHelp helpIcon, aboutAction
  
 		ribbonBand(rs('New Folder'), id: 'newFolderBand') {
-			commandButton(newIcon)
+			commandButton(newIcon, action: newFolderAction)
 		}
 		
 		ribbonBand(rs('Avatar'), id: 'avatarBand') {
@@ -556,8 +564,8 @@ ousia.edt {
 				quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
 			}
 			
-			checkBox(text: rs('Include Archived Items'))
-			checkBox(text: rs('Include Deleted Items'))
+			checkBox(text: rs('Include Archived'))
+			checkBox(text: rs('Include Deleted'))
 		}
 		
 		ribbonBand(rs('Advanced'), id: 'advancedSearchBand') {
@@ -583,6 +591,10 @@ ousia.edt {
 			commandButton(rs('Tag'))
 			commandButton(rs('Move To'))
 			commandButton(rs('Archive'))
+		}
+		
+		ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand') {
+			commandButton(addFeedAction)
 		}
 		
 		ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand') {
@@ -615,7 +627,7 @@ ousia.edt {
 		}
 
 		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand') {
-			commandButton(taskIcon, actionPerformed: openExplorerView)
+			commandButton(taskIcon, action: openExplorerView)
 		}
 		
 		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
@@ -623,7 +635,7 @@ ousia.edt {
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)))
-		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), shareBand, updateBand)))
+		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand)))
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Tools'), avatarBand, toolsBand))
 		
@@ -894,6 +906,11 @@ ousia.edt {
 						}
 						else {
 							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
+						}
+						
+						actionContext.addFolder = { folderName ->
+							breadcrumb.model.items[-1].data.element.addNode folderName
+							breadcrumb.model.items[-1].data.element.save()
 						}
 					}
 				
