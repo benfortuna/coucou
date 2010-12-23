@@ -630,7 +630,7 @@ ousia.edt {
 			commandButton(taskIcon, action: openExplorerView)
 		}
 		
-		frame.ribbon.addTask(new RibbonTask(rs('View'), filterBand, groupByBand, sortBand, showHideBand, viewModeBand))
+		frame.ribbon.addTask(new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Folder'), newFolderBand))
 		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
