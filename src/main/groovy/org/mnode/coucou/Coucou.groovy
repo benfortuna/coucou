@@ -250,6 +250,8 @@ ousia.edt {
 	resizableIcon('/document.svg', size: [16, 16], id: 'documentIcon')
 	resizableIcon('/import.svg', size: [16, 16], id: 'importIcon')
 	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
+	resizableIcon('/previous.svg', size: [16, 16], id: 'previousIcon')
+	resizableIcon('/next.svg', size: [16, 16], id: 'nextIcon')
 
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
@@ -630,14 +632,20 @@ ousia.edt {
 			commandButton(taskIcon, action: openExplorerView)
 		}
 		
-		frame.ribbon.addTask(new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Folder'), newFolderBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand))
+		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand') {
+			commandButton(previousIcon, text: rs('Previous'))
+			commandButton(nextIcon, text: rs('Next'))
+		}
+
+		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand)
+		frame.ribbon.addTask new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand)
+		frame.ribbon.addTask new RibbonTask(rs('Folder'), newFolderBand)
+		frame.ribbon.addTask new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand)
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
-		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)))
-		frame.ribbon.addContextualTaskGroup(new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand)))
+		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand))
+		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
-		frame.ribbon.addTask(new RibbonTask(rs('Tools'), avatarBand, toolsBand))
+		frame.ribbon.addTask new RibbonTask(rs('Tools'), avatarBand, toolsBand)
 		
 		panel {
 			borderLayout()
