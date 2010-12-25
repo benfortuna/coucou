@@ -71,6 +71,7 @@ import org.mnode.ousia.HTMLEditorKitExt;
 import org.mnode.ousia.HyperlinkBrowser;
 import org.mnode.ousia.OusiaBuilder;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener;
+import org.pushingpixels.flamingo.api.common.CommandButtonDisplayState;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonPopupOrientationKind;
 import org.pushingpixels.flamingo.api.common.popup.PopupPanelCallback;
@@ -518,30 +519,51 @@ ousia.edt {
 		frame.ribbon.applicationMenu = appMenu
 		frame.ribbon.configureHelp helpIcon, aboutAction
  
-		ribbonBand(rs('New Folder'), id: 'newFolderBand') {
-			commandButton(newIcon, action: newFolderAction)
+		ribbonBand(rs('New Folder'), id: 'newFolderBand', resizePolicies: ['mirror']) {
+			ribbonComponent(
+				component: commandButton(newIcon, action: newFolderAction),
+				priority: RibbonElementPriority.TOP
+			)
 		}
 		
-		ribbonBand(rs('Avatar'), id: 'avatarBand') {
-			commandButton(forwardIcon)
+		ribbonBand(rs('Avatar'), id: 'avatarBand', resizePolicy: 'none') {
+			ribbonComponent(
+				component: commandButton(forwardIcon),
+				priority: RibbonElementPriority.TOP
+			)
 		}
 
-		ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand') {
-			textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null})
-			checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox')
-			checkBox(text: rs('Important Items'), id: 'importantFilterCheckbox')
+		ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand', resizePolicies: ['mirror']) {
+			ribbonComponent(
+				component: textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}),
+				rowSpan: 1
+			)
+			ribbonComponent(
+				component: checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'),
+				rowSpan: 1
+			)
+			ribbonComponent(
+				component: checkBox(text: rs('Important Items'), id: 'importantFilterCheckbox'),
+				rowSpan: 1
+			)
 		}
 		
-		ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand') {
-			comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false)
+		ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false),
+				rowSpan: 1
+			])
 		}
 		
-		ribbonBand(rs('Sort By'), icon: forwardIcon, id: 'sortBand') {
-			comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
-				doLater {
-					sortedActivities.comparator = sortComparators[e.source.selectedItem]
-				}
-			})
+		ribbonBand(rs('Sort By'), icon: forwardIcon, id: 'sortBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
+					doLater {
+						sortedActivities.comparator = sortComparators[e.source.selectedItem]
+					}
+				}),
+				rowSpan: 1
+			])
 //			commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: {
 //				commandPopupMenu() {
 //					commandToggleMenuButton(rs('Ascending'))
@@ -550,91 +572,171 @@ ousia.edt {
 //			} as PopupPanelCallback)
 		}
 
-		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand') {
-			commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener)
+		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
+				priority: RibbonElementPriority.TOP
+			])
 		}
 		
-		ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand') {
-			commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction)
+		ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction),
+				priority: RibbonElementPriority.TOP
+			])
 		}
 		
-		ribbonBand(rs('Quick Search'), icon: forwardIcon, id: 'quickSearchBand') {
-			textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
-				keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
-				
-				quickSearchField.addActionListener quickSearchAction
-				quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
-			}
-			
-			checkBox(text: rs('Include Archived'))
-			checkBox(text: rs('Include Deleted'))
+		ribbonBand(rs('Quick Search'), icon: forwardIcon, id: 'quickSearchBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
+					keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
+					
+					quickSearchField.addActionListener quickSearchAction
+					quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
+				},
+				rowSpan: 1
+			])
+
+			ribbonComponent([
+				component: checkBox(text: rs('Include Archived')),
+				rowSpan: 1
+			])
+			ribbonComponent([
+				component: checkBox(text: rs('Include Deleted')),
+				rowSpan: 1
+			])
 		}
 		
-		ribbonBand(rs('Advanced'), id: 'advancedSearchBand') {
-			commandButton(rs('New Search'))
-			commandButton(rs('Saved Searches'))
+		ribbonBand(rs('Advanced'), id: 'advancedSearchBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(rs('New Search')),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(rs('Saved Searches')),
+				priority: RibbonElementPriority.MEDIUM
+			])
 		}
 		
-		ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand') {
-			commandButton(replyIcon, text: rs('Reply'))
-			commandButton(replyAllIcon, text: rs('Reply To All'))
-			commandButton(forwardIcon, text: rs('Forward'))
-			commandButton(chatIcon, text: rs('Chat'))
+		ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(replyIcon, text: rs('Reply')),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(replyAllIcon, text: rs('Reply To All')),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(forwardIcon, text: rs('Forward')),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(chatIcon, text: rs('Chat')),
+				priority: RibbonElementPriority.MEDIUM
+			])
 		}
 		
-		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand') {
-			commandButton(okIcon, action: markAsReadAction)
-			commandButton(okAllIcon, action: markAllReadAction)
-			commandButton(cancelIcon, action: deleteAction)
+		ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(rs('Flag')),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(rs('Tag')),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(rs('Move To')),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(rs('Archive')),
+				priority: RibbonElementPriority.MEDIUM
+			])
 		}
 		
-		ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand') {
-			commandButton(rs('Flag'))
-			commandButton(rs('Tag'))
-			commandButton(rs('Move To'))
-			commandButton(rs('Archive'))
+		ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(addFeedAction),
+				priority: RibbonElementPriority.TOP
+			])
 		}
 		
-		ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand') {
-			commandButton(addFeedAction)
-		}
-		
-		ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand') {
-			commandButton(rs('Post To Buzz'), actionPerformed: {
-				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-				// feed item..
-				if (selectedItem.node.hasProperty('link')) {
-					Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
-				}
-			} as ActionListener)
-			commandButton(rs('Twitter'), actionPerformed: {
-				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-				// feed item..
-				if (selectedItem.node.hasProperty('link')) {
-					Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
-				}
-			} as ActionListener)
-			commandButton(rs('Facebook'), actionPerformed: {
-				def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-				// feed item..
-				if (selectedItem.node.hasProperty('link')) {
-					Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
-				}
-			} as ActionListener)
+		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(okIcon, action: markAsReadAction),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(okAllIcon, action: markAllReadAction),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(cancelIcon, action: deleteAction),
+				priority: RibbonElementPriority.MEDIUM
+			])
 		}
 
-		ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand') {
-			commandButton(copyIcon, text: rs('Copy'))
-			commandButton(eventIcon, text: rs('Add To Planner'))
+		ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(rs('Post To Buzz'), actionPerformed: {
+					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+					// feed item..
+					if (selectedItem.node.hasProperty('link')) {
+						Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
+					}
+				} as ActionListener),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(rs('Twitter'), actionPerformed: {
+					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+					// feed item..
+					if (selectedItem.node.hasProperty('link')) {
+						Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
+					}
+				} as ActionListener),
+				priority: RibbonElementPriority.MEDIUM
+			])
+			ribbonComponent([
+				component: commandButton(rs('Facebook'), actionPerformed: {
+					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+					// feed item..
+					if (selectedItem.node.hasProperty('link')) {
+						Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
+					}
+				} as ActionListener),
+				priority: RibbonElementPriority.MEDIUM
+			])
 		}
 
-		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand') {
-			commandButton(taskIcon, action: openExplorerView)
+		ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(copyIcon, text: rs('Copy')),
+				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(eventIcon, text: rs('Add To Planner')),
+				priority: RibbonElementPriority.MEDIUM
+			])
+		}
+
+		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicy: 'none') {
+			ribbonComponent([
+				component: commandButton(taskIcon, action: openExplorerView),
+				priority: RibbonElementPriority.TOP
+			])
 		}
 		
-		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand') {
-			commandButton(previousIcon, text: rs('Previous'))
-			commandButton(nextIcon, text: rs('Next'))
+		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand', resizePolicy: 'none') {
+			ribbonComponent([
+				component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
+					commandButton(previousIcon, text: rs('Previous'), flat: true)
+					commandButton(nextIcon, text: rs('Next'), flat: true)
+				},
+				rowSpan: 3
+			])
 		}
 
 		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand)
