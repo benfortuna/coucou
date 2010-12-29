@@ -370,13 +370,13 @@
 						<phase>deploy</phase>
 						<configuration>
 							<tasks>
-								<scp file="target/${pom.build.finalName}.zip"
+								<scp file="target/${project.build.finalName}.zip"
 									todir="modularity@mnode.org:basetools.org/coucou"
 									keyfile="${user.home}/.ssh/id_rsa" passphrase="" />
 
 								<sshexec host="mnode.org" username="modularity"
 									keyfile="${user.home}/.ssh/id_rsa" passphrase=""
-									command="unzip -o basetools.org/coucou/${pom.build.finalName}.zip -d basetools.org/coucou/webstart" />
+									command="unzip -o basetools.org/coucou/${project.build.finalName}.zip -d basetools.org/coucou/webstart" />
 							</tasks>
 						</configuration>
 						<goals>
