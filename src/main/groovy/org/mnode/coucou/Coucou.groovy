@@ -526,7 +526,7 @@ ousia.edt {
 			)
 		}
 		
-		ribbonBand(rs('Avatar'), id: 'avatarBand', resizePolicy: 'none') {
+		ribbonBand(rs('Avatar'), id: 'avatarBand', resizePolicies: ['mirror']) {
 			ribbonComponent(
 				component: commandButton(forwardIcon),
 				priority: RibbonElementPriority.TOP
@@ -722,14 +722,14 @@ ousia.edt {
 			])
 		}
 
-		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicy: 'none') {
+		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
 				component: commandButton(taskIcon, action: openExplorerView),
 				priority: RibbonElementPriority.TOP
 			])
 		}
 		
-		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand', resizePolicy: 'none') {
+		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
 				component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
 					commandButton(previousIcon, text: rs('Previous'), flat: true)
