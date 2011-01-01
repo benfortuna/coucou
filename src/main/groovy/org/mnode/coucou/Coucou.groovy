@@ -709,6 +709,16 @@ ousia.edt {
 				} as ActionListener),
 				priority: RibbonElementPriority.MEDIUM
 			])
+			ribbonComponent(
+				component: commandButton(rs('Reddit'), actionPerformed: {
+					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+					// feed item..
+					if (selectedItem.node.hasProperty('link')) {
+						Desktop.desktop.browse(URI.create("http://reddit.com/submit?url=${selectedItem.node.getProperty('link').value.string}&title=${URLEncoder.encode(selectedItem.node.getProperty('title').value.string, 'UTF-8')}"))
+					}
+				} as ActionListener),
+				priority: RibbonElementPriority.MEDIUM
+			)
 		}
 
 		ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand', resizePolicies: ['mirror']) {
