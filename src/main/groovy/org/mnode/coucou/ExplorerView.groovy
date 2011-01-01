@@ -35,14 +35,14 @@ public class ExplorerView extends JXPanel{
         def swing = new OusiaBuilder()
         
         layout = swing.borderLayout()
-        name = 'Repository Explorer'
+        name = swing.rs('Repository Explorer')
         border = swing.emptyBorder(10)
         
         add swing.splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
             scrollPane(constraints: 'left') {
                 treeTable(id: 'explorerTree')
 //                explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
-                explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(rootNode), ['Name', 'Type', 'State'])
+                explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(rootNode), [rs('Name'), rs('Type'), rs('State')])
                 explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
                 explorerTree.selectionModel.valueChanged = {
                     def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
@@ -50,7 +50,7 @@ public class ExplorerView extends JXPanel{
                         swing.edt {
                             propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent.userObject)
                             editContext.delete = {
-                                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(parentWindow, "Delete node: ${selectedPath.lastPathComponent.userObject.name}?", 'Confirm delete', JOptionPane.OK_CANCEL_OPTION)) {
+                                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(parentWindow, "${rs('Delete node')}: ${selectedPath.lastPathComponent.userObject.name}?", rs('Confirm delete'), JOptionPane.OK_CANCEL_OPTION)) {
                                     explorerTree.clearSelection()
 //                                    def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
                                     removeNode selectedPath.lastPathComponent.userObject
