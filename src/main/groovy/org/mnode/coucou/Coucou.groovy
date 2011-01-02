@@ -752,7 +752,7 @@ ousia.edt {
 		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand)
 		frame.ribbon.addTask new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand)
 		frame.ribbon.addTask new RibbonTask(rs('Folder'), newFolderBand)
-		frame.ribbon.addTask new RibbonTask(rs('Search'), quickSearchBand, advancedSearchBand)
+		frame.ribbon.addTask new RibbonTask(rs('Search'), advancedSearchBand, quickSearchBand)
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand))
