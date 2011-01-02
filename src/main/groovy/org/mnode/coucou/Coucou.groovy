@@ -738,8 +738,12 @@ ousia.edt {
 		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
 				component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
-					commandButton(previousIcon, text: rs('Previous'), flat: true)
-					commandButton(nextIcon, text: rs('Next'), flat: true)
+					commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
+						bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
+					}
+					commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
+						bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
+					}
 				},
 				rowSpan: 3
 			])
@@ -866,6 +870,27 @@ ousia.edt {
 							if (!e.valueIsAdjusting) {
 								if (activityTable.selectedRow >= 0) {
 									int entryIndex = activityTable.convertRowIndexToModel(activityTable.selectedRow)
+									
+									if (entryIndex > 0) {
+										actionContext.previousItem = {
+											int previousIndex = activityTable.convertRowIndexToView(entryIndex - 1)
+											activityTable.setRowSelectionInterval(previousIndex, previousIndex)
+										}
+									}
+									else {
+										actionContext.previousItem = null
+									}
+									
+									if (entryIndex < activityTree.size() - 1) {
+										actionContext.nextItem = {
+											int nextIndex = activityTable.convertRowIndexToView(entryIndex + 1)
+											activityTable.setRowSelectionInterval(nextIndex, nextIndex)
+										}
+									}
+									else {
+										actionContext.nextItem = null
+									}
+
 									def entry = activityTree[entryIndex]
 									if (entry && entry instanceof Map) {
 										// update action context..
@@ -936,6 +961,8 @@ ousia.edt {
 										contentView.text = null
 									}
 									actionContext.markAsRead = null
+									actionContext.previousItem = null
+									actionContext.nextItem = null
 								}
 							}
 						}
