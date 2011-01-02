@@ -18,94 +18,85 @@
  */
 package org.mnode.coucou
 
-import groovy.xml.MarkupBuilder;
-import groovyx.gpars.GParsExecutorsPool;
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeListener;
-
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
+import groovy.xml.MarkupBuilder
+import groovyx.gpars.GParsExecutorsPool
 
-import javax.jcr.PropertyType;
-import javax.jcr.SimpleCredentials;
-import javax.jcr.observation.EventListener;
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MailDateFormat;
-import javax.naming.InitialContext;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.text.html.StyleSheet;
-import javax.swing.JSplitPane;
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Cursor
+import java.awt.Desktop
+import java.awt.Font
+import java.awt.GraphicsEnvironment
+import java.awt.event.ActionListener
+import java.awt.event.KeyEvent
+import java.awt.event.MouseEvent
+import java.beans.PropertyChangeListener
 
-import org.apache.jackrabbit.core.jndi.RegistryHelper;
-import org.jdesktop.swingx.JXErrorPane;
-import org.jdesktop.swingx.JXStatusBar;
-import org.jdesktop.swingx.error.ErrorInfo;
-import org.jdesktop.swingx.prompt.BuddySupport;
-import org.jdesktop.swingx.prompt.PromptSupport.FocusBehavior;
-import org.mnode.coucou.activity.DateExpansionModel;
-import org.mnode.coucou.breadcrumb.PathResultCallback;
-import org.mnode.coucou.contacts.ContactsManager;
-import org.mnode.coucou.feed.Aggregator;
-import org.mnode.coucou.mail.Mailbox;
-import org.mnode.coucou.planner.Planner;
-import org.mnode.coucou.search.SearchPathResult;
-import org.mnode.juicer.query.QueryBuilder;
-import org.mnode.ousia.HTMLEditorKitExt;
-import org.mnode.ousia.HyperlinkBrowser;
-import org.mnode.ousia.OusiaBuilder;
-import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener;
-import org.pushingpixels.flamingo.api.common.CommandButtonDisplayState;
-import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
-import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonPopupOrientationKind;
-import org.pushingpixels.flamingo.api.common.popup.PopupPanelCallback;
-import org.pushingpixels.flamingo.api.ribbon.JRibbonBand;
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
-import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
-import org.pushingpixels.flamingo.api.ribbon.RibbonTask;
-import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies;
-import org.pushingpixels.substance.api.SubstanceConstants;
-import org.pushingpixels.substance.api.SubstanceLookAndFeel;
-import org.slf4j.LoggerFactory;
-import javax.jcr.Node;
+import javax.jcr.Node
+import javax.jcr.PropertyType
+import javax.jcr.SimpleCredentials
+import javax.jcr.observation.EventListener
+import javax.mail.Session
+import javax.mail.Store
+import javax.mail.URLName
+import javax.mail.internet.InternetAddress
+import javax.mail.internet.MailDateFormat
+import javax.naming.InitialContext
+import javax.swing.JFileChooser
+import javax.swing.JFrame
+import javax.swing.JOptionPane
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.SwingUtilities
+import javax.swing.UIManager
+import javax.swing.UIManager.LookAndFeelInfo
+import javax.swing.text.html.StyleSheet
 
-import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem;
+import org.apache.jackrabbit.core.jndi.RegistryHelper
+import org.jdesktop.swingx.JXErrorPane
+import org.jdesktop.swingx.JXStatusBar
+import org.jdesktop.swingx.error.ErrorInfo
+import org.jdesktop.swingx.prompt.BuddySupport
+import org.mnode.base.log.FormattedLogEntry
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.LogEntry
+import org.mnode.base.log.LogEntry.Level
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.mnode.coucou.activity.DateExpansionModel
+import org.mnode.coucou.breadcrumb.PathResultCallback
+import org.mnode.coucou.contacts.ContactsManager
+import org.mnode.coucou.feed.Aggregator
+import org.mnode.coucou.mail.Mailbox
+import org.mnode.coucou.planner.Planner
+import org.mnode.coucou.search.SearchPathResult
+import org.mnode.juicer.query.QueryBuilder
+import org.mnode.ousia.HTMLEditorKitExt
+import org.mnode.ousia.HyperlinkBrowser
+import org.mnode.ousia.OusiaBuilder
+import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem
+import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener
+import org.pushingpixels.flamingo.api.common.CommandButtonDisplayState
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
+import org.pushingpixels.flamingo.api.ribbon.RibbonTask
+import org.pushingpixels.substance.api.SubstanceConstants
+import org.pushingpixels.substance.api.SubstanceLookAndFeel
+import org.slf4j.LoggerFactory
 
-
-import ca.odell.glazedlists.BasicEventList;
-import ca.odell.glazedlists.Filterator;
-import ca.odell.glazedlists.TextFilterator;
-import ca.odell.glazedlists.TreeList;
-import ca.odell.glazedlists.TreeList.Format;
-import ca.odell.glazedlists.event.ListEventListener;
-import ca.odell.glazedlists.gui.TableFormat;
-import ca.odell.glazedlists.matchers.CompositeMatcherEditor;
-import ca.odell.glazedlists.matchers.MatcherEditor;
-import ca.odell.glazedlists.swing.EventTableModel;
-import ca.odell.glazedlists.swing.TextComponentMatcherEditor;
-import ca.odell.glazedlists.swing.TreeTableSupport;
-
-import org.mnode.base.log.FormattedLogEntry;
-import org.mnode.base.log.LogEntry.Level;
-import org.mnode.base.log.LogEntry;
-import org.mnode.base.log.LogAdapter;
-import org.mnode.base.log.adapter.Slf4jAdapter;
+import ca.odell.glazedlists.BasicEventList
+import ca.odell.glazedlists.Filterator
+import ca.odell.glazedlists.TextFilterator
+import ca.odell.glazedlists.TreeList
+import ca.odell.glazedlists.TreeList.Format
+import ca.odell.glazedlists.event.ListEventListener
+import ca.odell.glazedlists.gui.TableFormat
+import ca.odell.glazedlists.matchers.CompositeMatcherEditor
+import ca.odell.glazedlists.matchers.MatcherEditor
+import ca.odell.glazedlists.swing.EventTableModel
+import ca.odell.glazedlists.swing.TextComponentMatcherEditor
+import ca.odell.glazedlists.swing.TreeTableSupport
 
 LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
 LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
@@ -444,19 +435,21 @@ ousia.edt {
 		}
 		
 		action id: 'quickSearchAction', name: rs('Search Items'), closure: {
-			def searchQuery = new QueryBuilder(session.workspace.queryManager, session.valueFactory).with {
-				query(
-					source: selector(nodeType: 'nt:unstructured', name: 'items'),
-					constraint: and(
-						constraint1: descendantNode(selectorName: 'items', path: breadcrumb.model.items[-1].data.element.path),
-						constraint2: fullTextSearch(selectorName: 'items', propertyName: 'description', searchTerms: quickSearchField.text)
+			if (quickSearchField.text) {
+				def searchQuery = new QueryBuilder(session.workspace.queryManager, session.valueFactory).with {
+					query(
+						source: selector(nodeType: 'nt:unstructured', name: 'items'),
+						constraint: and(
+							constraint1: descendantNode(selectorName: 'items', path: breadcrumb.model.items[-1].data.element.path),
+							constraint2: fullTextSearch(selectorName: 'items', propertyName: 'description', searchTerms: quickSearchField.text)
+						)
 					)
-				)
+				}
+				def pr = new SearchPathResult(searchQuery, quickSearchField.text)
+				def searchResult = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
+				searchResult.icon = searchIcon
+				breadcrumb.model.addLast(searchResult)
 			}
-			def pr = new SearchPathResult(searchQuery, quickSearchField.text)
-			def searchResult = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
-			searchResult.icon = searchIcon
-			breadcrumb.model.addLast(searchResult)
 		}
 		
 		action id: 'markAsReadAction', name: rs('Mark As Read'), closure: {
@@ -592,7 +585,7 @@ ousia.edt {
 					keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
 					
 					quickSearchField.addActionListener quickSearchAction
-					quickSearchField.addBuddy commandButton(searchIcon, flat: true, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
+					quickSearchField.addBuddy commandButton(searchIcon, enabled: false, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
 				},
 				rowSpan: 1
 			])
