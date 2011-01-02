@@ -232,6 +232,7 @@ ousia.edt {
 	resizableIcon('/ok.svg', size: [16, 16], id: 'okIcon')
 	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
 	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
+	resizableIcon('/cancel.svg', size: [12, 12], id: 'clearIcon')
 	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
 	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
 	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
@@ -530,7 +531,9 @@ ousia.edt {
 			ribbonComponent(
 				component: textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}),
 				rowSpan: 1
-			)
+			) {
+				filterTextField.addBuddy commandButton(clearIcon, actionPerformed: {filterTextField.text = null} as ActionListener), BuddySupport.Position.RIGHT
+			}
 			ribbonComponent(
 				component: checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'),
 				rowSpan: 1
