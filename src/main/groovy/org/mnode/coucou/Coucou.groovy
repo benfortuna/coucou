@@ -1057,7 +1057,7 @@ ousia.edt {
 							 }
 						}
 
-						 items.each {
+						 items.reverseEach {
 							 def item = [:]
 							 // feeds / items..
 							 if (it.hasProperty('title')) {
