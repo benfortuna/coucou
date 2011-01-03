@@ -23,7 +23,7 @@
     <vendor>$project.Organization.Name</vendor>
     <homepage href="$project.Url"/>
     <icon href="lib/splash.png" kind="splash"/>
-    <icon href="lib/shortcut.png" kind="shortcut"/>
+    <icon href="lib/shortcut.png" kind="shortcut" width="64" height="64"/>
     <description>$project.Description</description>
 #if($offlineAllowed)
     <offline-allowed/>
