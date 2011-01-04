@@ -217,6 +217,17 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 
+def breadcrumbTitle = { items ->
+	def title = items.collect({ it.data.name }).join(' | ')
+//	items.each {
+//		title << it.data.name
+//		title << ' | '
+//	}
+	title += ' - Coucou'
+//	"${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
+	return title
+}
+
 ousia.edt {
 //	lookAndFeel('substance-nebula')
 	lookAndFeel('system')
@@ -1029,7 +1040,8 @@ ousia.edt {
 			breadcrumb.model.addPathListener({
 					edt {
 						filterTextField.text = null
-						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
+//						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
+						frame.title = breadcrumbTitle(breadcrumb.model.items)
 						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
 						
 						// enable/disable ribbon tasks..
