@@ -256,7 +256,9 @@ ousia.edt {
 	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
 	resizableIcon('/previous.svg', size: [16, 16], id: 'previousIcon')
 	resizableIcon('/next.svg', size: [16, 16], id: 'nextIcon')
-
+	resizableIcon('/reload.svg', size: [16, 16], id: 'refreshIcon')
+    resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelLoadIcon')
+    
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
@@ -746,7 +748,8 @@ ousia.edt {
 			])
 		}
 		
-		ribbonBand(rs('Navigation'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
+		ribbonBand(rs('Navigate'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
+            /*
 			ribbonComponent([
 				component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
 					commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
@@ -758,9 +761,33 @@ ousia.edt {
 				},
 				rowSpan: 3
 			])
+			*/
+            ribbonComponent(
+                component: commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
+                        bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
+                    },
+                priority: RibbonElementPriority.TOP
+            )
+            ribbonComponent(
+                component: commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
+                        bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
+                    },
+                priority: RibbonElementPriority.TOP
+            )
 		}
+        
+        ribbonBand(rs('Load'), icon: taskIcon, id: 'loadBand', resizePolicies: ['mirror']) {
+            ribbonComponent(
+                component: commandButton(refreshIcon, text: rs('Refresh')),
+                priority: RibbonElementPriority.TOP
+            )
+            ribbonComponent(
+                component: commandButton(cancelLoadIcon, text: rs('Cancel')),
+                priority: RibbonElementPriority.TOP
+            )
+        }
 
-		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand, quickSearchBand)
+		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand, loadBand, quickSearchBand)
 		frame.ribbon.addTask new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand)
 		frame.ribbon.addTask new RibbonTask(rs('Folder'), newFolderBand)
 //		frame.ribbon.addTask new RibbonTask(rs('Search'), advancedSearchBand, quickSearchBand)
