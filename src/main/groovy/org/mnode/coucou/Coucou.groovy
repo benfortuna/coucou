@@ -104,12 +104,13 @@ LogEntry node_added = new FormattedLogEntry(Level.Debug, 'Node added: %s')
 
 
 UIManager.put(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Nebula', 'substance-nebula'))
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Office Blue 2007', 'substance-office-blue-2007'))
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Office Silver 2007', 'substance-office-silver-2007'))
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Mariner', 'substance-mariner'))
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Black Steel', 'substance-business-black-steel'))
-UIManager.installLookAndFeel(new LookAndFeelInfo('Substance Business Blue Steel', 'substance-business-blue-steel'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Nebula', 'substance-nebula'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Office Blue 2007', 'substance-office-blue-2007'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Office Silver 2007', 'substance-office-silver-2007'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Mariner', 'substance-mariner'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Business Black Steel', 'substance-business-black-steel'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Business Blue Steel', 'substance-business-blue-steel'))
+UIManager.installLookAndFeel(new LookAndFeelInfo('Raven', 'substance-raven'))
 
 def currentLookAndFeelInfo = {
 	for (laf in UIManager.installedLookAndFeels) {
@@ -958,6 +959,8 @@ ousia.edt {
 										}
 										
 										edt {
+											contentTitle.text = "${entry['source']} | ${entry['title']}"
+											
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
 												def content = entry['node'].getProperty('description').string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, '') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
@@ -996,6 +999,7 @@ ousia.edt {
 								}
 								else {
 									edt {
+										contentTitle.text = ''
 										contentView.text = null
 									}
 									actionContext.markAsRead = null
@@ -1050,17 +1054,25 @@ ousia.edt {
 					}
 				}
 				
-				scrollPane(constraints: 'right') {
-					def styleSheet = new StyleSheet()
-					styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-			//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
-			//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
-			//        styleSheet.addRule("img {border-width:0; }")
+				panel(constraints: 'right') {
+					borderLayout()
 					
-					def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
-			
-					editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
-					contentView.addHyperlinkListener(new HyperlinkBrowser())
+					label(constraints: BorderLayout.NORTH, border: emptyBorder(5), id: 'contentTitle') {
+						contentTitle.font = contentTitle.font.deriveFont(Font.BOLD, 14f)
+					}
+					
+					scrollPane {
+						def styleSheet = new StyleSheet()
+						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+				//        styleSheet.addRule("img {border-width:0; }")
+						
+						def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+				
+						editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+						contentView.addHyperlinkListener(new HyperlinkBrowser())
+					}
 				}
 			}
 
