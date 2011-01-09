@@ -43,53 +43,16 @@ import org.slf4j.LoggerFactory
 class Mailbox extends AbstractNodeManager {
 	
 	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Mailbox))
-	
-//	def rootNode
 
 	javax.mail.Session mailSession
 	
 	def updateThread
-		
-//	Query relatedMessages
 	
 	Mailbox(Repository repository, String nodeName) {
-//		def mailNode
-//		if (!session.rootNode.hasNode(nodeName)) {
-//			mailNode = session.rootNode.addNode(nodeName)
-//		}
-//		else {
-//			mailNode = session.rootNode.getNode(nodeName)
-//		}
 		super(repository, 'mail', nodeName)
 		
 		if (!rootNode.hasNode('folders')) {
 			rootNode.addNode('folders')
-		}
-		
-		//if (mailNode.hasNode('Attachments')) {
-		//	mailNode.getNode('Attachments').remove()
-		//}
-		
-		if (!rootNode.hasNode('Attachments')) {
-			def attachments = new QueryBuilder(session.workspace.queryManager).with {
-				query(
-					source: selector(nodeType: 'nt:file', name: 'files'),
-					constraint: and(
-						constraint1: descendantNode(selectorName: 'files', path: "/${nodeName}"),
-						constraint2: and(
-							constraint1: not(comparison(
-								operand1: nodeNamex(selectorName: 'files'),
-								operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
-								operand2: literal(session.valueFactory.createValue('part')))),
-							constraint2: not(comparison(
-								operand1: nodeNamex(selectorName: 'files'),
-								operator: QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
-								operand2: literal(session.valueFactory.createValue('data'))))))
-				)
-			}
-			def attachmentsNode = rootNode.addNode('Attachments')
-			attachments.storeAsNode("${attachmentsNode.path}/query")
-//			mailNode.save()
 		}
 		
 		save rootNode
