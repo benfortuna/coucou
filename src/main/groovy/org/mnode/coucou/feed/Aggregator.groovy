@@ -47,39 +47,11 @@ class Aggregator extends AbstractNodeManager {
 	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Aggregator))
 	private static LogEntry updating_feed = new FormattedLogEntry(Level.Info, 'Updating feed: %s')
 	private static LogEntry found_feeds = new FormattedLogEntry(Level.Info, 'Found %s feeds: %s')
-	
-//	def rootNode
 
 	def updateThread
 		
 	Aggregator(Repository repository, String nodeName) {
-//		if (!session.rootNode.hasNode(nodeName)) {
-//			rootNode = session.rootNode.addNode(nodeName)
-//		}
-//		else {
-//			rootNode = session.rootNode.getNode(nodeName)
-//		}
 		super(repository, 'feeds', nodeName)
-		
-		//if (feedsNode.hasNode('All Items')) {
-		//	feedsNode.getNode('All Items').remove()
-		//}
-		
-		if (!rootNode.hasNode('All Items')) {
-			def allItems = new QueryBuilder(session.workspace.queryManager).with {
-				query(
-					source: selector(nodeType: 'nt:unstructured', name: 'all_nodes'),
-					constraint: and(
-						constraint1: descendantNode(selectorName: 'all_nodes', path: "/${nodeName}"),
-						constraint2: not(childNode(selectorName: 'all_nodes', path: "/${nodeName}")))
-				)
-			}
-			def allItemsNode = rootNode.addNode('All Items')
-			allItems.storeAsNode("${allItemsNode.path}/query")
-//			rootNode.save()
-		}
-		
-		save rootNode
 		
 		updateThread = Executors.newSingleThreadScheduledExecutor()
 	}

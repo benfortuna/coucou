@@ -18,6 +18,9 @@
  */
 package org.mnode.coucou.feed;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
@@ -34,11 +37,32 @@ import org.mnode.coucou.search.SearchPathResult;
  */
 public class FeedsNodePathResult extends NodePathResult {
 
+	private Query allItemsQuery;
+	
 	/**
 	 * @param node
 	 */
 	public FeedsNodePathResult(Node node) {
 		super(node);
+		try {
+			allItemsQuery = node.getSession().getWorkspace().getQueryManager().createQuery(
+				String.format("SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, [%s]) AND all_nodes.description IS NOT NULL", node.getPath()),
+				Query.JCR_JQOM);
+		}
+		catch (RepositoryException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public List<PathResult<?, Node>> getChildren() throws PathResultException {
+		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+		
+		if (allItemsQuery != null) {
+			children.add(new SearchPathResult(allItemsQuery, "All Items"));
+		}
+		children.addAll(super.getChildren());
+		return children;
 	}
 	
 	@Override
