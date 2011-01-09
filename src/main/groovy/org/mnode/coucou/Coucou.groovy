@@ -314,6 +314,8 @@ ousia.edt {
 		action id: 'importFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
 				doOutside {
+					aggregator.loadOpml(chooser.selectedFile)
+/*
 					def opml = new XmlSlurper().parse(chooser.selectedFile)
 					def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
 					if (feeds.isEmpty()) {
@@ -343,6 +345,7 @@ ousia.edt {
 							JXErrorPane.showDialog(frame, error);
 						}
 					}
+*/
 				}
 			}
 		}

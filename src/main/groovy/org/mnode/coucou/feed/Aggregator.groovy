@@ -18,25 +18,24 @@
  */
 package org.mnode.coucou.feed
 
-import groovyx.gpars.GParsExecutorsPool;
+import groovyx.gpars.GParsExecutorsPool
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-import javax.jcr.Repository;
+import javax.jcr.Repository
 
-import org.apache.jackrabbit.util.Text;
-import org.mnode.base.log.FormattedLogEntry;
-import org.mnode.base.log.LogAdapter;
-import org.mnode.base.log.LogEntry;
-import org.mnode.base.log.LogEntry.Level;
-import org.mnode.base.log.adapter.Slf4jAdapter;
-import org.mnode.coucou.AbstractNodeManager;
-import org.mnode.juicer.query.QueryBuilder;
-import org.slf4j.LoggerFactory;
+import org.apache.jackrabbit.util.Text
+import org.mnode.base.log.FormattedLogEntry
+import org.mnode.base.log.LogAdapter
+import org.mnode.base.log.LogEntry
+import org.mnode.base.log.LogEntry.Level
+import org.mnode.base.log.adapter.Slf4jAdapter
+import org.mnode.coucou.AbstractNodeManager
+import org.slf4j.LoggerFactory
 
-import com.sun.syndication.io.SyndFeedInput;
-import com.sun.syndication.io.XmlReader;
+import com.sun.syndication.io.SyndFeedInput
+import com.sun.syndication.io.XmlReader
 
 /**
  * @author fortuna
@@ -96,6 +95,47 @@ class Aggregator extends AbstractNodeManager {
 	}
 */
 	
+	def loadOpml = { file ->
+		def opml = new XmlSlurper().parse(file)
+		GParsExecutorsPool.withPool(10) {
+			opml.body.outline.each {
+				if (it.@xmlUrl.text()) {
+					updateFeed.callAsync(it.@xmlUrl.text())
+				}
+				else {
+					def folder = rootNode.addNode(it.@title.text())
+					save rootNode
+					it.outline.each {
+						updateFeed.callAsync(it.@xmlUrl.text(), folder)
+					}
+				}
+			}
+		}
+/*		
+		def feeds = opml.body.outline.outline.collect { it.@xmlUrl.text() }
+		if (feeds.isEmpty()) {
+			feeds = opml.body.outline.collect { it.@xmlUrl.text() }
+		}
+		println "Feeds: ${feeds}"
+		def errorMap = [:]
+		GParsExecutorsPool.withPool(10) {
+			for (feed in feeds) {
+				try {
+					def future = aggregator.updateFeed.callAsync(feed)
+//	                            future.get()
+//	                            doLater {
+//	                                feedList.model.fireTableDataChanged()
+//	                            }
+				}
+				catch (Exception ex) {
+					log.log unexpected_error, ex
+					errorMap.put(feed, ex)
+				}
+			}
+		}
+*/
+	}
+	
 	def addFeed = { url ->
 		 def feedNode = null
 		 def feedUrl
@@ -125,12 +165,12 @@ class Aggregator extends AbstractNodeManager {
 		 }
 	}
 	
-	def updateFeed = { url ->
+	def updateFeed = { url, parent = rootNode ->
 		// rome uses Thread.contextClassLoader..
 		Thread.currentThread().contextClassLoader = Aggregator.classLoader
 		
 		def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
-		def feedNode = getNode(rootNode, Text.escapeIllegalJcrChars(feed.title), true)
+		def feedNode = getNode(parent, Text.escapeIllegalJcrChars(feed.title), true)
 		updateProperty(feedNode, 'url', url)
 		updateProperty(feedNode, 'title', feed?.title)
 
@@ -146,13 +186,13 @@ class Aggregator extends AbstractNodeManager {
 		for (entry in feed.entries) {
 			def entryNode
 			if (entry.uri) {
-				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.uri)}")
+				entryNode = getNode(parent, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.uri)}")
 			}
 			else if (entry.link) {
-				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.link)}")
+				entryNode = getNode(parent, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.link)}")
 			}
 			else {
-				entryNode = getNode(rootNode, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.title)}")
+				entryNode = getNode(parent, "${feedNode.name}/${Text.escapeIllegalJcrChars(entry.title)}")
 			}
 			updateProperty(entryNode, 'title', entry?.title)
 			if (entry?.description) {
