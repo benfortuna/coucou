@@ -20,13 +20,13 @@ package org.mnode.coucou.breadcrumb;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.jcr.Node;
 import javax.swing.Icon;
 
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
-import org.mnode.coucou.search.SearchPathResult;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbBarCallBack;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbBarException;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem;
@@ -40,7 +40,7 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 
 	private PathResult<Node, Node> root;
 
-	private Icon searchPathIcon;
+	private Map<Class<? extends PathResult<?, ?>>, Icon> pathIcons;
 	
 //	public PathResultCallback(Node root) {
 //		this.root = new RootNodePathResult(root);
@@ -65,9 +65,7 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 				if (!lastPathResult.isLeaf()) {
 					for (PathResult<?, Node> result : lastPathResult.getChildren()) {
 						final StringValuePair<PathResult<?, Node>> pathChoice = new StringValuePair<PathResult<?, Node>>(result.getName(), result);
-						if (result instanceof SearchPathResult) {
-							pathChoice.set("icon", searchPathIcon);
-						}
+						pathChoice.set("icon", pathIcons.get(result.getClass()));
 						pathChoices.add(pathChoice);
 					}
 				}
@@ -88,15 +86,15 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 	/**
 	 * @return the searchPathIcon
 	 */
-	public Icon getSearchPathIcon() {
-		return searchPathIcon;
+	public Map<Class<? extends PathResult<?, ?>>, Icon> getPathIcons() {
+		return pathIcons;
 	}
 
 	/**
 	 * @param searchPathIcon the searchPathIcon to set
 	 */
-	public void setSearchPathIcon(Icon searchPathIcon) {
-		this.searchPathIcon = searchPathIcon;
+	public void setPathIcons(Map<Class<? extends PathResult<?, ?>>, Icon> pathIcons) {
+		this.pathIcons = pathIcons;
 	}
 
 	/**
