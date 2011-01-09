@@ -806,7 +806,9 @@ ousia.edt {
 //			breadcrumbFileSelector(path: new File(System.getProperty('user.home')), constraints: BorderLayout.NORTH)
 			
 //			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
-			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), searchPathIcon: searchIcon), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
+			def pathIcons = [:]
+			pathIcons[SearchPathResult] = searchIcon
+			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			def activities = new BasicEventList<?>()
 			
