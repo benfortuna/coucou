@@ -68,6 +68,7 @@ import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
+import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
@@ -273,7 +274,12 @@ ousia.edt {
 			if (url) {
 				doOutside {
 					try {
-						aggregator.addFeed(url)
+						if (breadcrumb.model.items[-1].data instanceof FeedsNodePathResult) {
+							aggregator.addFeed(url, breadcrumb.model.items[-1].data.element)
+						}
+						else {
+							aggregator.addFeed(url)
+						}
 					}
 					catch (MalformedURLException e) {
 						doLater {
