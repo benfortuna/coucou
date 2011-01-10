@@ -923,6 +923,7 @@ ousia.edt {
 										actionContext.previousItem = {
 											int previousIndex = activityTable.convertRowIndexToView(entryIndex - 1)
 											activityTable.setRowSelectionInterval(previousIndex, previousIndex)
+											activityTable.scrollRectToVisible(activityTable.getCellRect(previousIndex, 0, true))
 										}
 									}
 									else {
@@ -933,6 +934,7 @@ ousia.edt {
 										actionContext.nextItem = {
 											int nextIndex = activityTable.convertRowIndexToView(entryIndex + 1)
 											activityTable.setRowSelectionInterval(nextIndex, nextIndex)
+											activityTable.scrollRectToVisible(activityTable.getCellRect(nextIndex, 0, true))
 										}
 									}
 									else {
@@ -948,6 +950,7 @@ ousia.edt {
 			                                    if (entryIndex < activityTree.size() - 1) {
 													int nextIndex = activityTable.convertRowIndexToView(entryIndex + 1)
 			                                        activityTable.setRowSelectionInterval(nextIndex, nextIndex)
+													activityTable.scrollRectToVisible(activityTable.getCellRect(nextIndex, 0, true))
 			                                    }
 											}
 											actionContext.delete = {
@@ -1002,6 +1005,7 @@ ousia.edt {
 										}
 									}
 									else {
+										contentTitle.text = ''
 										contentView.text = null
 										actionContext.markAsRead = null
 									}
