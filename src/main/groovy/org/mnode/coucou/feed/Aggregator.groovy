@@ -136,7 +136,7 @@ class Aggregator extends AbstractNodeManager {
 */
 	}
 	
-	def addFeed = { url ->
+	def addFeed = { url, parent = rootNode ->
 		 def feedNode = null
 		 def feedUrl
 		 try {
@@ -147,14 +147,14 @@ class Aggregator extends AbstractNodeManager {
 		 }
 		 
 		 try {
-			 feedNode = updateFeed(url)
+			 feedNode = updateFeed(url, parent)
 		 }
 		 catch (Exception e) {
 			  def html = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parse(feedUrl.content)
 			  def feeds = html.head.link.findAll { it.@type == 'application/rss+xml' || it.@type == 'application/atom+xml' }
 			  log.log found_feeds, feeds.size(), feeds.collect { it.@href.text() }
 			  if (!feeds.isEmpty()) {
-				  feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString())
+				  feedNode = updateFeed(new URL(feedUrl, feeds[0].@href.text()).toString(), parent)
 			  }
 			  else {
 //				  doLater {
