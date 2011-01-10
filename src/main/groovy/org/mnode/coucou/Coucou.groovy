@@ -968,7 +968,7 @@ ousia.edt {
 										}
 										
 										edt {
-											contentTitle.text = "${entry['source']} | ${entry['title']}"
+											contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
 											
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
@@ -1069,7 +1069,7 @@ ousia.edt {
 					borderLayout()
 					
 					label(constraints: BorderLayout.NORTH, border: emptyBorder(5), id: 'contentTitle') {
-						contentTitle.font = contentTitle.font.deriveFont(Font.BOLD, 14f)
+//						contentTitle.font = contentTitle.font.deriveFont(Font.BOLD, 14f)
 					}
 					
 					scrollPane {
