@@ -890,7 +890,7 @@ ousia.edt {
 										return object['source']
 									}
 									case 1: if (!(object instanceof String)) {
-										return object['title']
+										return object['title'].replaceAll('<(/*)[^\\s]+>', '')
 									}
 									case 2: if (!(object instanceof String)) {
 	//									return new PrettyTime().format(object['date'])
