@@ -67,6 +67,7 @@ import org.mnode.coucou.activity.DateExpansionModel
 import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.feed.Aggregator
+import org.mnode.coucou.feed.FeedNodePathResult;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
@@ -237,6 +238,7 @@ ousia.edt {
 	resizableIcon('/logo.svg', size: [20, 20], id: 'logoIcon')
 	resizableIcon('/add.svg', size: [16, 16], id: 'newIcon')
 	resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
+	resizableIcon('/feed.svg', size: [12, 12], id: 'feedIconSmall')
 	resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
 	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
 	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
@@ -259,7 +261,8 @@ ousia.edt {
 	resizableIcon('/next.svg', size: [16, 16], id: 'nextIcon')
 	resizableIcon('/reload.svg', size: [16, 16], id: 'refreshIcon')
     resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelLoadIcon')
-    
+	resizableIcon('/forward.svg', size: [12, 12], id: 'folderIcon')
+	
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
@@ -808,6 +811,7 @@ ousia.edt {
 //			breadcrumbBar(new NodeCallback(session.rootNode), constraints: BorderLayout.NORTH, id: 'breadcrumb')
 			def pathIcons = [:]
 			pathIcons[SearchPathResult] = searchIcon
+			pathIcons[FeedNodePathResult] = feedIconSmall
 			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			def activities = new BasicEventList<?>()
@@ -1045,7 +1049,9 @@ ousia.edt {
 								else {
 									doLater {
 										final PathResult<?, javax.jcr.Node> pr = breadcrumb.model.items[-1].data.getChild(selectedItem.node)
-										breadcrumb.model.addLast(new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr))
+										def breadcrumbItem = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
+										breadcrumbItem.icon = pathIcons[pr.class]
+										breadcrumb.model.addLast(breadcrumbItem)
 									}
 								}
 		                    }
