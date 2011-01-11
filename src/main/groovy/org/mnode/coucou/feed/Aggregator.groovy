@@ -24,6 +24,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 import javax.jcr.Repository
+import javax.jcr.query.Query;
 
 import org.apache.jackrabbit.util.Text
 import org.mnode.base.log.FormattedLogEntry
@@ -32,6 +33,7 @@ import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
+import org.mnode.juicer.query.QueryBuilder;
 import org.slf4j.LoggerFactory
 
 import com.sun.syndication.io.SyndFeedInput
@@ -48,26 +50,30 @@ class Aggregator extends AbstractNodeManager {
 	private static LogEntry found_feeds = new FormattedLogEntry(Level.Info, 'Found %s feeds: %s')
 
 	def updateThread
+	
+	Query allFeedsQuery
 		
 	Aggregator(Repository repository, String nodeName) {
 		super(repository, 'feeds', nodeName)
 		
 		updateThread = Executors.newSingleThreadScheduledExecutor()
+		
+		allFeedsQuery = session.workspace.queryManager.createQuery(
+			"SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, [${rootNode.path}]) AND all_nodes.url IS NOT NULL",
+			Query.JCR_JQOM)
 	}
 	
 	void start() {
 	   updateThread.scheduleAtFixedRate({
-		   for (node in rootNode.nodes) {
-			   if (node.hasProperty('url')) {
-					log.log updating_feed, node.getProperty('title').value.string
-					
-					GParsExecutorsPool.withPool(10) {
-						try {
-							def future = updateFeed.callAsync(node.getProperty('url').value.string)
-						}
-						catch (Exception e) {
-							log.log unexpected_error, e
-						}
+		   for (node in allFeedsQuery.execute().nodes) {
+				log.log updating_feed, node.getProperty('title').value.string
+				
+				GParsExecutorsPool.withPool(10) {
+					try {
+						def future = updateFeed.callAsync(node.getProperty('url').value.string, node.parent)
+					}
+					catch (Exception e) {
+						log.log unexpected_error, e
 					}
 				}
 			}
