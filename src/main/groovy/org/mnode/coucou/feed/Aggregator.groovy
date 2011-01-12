@@ -109,7 +109,8 @@ class Aggregator extends AbstractNodeManager {
 					updateFeed.callAsync(it.@xmlUrl.text())
 				}
 				else {
-					def folder = rootNode.addNode(it.@title.text())
+					def folder = getNode(rootNode, Text.escapeIllegalJcrChars(it.@title.text()))
+//					def folder = rootNode.addNode(it.@title.text())
 					save rootNode
 					it.outline.each {
 						updateFeed.callAsync(it.@xmlUrl.text(), folder)
