@@ -54,6 +54,7 @@ import javax.swing.UIManager.LookAndFeelInfo
 import javax.swing.text.html.StyleSheet
 
 import org.apache.jackrabbit.core.jndi.RegistryHelper
+import org.apache.jackrabbit.util.Text;
 import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.error.ErrorInfo
@@ -1124,7 +1125,7 @@ ousia.edt {
 						}
 						
 						actionContext.addFolder = { folderName ->
-							breadcrumb.model.items[-1].data.element.addNode folderName
+							breadcrumb.model.items[-1].data.element.addNode(Text.escapeIllegalJcrChars(folderName))
 							breadcrumb.model.items[-1].data.element.save()
 						}
 					}
