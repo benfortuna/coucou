@@ -46,7 +46,7 @@ public class FeedsNodePathResult extends NodePathResult {
 		super(node);
 		try {
 			allItemsQuery = node.getSession().getWorkspace().getQueryManager().createQuery(
-				String.format("SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, [%s]) AND all_nodes.description IS NOT NULL", node.getPath()),
+				String.format("SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, ['%s']) AND all_nodes.description IS NOT NULL", node.getPath()),
 				Query.JCR_JQOM);
 		}
 		catch (RepositoryException e) {
