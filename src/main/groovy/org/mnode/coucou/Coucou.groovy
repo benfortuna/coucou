@@ -432,7 +432,9 @@ def reloadResults = {
 		}
 	}
 	
-
+	ousia.doLater {
+		activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
+	}
 }
 
 ousia.edt {
