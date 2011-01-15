@@ -232,6 +232,209 @@ def breadcrumbTitle = { items ->
 	return title
 }
 
+def reloadResults = {
+	ousia.edt {
+		filterTextField.text = null
+//						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
+		frame.title = breadcrumbTitle(breadcrumb.model.items)
+		frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+		
+		// enable/disable ribbon tasks..
+		quickSearchField.text = null
+		quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
+		quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
+		
+		if (breadcrumb.model.items[0].data.element.path == '/Mail') {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
+		}
+		else {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), false
+		}
+		
+		if (breadcrumb.model.items[0].data.element.path == '/Feeds') {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), true
+		}
+		else {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
+		}
+		
+		actionContext.addFolder = { folderName ->
+			breadcrumb.model.items[-1].data.element.addNode(Text.escapeIllegalJcrChars(folderName))
+			breadcrumb.model.items[-1].data.element.save()
+		}
+	}
+
+	ousia.doOutside {
+//						def items = breadcrumb.callback.getLeafs(breadcrumb.model.items)
+		def items = breadcrumb.model.items[-1].data.results
+
+		doLater {
+			// install new renderer..
+//							def defaultRenderer = new DefaultNodeTableCellRenderer(breadcrumb.model.items[-1].data)
+			def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, ['Today', 'Yesterday', 'Older Items'])
+			defaultRenderer.background = Color.WHITE
+			
+//							def dateRenderer = new DateCellRenderer(breadcrumb.model.items[-1].data)
+			def dateRenderer = new DateCellRenderer(activityTree)
+			dateRenderer.background = Color.WHITE
+			
+			ttsupport.delegateRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+			
+			 try {
+				 // lock for list modification..
+				 activities.readWriteLock.writeLock().lock()
+				 
+				 activities.clear()
+			 }
+			 finally {
+				 // unlock post-list modification..
+				 activities.readWriteLock.writeLock().unlock()
+			 }
+		}
+
+		 items.reverseEach {
+			 def item = [:]
+			 // feeds / items..
+			 if (it.hasProperty('title')) {
+				 item['title'] = it.getProperty('title').string
+			 }
+			 // mail messages..
+			 else if (it.hasNode('headers')) {
+				 def headers = it.getNode('headers')
+				 if (headers.hasProperty('Subject')) {
+					 item['title'] = headers.getProperty('Subject').string
+				 }
+				 else {
+					 item['title'] = '<No Subject>'
+				 }
+			 }
+			 // contacts..
+			 else if (it.hasProperty('personal')) {
+				 item['title'] = it.getProperty('personal').string
+			 }
+			 // calendars..
+			 else if (it.hasProperty('summary')) {
+				 item['title'] = it.getProperty('summary').string
+			 }
+			 else {
+				 item['title'] = it.name
+			 }
+			 
+			 if (it.hasProperty('source')) {
+				 if (it.getProperty('source').type == PropertyType.REFERENCE) {
+					 item['source'] = it.getProperty('source').getNode().getProperty('title').string
+				 }
+				 else {
+					 item['source'] = it.getProperty('source').string
+				 }
+			 }
+			 // mail messages..
+			 else if (it.hasNode('headers')) {
+				 def headers = it.getNode('headers')
+				 if (it.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
+					 item['source'] = headers.getProperty('To').string
+				 }
+				 else if (headers.hasProperty('From')) {
+					 item['source'] = headers.getProperty('From').string
+				 }
+				 else {
+					 item['source'] = '<Unknown Sender>'
+				 }
+			 }
+			 // attachments..
+			 else if (it.parent.name == 'attachments') {
+				 def message = it.parent.parent
+				 def headers = message.getNode('headers')
+				 if (message.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
+					 item['source'] = headers.getProperty('To').string
+				 }
+				 else if (headers.hasProperty('From')) {
+					 item['source'] = headers.getProperty('From').string
+				 }
+				 else {
+					 item['source'] = '<Unknown Sender>'
+				 }
+			 }
+			 // contacts..
+			 else if (it.hasProperty('email')) {
+				 item['source'] = it.getProperty('email').string
+			 }
+			 else {
+				 item['source'] = it.parent.name
+			 }
+
+			 if (it.hasProperty('date')) {
+				 item['date'] = it.getProperty('date').date.time
+			 }
+			 // mail messages..
+			 else if (it.hasNode('headers')) {
+				 def headers = it.getNode('headers')
+				 if (headers.hasProperty('Date')) {
+					 try {
+						 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
+					 }
+					 catch (Exception e) {
+					 }
+				 }
+			 }
+			 else if (it.hasProperty('received')) {
+				 item['date'] = it.getProperty('received').date.time
+			 }
+			 // attachments..
+			 else if (it.parent.name == 'attachments') {
+				 def headers = it.parent.parent.getNode('headers')
+				 if (headers.hasProperty('Date')) {
+					 try {
+						 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
+					 }
+					 catch (Exception e) {
+					 }
+				 }
+			 }
+
+			 item['node'] = it
+
+			 doLater {
+				 try {
+					 // lock for list modification..
+					 activities.readWriteLock.writeLock().lock()
+					 activities.add(item)
+//									 statusMessage.text = "${activities.size()} ${rs('items')}"
+				 }
+				 finally {
+					 // unlock post-list modification..
+					 activities.readWriteLock.writeLock().unlock()
+				 }
+			 }
+		}
+		
+		 doLater {
+//							 if (activities.size() == 0) {
+//								 statusMessage.text = rs('Nothing to see here')
+//							 }
+			 frame.contentPane.cursor = Cursor.defaultCursor
+		 }
+		 
+		// listen for data changes..
+		def tableUpdater = { events ->
+			println '*** Refresh table'
+//							activityTable.model.fireTableDataChanged()
+		} as EventListener
+	
+		if (breadcrumb.model.items[-1].data.element instanceof javax.jcr.Node) {
+			def path = breadcrumb.model.items[-1].data.element.path
+
+			session.workspace.observationManager.removeEventListener(tableUpdater)
+			session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
+			println "Listening for changes: ${path}"
+		}
+	}
+	
+
+}
+
 ousia.edt {
 //	lookAndFeel('substance-nebula')
 	lookAndFeel('system')
@@ -497,6 +700,10 @@ ousia.edt {
 			if (folderName && actionContext.addFolder) {
 				actionContext.addFolder(folderName)
 			}
+		}
+		
+		action id: 'refreshAction', name: rs('Refresh'), closure: {
+			reloadResults()
 		}
 	}
 
@@ -792,7 +999,7 @@ ousia.edt {
         
         ribbonBand(rs('Load'), icon: taskIcon, id: 'loadBand', resizePolicies: ['mirror']) {
             ribbonComponent(
-                component: commandButton(refreshIcon, text: rs('Refresh')),
+                component: commandButton(refreshIcon, action: refreshAction),
                 priority: RibbonElementPriority.TOP
             )
             ribbonComponent(
@@ -821,7 +1028,7 @@ ousia.edt {
 			pathIcons[FeedNodePathResult] = feedIconSmall
 			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
-			def activities = new BasicEventList<?>()
+			activities = new BasicEventList<?>()
 			
 			// XXX: when look and feel changes the breadcrumb is reset..
 			UIManager.addPropertyChangeListener({ e ->
@@ -829,9 +1036,6 @@ ousia.edt {
 					activities.clear()
 				}
 			} as PropertyChangeListener)
-
-			// Treetable renderering..
-			def ttsupport
 
 			splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true, oneTouchExpandable: true, dividerSize: 10) {
 				
@@ -1098,207 +1302,7 @@ ousia.edt {
 				}
 			}
 
-			breadcrumb.model.addPathListener({
-					edt {
-						filterTextField.text = null
-//						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
-						frame.title = breadcrumbTitle(breadcrumb.model.items)
-						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-						
-						// enable/disable ribbon tasks..
-						quickSearchField.text = null
-						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
-						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
-						
-						if (breadcrumb.model.items[0].data.element.path == '/Mail') {
-							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
-						}
-						else {
-							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), false
-						}
-						
-						if (breadcrumb.model.items[0].data.element.path == '/Feeds') {
-							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), true
-						}
-						else {
-							frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
-						}
-						
-						actionContext.addFolder = { folderName ->
-							breadcrumb.model.items[-1].data.element.addNode(Text.escapeIllegalJcrChars(folderName))
-							breadcrumb.model.items[-1].data.element.save()
-						}
-					}
-				
-					doOutside {
-//						def items = breadcrumb.callback.getLeafs(breadcrumb.model.items)
-						def items = breadcrumb.model.items[-1].data.results
-
-						doLater {
-							// install new renderer..
-//							def defaultRenderer = new DefaultNodeTableCellRenderer(breadcrumb.model.items[-1].data)
-							def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, ['Today', 'Yesterday', 'Older Items'])
-							defaultRenderer.background = Color.WHITE
-							
-//							def dateRenderer = new DateCellRenderer(breadcrumb.model.items[-1].data)
-							def dateRenderer = new DateCellRenderer(activityTree)
-							dateRenderer.background = Color.WHITE
-							
-							ttsupport.delegateRenderer = defaultRenderer
-							activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
-							activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
-							
-							 try {
-								 // lock for list modification..
-								 activities.readWriteLock.writeLock().lock()
-								 
-								 activities.clear()
-							 }
-							 finally {
-								 // unlock post-list modification..
-								 activities.readWriteLock.writeLock().unlock()
-							 }
-						}
-
-						 items.reverseEach {
-							 def item = [:]
-							 // feeds / items..
-							 if (it.hasProperty('title')) {
-								 item['title'] = it.getProperty('title').string
-							 }
-							 // mail messages..
-							 else if (it.hasNode('headers')) {
-								 def headers = it.getNode('headers')
-								 if (headers.hasProperty('Subject')) {
-									 item['title'] = headers.getProperty('Subject').string
-								 }
-								 else {
-									 item['title'] = '<No Subject>'
-								 }
-							 }
-							 // contacts..
-							 else if (it.hasProperty('personal')) {
-								 item['title'] = it.getProperty('personal').string
-							 }
-							 // calendars..
-							 else if (it.hasProperty('summary')) {
-								 item['title'] = it.getProperty('summary').string
-							 }
-							 else {
-								 item['title'] = it.name
-							 }
-							 
-							 if (it.hasProperty('source')) {
-								 if (it.getProperty('source').type == PropertyType.REFERENCE) {
-									 item['source'] = it.getProperty('source').getNode().getProperty('title').string
-								 }
-								 else {
-									 item['source'] = it.getProperty('source').string
-								 }
-							 }
-							 // mail messages..
-							 else if (it.hasNode('headers')) {
-								 def headers = it.getNode('headers')
-								 if (it.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
-									 item['source'] = headers.getProperty('To').string
-								 }
-								 else if (headers.hasProperty('From')) {
-									 item['source'] = headers.getProperty('From').string
-								 }
-								 else {
-									 item['source'] = '<Unknown Sender>'
-								 }
-							 }
-							 // attachments..
-							 else if (it.parent.name == 'attachments') {
-								 def message = it.parent.parent
-								 def headers = message.getNode('headers')
-								 if (message.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
-									 item['source'] = headers.getProperty('To').string
-								 }
-								 else if (headers.hasProperty('From')) {
-									 item['source'] = headers.getProperty('From').string
-								 }
-								 else {
-									 item['source'] = '<Unknown Sender>'
-								 }
-							 }
-							 // contacts..
-							 else if (it.hasProperty('email')) {
-								 item['source'] = it.getProperty('email').string
-							 }
-							 else {
-								 item['source'] = it.parent.name
-							 }
-
-							 if (it.hasProperty('date')) {
-								 item['date'] = it.getProperty('date').date.time
-							 }
-							 // mail messages..
-							 else if (it.hasNode('headers')) {
-								 def headers = it.getNode('headers')
-								 if (headers.hasProperty('Date')) {
-									 try {
-										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
-									 }
-									 catch (Exception e) {
-									 }
-								 }
-							 }
-							 else if (it.hasProperty('received')) {
-								 item['date'] = it.getProperty('received').date.time
-							 }
-							 // attachments..
-							 else if (it.parent.name == 'attachments') {
-								 def headers = it.parent.parent.getNode('headers')
-								 if (headers.hasProperty('Date')) {
-									 try {
-										 item['date'] = mailDateFormat.parse(headers.getProperty('Date').string)
-									 }
-									 catch (Exception e) {
-									 }
-								 }
-							 }
-
-							 item['node'] = it
-
-							 doLater {							 
-								 try {
-									 // lock for list modification..
-									 activities.readWriteLock.writeLock().lock()
-									 activities.add(item)
-//									 statusMessage.text = "${activities.size()} ${rs('items')}"
-								 }
-								 finally {
-									 // unlock post-list modification..
-									 activities.readWriteLock.writeLock().unlock()
-								 }
-							 }
-						}
-						
-						 doLater {
-//							 if (activities.size() == 0) {
-//								 statusMessage.text = rs('Nothing to see here')
-//							 }
-							 frame.contentPane.cursor = Cursor.defaultCursor
-						 }
-						 
-						// listen for data changes..
-						def tableUpdater = { events ->
-							println '*** Refresh table'
-//							activityTable.model.fireTableDataChanged()
-						} as EventListener
-					
-						if (breadcrumb.model.items[-1].data.element instanceof javax.jcr.Node) {
-							def path = breadcrumb.model.items[-1].data.element.path
-	
-							session.workspace.observationManager.removeEventListener(tableUpdater)
-							session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
-							println "Listening for changes: ${path}"
-						}
-					}
-					
-				} as BreadcrumbPathListener)
+			breadcrumb.model.addPathListener({ reloadResults() } as BreadcrumbPathListener)
 		}
 		
 //		toolWindowManager(id: 'windowManager')
