@@ -22,6 +22,8 @@
 package org.mnode.coucou;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.jcr.Node;
@@ -37,6 +39,8 @@ import org.apache.jackrabbit.util.Text;
  */
 public class NodePathResult implements PathResult<Node, Node> {
 
+	private static final Comparator<PathResult<?, ?>> COMPARATOR = new PathResultComparator();
+	
 	private final Node node;
 	
 	public NodePathResult(Node node) {
@@ -83,6 +87,9 @@ public class NodePathResult implements PathResult<Node, Node> {
 		catch (RepositoryException re) {
 			throw new PathResultException(re);
 		}
+		
+		Collections.sort(children, COMPARATOR);
+		
 		return children;
 	}
 	
