@@ -416,7 +416,7 @@ def reloadResults = {
 //							 }
 			 frame.contentPane.cursor = Cursor.defaultCursor
 		 }
-		 
+/*
 		// listen for data changes..
 		def tableUpdater = { events ->
 			println '*** Refresh table'
@@ -430,6 +430,7 @@ def reloadResults = {
 			session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
 			println "Listening for changes: ${path}"
 		}
+*/
 	}
 	
 	ousia.doLater {
@@ -1018,7 +1019,7 @@ ousia.edt {
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand))
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
-		frame.ribbon.addTask new RibbonTask(rs('Tools'), avatarBand, toolsBand)
+		frame.ribbon.addTask new RibbonTask(rs('Tools'), toolsBand)
 		
 		panel {
 			borderLayout()
