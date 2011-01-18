@@ -1095,7 +1095,7 @@ ousia.edt {
 									case 0: if (object instanceof String) {
 										return object
 									} else {
-										return object['source']
+										return object['source'].replaceAll('&amp;', '&')
 									}
 									case 1: if (!(object instanceof String)) {
 										return object['title'].replaceAll('<(/*)[^\\s]+>', '')
