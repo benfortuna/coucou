@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 
@@ -81,5 +82,23 @@ public class FeedsNodePathResult extends NodePathResult {
 			throw new PathResultException(re);
 		}
 		return new FeedsNodePathResult(result);
+	}
+	
+	@Override
+	public List<Node> getResults() throws PathResultException {
+		final List<Node> results = new ArrayList<Node>();
+		try {
+			final NodeIterator childNodes = getElement().getNodes();
+			while (childNodes.hasNext()) {
+				final Node node = childNodes.nextNode();
+				if (node.hasProperty("url")) {
+					results.add(node);
+				}
+			}
+		}
+		catch (RepositoryException re) {
+			throw new PathResultException(re);
+		}
+		return results;
 	}
 }
