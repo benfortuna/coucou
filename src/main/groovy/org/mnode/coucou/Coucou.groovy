@@ -203,20 +203,23 @@ def dateGroupComparator = {a, b ->
 
 def groupComparators = [:]
 groupComparators['Date'] = {a, b -> dateGroupComparator.compare(dateGroup(a.date), dateGroup(b.date))} as Comparator
-groupComparators['Source'] = {a, b -> b.source <=> a.source} as Comparator
+groupComparators['Source'] = {a, b -> a.source <=> b.source} as Comparator
+
+def selectedGroup = 'Date'
+def selectedSort = ousia.rs('Date')
 
 def sortComparators = [:]
 sortComparators[ousia.rs('Date')] = {a, b ->
-	int groupSort = groupComparators['Date'].compare(a, b)
+	int groupSort = groupComparators[selectedGroup].compare(a, b)
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 sortComparators[ousia.rs('Title')] = {a, b ->
-	int groupSort = groupComparators['Date'].compare(a, b)
-	groupSort = (groupSort != 0) ? groupSort : b.title <=> a.title
+	int groupSort = groupComparators[selectedGroup].compare(a, b)
+	groupSort = (groupSort != 0) ? groupSort : a.title <=> b.title
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 sortComparators[ousia.rs('Source')] = {a, b ->
-	int groupSort = groupComparators['Date'].compare(a, b)
+	int groupSort = groupComparators[selectedGroup].compare(a, b)
 	groupSort = (groupSort != 0) ? groupSort : b.source <=> a.source
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
@@ -435,6 +438,30 @@ def reloadResults = {
 	
 	ousia.doLater {
 		activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
+	}
+}
+
+def buildActivityTableModel = {
+	ousia.build {
+		new EventTableModel<?>(activityTree,
+			[
+				getColumnCount: {3},
+				getColumnName: {column -> },
+				getColumnValue: {object, column -> switch(column) {
+					case 0: if (object instanceof String) {
+						return object
+					} else {
+						return object['source'].replaceAll('&amp;', '&')
+					}
+					case 1: if (!(object instanceof String)) {
+						return object['title'].replaceAll('<(/*)[^\\s]+>', '')
+					}
+					case 2: if (!(object instanceof String)) {
+	//									return new PrettyTime().format(object['date'])
+						return object['date']
+					}
+				}}
+			] as TableFormat)
 	}
 }
 
@@ -783,7 +810,55 @@ ousia.edt {
 		
 		ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
-				component: comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false),
+				component: comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false, itemStateChanged: { e->
+					doLater {
+						selectedGroup = e.source.selectedItem
+						sortedActivities.comparator = sortComparators[selectedSort]
+						
+						if (e.source.selectedItem == rs('Source')) {
+							treeList(sortedActivities,
+								 expansionModel: TreeList.NODES_START_COLLAPSED, format: [
+							        allowsChildren: {element -> true},
+							        getComparator: {depth -> },
+							        getPath: {path, element ->
+										path << element.source
+										path << element
+									 }
+							    ] as Format<?>, id: 'activityTree')
+							
+							activityTable.model = buildActivityTableModel()
+						}
+						else {
+							treeList(sortedActivities,
+								 expansionModel: new DateExpansionModel(), format: [
+							        allowsChildren: {element -> true},
+							        getComparator: {depth -> },
+							        getPath: {path, element ->
+										path << dateGroup(element.date)
+										path << element
+									 }
+							    ] as Format<?>, id: 'activityTree')
+							
+							activityTable.model = buildActivityTableModel()
+						}
+						
+						ttsupport.uninstall()
+						ttsupport = TreeTableSupport.install(activityTable, activityTree, 0)
+						ttsupport.arrowKeyExpansionEnabled = true
+						ttsupport.delegateRenderer.background = Color.WHITE
+						
+						def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, [])
+						defaultRenderer.background = Color.WHITE
+						
+						def dateRenderer = new DateCellRenderer(activityTree)
+						dateRenderer.background = Color.WHITE
+						
+						ttsupport.delegateRenderer = defaultRenderer
+						activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+						activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+						
+					}
+				}),
 				rowSpan: 1
 			])
 		}
@@ -792,7 +867,8 @@ ousia.edt {
 			ribbonComponent([
 				component: comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
 					doLater {
-						sortedActivities.comparator = sortComparators[e.source.selectedItem]
+						selectedSort = e.source.selectedItem
+						sortedActivities.comparator = sortComparators[selectedSort]
 					}
 				}),
 				rowSpan: 1
@@ -1077,7 +1153,7 @@ ousia.edt {
 							}
 						} as ListEventListener)
 
-						treeList(sortedList(filteredActivities, comparator: sortComparators[rs('Date')], id: 'sortedActivities'),
+						treeList(sortedList(filteredActivities, comparator: sortComparators[selectedSort], id: 'sortedActivities'),
 							 expansionModel: new DateExpansionModel(), format: [
 						        allowsChildren: {element -> true},
 						        getComparator: {depth -> },
@@ -1087,25 +1163,7 @@ ousia.edt {
 								 }
 						    ] as Format<?>, id: 'activityTree')
 						
-						activityTable.model = new EventTableModel<?>(activityTree,
-							[
-								getColumnCount: {3},
-								getColumnName: {column -> },
-								getColumnValue: {object, column -> switch(column) {
-									case 0: if (object instanceof String) {
-										return object
-									} else {
-										return object['source'].replaceAll('&amp;', '&')
-									}
-									case 1: if (!(object instanceof String)) {
-										return object['title'].replaceAll('<(/*)[^\\s]+>', '')
-									}
-									case 2: if (!(object instanceof String)) {
-	//									return new PrettyTime().format(object['date'])
-										return object['date']
-									}
-								}}
-							] as TableFormat)
+						activityTable.model = buildActivityTableModel()
 						
 						activityTable.tableHeader = null
 	
