@@ -27,6 +27,9 @@ import org.mnode.base.log.LogEntry.Level;
  *
  */
 public final class LogEntries {
+	
+	public static final LogEntry UNEXPECTED_ERROR = new FormattedLogEntry(Level.Error,
+			"An unexpected error has occurred");
 
     public static final LogEntry NODE_ERROR = new FormattedLogEntry(Level.Error,
             "An unexpected error occurred reading node: %s");
@@ -36,4 +39,6 @@ public final class LogEntries {
 
     public static final LogEntry QUERY_ERROR = new FormattedLogEntry(Level.Error,
             "An unexpected error occurred executing query: %s");
+    
+    public static final LogEntry NODE_ADDED = new FormattedLogEntry(Level.Debug, "Node added: %");
 }
