@@ -102,8 +102,6 @@ import ca.odell.glazedlists.swing.TextComponentMatcherEditor
 import ca.odell.glazedlists.swing.TreeTableSupport
 
 LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
-LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
-LogEntry node_added = new FormattedLogEntry(Level.Debug, 'Node added: %s')
 
 UIManager.put(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
 UIManager.installLookAndFeel(new LookAndFeelInfo('Nebula', 'substance-nebula'))
@@ -157,7 +155,7 @@ def contactsManager = new ContactsManager(repository, 'Contacts')
 
 def newContact = { events ->
 	for (event in events) {
-		log.log node_added, event.path
+		log.log LogEntries.NODE_ADDED, event.path
 		def message = session.getNode(event.path)
 		if (message.hasNode('headers')) {
 			def headers = message.getNode('headers')
