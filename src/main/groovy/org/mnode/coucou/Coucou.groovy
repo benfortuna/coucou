@@ -105,7 +105,6 @@ LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
 LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
 LogEntry node_added = new FormattedLogEntry(Level.Debug, 'Node added: %s')
 
-
 UIManager.put(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
 UIManager.installLookAndFeel(new LookAndFeelInfo('Nebula', 'substance-nebula'))
 UIManager.installLookAndFeel(new LookAndFeelInfo('Office Blue 2007', 'substance-office-blue-2007'))
@@ -466,6 +465,7 @@ def buildActivityTableModel = {
 }
 
 ousia.edt {
+
 //	lookAndFeel('substance-nebula')
 	lookAndFeel('system')
 	
@@ -1382,6 +1382,10 @@ ousia.edt {
 //			bind(source: viewStatusBar, sourceProperty: 'selected', target: statusBar, targetProperty:'visible')
 		}
 	}
+		
+		
+	Thread.defaultUncaughtExceptionHandler = new DefaultExceptionHandler(dialogOwner: frame)
+	
 /*
 	def content = windowManager.contentManager.addContent('tabs', 'Tabs', null, tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
 		panel(name: rs('Home'), id: 'homeTab') {
