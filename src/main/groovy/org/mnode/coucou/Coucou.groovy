@@ -26,6 +26,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Desktop
+import java.awt.FlowLayout;
 import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.event.ActionListener
@@ -131,9 +132,41 @@ new File(System.getProperty("user.home"), ".coucou/logs").mkdirs()
 def configFile = new File(System.getProperty("user.home"), ".coucou/config.xml")
 configFile.text = Coucou.getResourceAsStream("/config.xml").text
 
+
+def ousia = new OusiaBuilder()
+
+def repositoryLocation = new File(System.getProperty("user.home"), ".coucou/data")
+
+ousia.edt {
+	
+	//	lookAndFeel('substance-nebula')
+	lookAndFeel('system')
+	
+	fileChooser(id: 'dirChooser', fileSelectionMode: JFileChooser.FILES_AND_DIRECTORIES)
+	
+	dialog(title: rs('Repository Location'), size: [400, 150], show: true, modal: true, locationRelativeTo: null, id: 'repositoryLocationDialog') {
+		panel() {
+			textField(columns: 35, text: repositoryLocation.absolutePath, id: 'repositoryLocationField')
+			button(text: rs('Browse'), actionPerformed: {
+				if (dirChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+					repositoryLocationField.text = dirChooser.selectedFile.absolutePath
+				}
+			})
+		}
+		panel(constraints: BorderLayout.SOUTH) {
+			flowLayout(new FlowLayout(FlowLayout.TRAILING))
+			button(text: rs('Cancel'), actionPerformed: { System.exit(0)})
+			button(text: rs('Ok'), actionPerformed: {
+				repositoryLocation = new File(repositoryLocationField.text)
+				repositoryLocationDialog.dispose()
+			})
+		}
+	}
+}
+
 def context = new InitialContext()
 RegistryHelper.registerRepository(context, 'coucou', configFile.absolutePath,
-	 new File(System.getProperty("user.home"), ".coucou/data").absolutePath, false)
+	 repositoryLocation.absolutePath, false)
 def repository = context.lookup('coucou')
 
 def session = repository.login(new SimpleCredentials('readonly', ''.toCharArray()))
@@ -173,8 +206,6 @@ def planner = new Planner(repository, 'Planner')
 //def searchManager = new SearchManager(session)
 
 def actionContext = [:] as ObservableMap
-
-def ousia = new OusiaBuilder()
 
 def dateGroup = { date ->
 	today = Calendar.instance
@@ -463,9 +494,6 @@ def buildActivityTableModel = {
 }
 
 ousia.edt {
-
-//	lookAndFeel('substance-nebula')
-	lookAndFeel('system')
 	
 	// icons..
 	resizableIcon('/logo.svg', size: [20, 20], id: 'logoIcon')
@@ -737,7 +765,6 @@ ousia.edt {
 
 	fileChooser(id: 'chooser')
 	fileChooser(id: 'imageChooser', fileFilter: new ImageFileFilter())
-	fileChooser(id: 'dirChooser', fileSelectionMode: JFileChooser.FILES_AND_DIRECTORIES)
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
 		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame',
