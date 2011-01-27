@@ -56,6 +56,7 @@ import javax.swing.text.html.StyleSheet
 
 import org.apache.jackrabbit.core.jndi.RegistryHelper
 import org.apache.jackrabbit.util.Text;
+import org.jdesktop.swingx.JXDialog;
 import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.error.ErrorInfo
@@ -147,6 +148,10 @@ ousia.edt {
 	dialog(title: rs('Repository Location'), size: [400, 150], show: true, modal: true, locationRelativeTo: null, id: 'repositoryLocationDialog') {
 		panel() {
 			textField(columns: 35, text: repositoryLocation.absolutePath, id: 'repositoryLocationField')
+			repositoryLocationField.actionPerformed = {
+				repositoryLocationOkButton.doClick()
+			}
+			
 			button(text: rs('Browse'), actionPerformed: {
 				if (dirChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
 					repositoryLocationField.text = dirChooser.selectedFile.absolutePath
@@ -155,11 +160,15 @@ ousia.edt {
 		}
 		panel(constraints: BorderLayout.SOUTH) {
 			flowLayout(new FlowLayout(FlowLayout.TRAILING))
-			button(text: rs('Cancel'), actionPerformed: { System.exit(0)})
-			button(text: rs('Ok'), actionPerformed: {
+			button(text: rs('Ok'), id: 'repositoryLocationOkButton', actionPerformed: {
 				repositoryLocation = new File(repositoryLocationField.text)
 				repositoryLocationDialog.dispose()
 			})
+			button(text: rs('Cancel'), actionPerformed: { System.exit(0)})
+		}
+		
+		repositoryLocationDialog.windowClosing = {
+			System.exit(0)
 		}
 	}
 }
@@ -523,6 +532,7 @@ ousia.edt {
 	resizableIcon('/reload.svg', size: [16, 16], id: 'refreshIcon')
     resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelLoadIcon')
 	resizableIcon('/forward.svg', size: [12, 12], id: 'folderIcon')
+	resizableIcon('/star.svg', size: [16, 16], id: 'bookmarkIcon')
 	
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
@@ -749,6 +759,10 @@ ousia.edt {
 
 		action id: 'deleteAction', name: rs('Delete'), closure: {
 			actionContext.delete()
+		}
+		
+		action id: 'bookmarkFeedAction', name: rs('Bookmark'), closure: {
+//			actionContext.toggleBookmark()
 		}
 
 		action id: 'newFolderAction', name: rs('New Folder'), closure: {
@@ -999,8 +1013,12 @@ ousia.edt {
 		
 		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
-				component: commandButton(okIcon, action: markAsReadAction),
+				component: commandToggleButton(bookmarkIcon, action: bookmarkFeedAction),
 				priority: RibbonElementPriority.TOP
+			])
+			ribbonComponent([
+				component: commandButton(okIcon, action: markAsReadAction),
+				priority: RibbonElementPriority.MEDIUM
 			])
 			ribbonComponent([
 				component: commandButton(okAllIcon, action: markAllReadAction),
