@@ -286,7 +286,7 @@ def reloadResults = {
 		
 		if (breadcrumb.model.items[0].data.element.path == '/Mail') {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
-			if (breadcrumb.model.items[-1].data.element.path == '/Mail') {
+			if (breadcrumb.model.items[-1].data.name == 'Mail') {
 				frame.ribbon.selectedTask = mailRibbonTask
 			}
 		}
@@ -296,7 +296,7 @@ def reloadResults = {
 		
 		if (breadcrumb.model.items[0].data.element.path == '/Feeds') {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), true
-			if (breadcrumb.model.items[-1].data.element.path == '/Feeds') {
+			if (breadcrumb.model.items[-1].data.name == 'Feeds') {
 				frame.ribbon.selectedTask = feedRibbonTask
 			}
 		}
