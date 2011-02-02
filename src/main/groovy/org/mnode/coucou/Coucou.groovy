@@ -286,6 +286,9 @@ def reloadResults = {
 		
 		if (breadcrumb.model.items[0].data.element.path == '/Mail') {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
+			if (breadcrumb.model.items[-1].data.element.path == '/Mail') {
+				frame.ribbon.selectedTask = mailRibbonTask
+			}
 		}
 		else {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), false
@@ -293,6 +296,9 @@ def reloadResults = {
 		
 		if (breadcrumb.model.items[0].data.element.path == '/Feeds') {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), true
+			if (breadcrumb.model.items[-1].data.element.path == '/Feeds') {
+				frame.ribbon.selectedTask = feedRibbonTask
+			}
 		}
 		else {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
@@ -1135,11 +1141,15 @@ ousia.edt {
 		frame.ribbon.addTask new RibbonTask(rs('Folder'), newFolderBand)
 //		frame.ribbon.addTask new RibbonTask(rs('Search'), advancedSearchBand, quickSearchBand)
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
-		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand))
-		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask new RibbonTask(rs('Tools'), toolsBand)
 		
+		mailRibbonTask = new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)
+		feedRibbonTask = new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand)
+		
+		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
+		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
+
 		panel {
 			borderLayout()
 //			breadcrumbFileSelector(path: new File(System.getProperty('user.home')), constraints: BorderLayout.NORTH)
@@ -1406,7 +1416,9 @@ ousia.edt {
 				}
 			}
 
-			breadcrumb.model.addPathListener({ reloadResults() } as BreadcrumbPathListener)
+			breadcrumb.model.addPathListener({
+				reloadResults()
+			} as BreadcrumbPathListener)
 		}
 		
 //		toolWindowManager(id: 'windowManager')
