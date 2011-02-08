@@ -1352,8 +1352,10 @@ ousia.edt {
 		                        def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
 								// feed item..
 		                        if (selectedItem.node.hasProperty('link')) {
-		                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
-									aggregator.markNodeRead selectedItem.node
+									doOutside {
+			                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
+										aggregator.markNodeRead selectedItem.node
+									}
 		                        }
 								/*
 								// feed subscription..
@@ -1371,9 +1373,11 @@ ousia.edt {
 								*/
 								// mail attachment..
 								else if (selectedItem.node.hasNode('jcr:content')) {
-									def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
-									file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
-									Desktop.desktop.open(file)
+									doOutside {
+										def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
+										file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
+										Desktop.desktop.open(file)
+									}
 								}
 								else {
 									doLater {
