@@ -674,6 +674,12 @@ ousia.edt {
 			}
 		}
 		
+		action id: 'openLogView', name: rs('Log'), closure: {
+			frame(title: rs('Log'), size: [320, 240], show: true, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE) {
+				widget new LogView(new File("${System.getProperty('user.home')}/.coucou/logs/coucou.log"))
+			}
+		}
+
 		def screenEnv = GraphicsEnvironment.localGraphicsEnvironment.defaultScreenDevice
 		action id: 'fullScreenAction', name: rs('Fullscreen'), accelerator: 'F11', enabled: screenEnv.fullScreenSupported, closure: {
 			// toggle..
@@ -1091,10 +1097,14 @@ ousia.edt {
 		}
 
 		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
+			ribbonComponent(
 				component: commandButton(taskIcon, action: openExplorerView),
 				priority: RibbonElementPriority.TOP
-			])
+			)
+			ribbonComponent(
+				component: commandButton(taskIcon, action: openLogView),
+				priority: RibbonElementPriority.MEDIUM
+			)
 		}
 		
 		ribbonBand(rs('Navigate'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
