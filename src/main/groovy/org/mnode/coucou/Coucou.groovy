@@ -497,7 +497,7 @@ def buildActivityTableModel = {
 						return object['source'].replaceAll('&amp;', '&')
 					}
 					case 1: if (!(object instanceof String)) {
-						return object['title'].replaceAll('<(/*)[^\\s]+>', '')
+						return object['title'].replaceAll('<(/*)[^>]+>', '')
 					}
 					case 2: if (!(object instanceof String)) {
 	//									return new PrettyTime().format(object['date'])
