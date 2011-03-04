@@ -33,6 +33,7 @@ import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
+import org.mnode.juicer.JcrNodeCategory;
 import org.mnode.juicer.query.QueryBuilder;
 import org.slf4j.LoggerFactory
 
@@ -177,7 +178,7 @@ class Aggregator extends AbstractNodeManager {
 		Thread.currentThread().contextClassLoader = Aggregator.classLoader
 		
 		def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
-		def feedNode = getNode(parent, Text.escapeIllegalJcrChars(feed.title), true)
+		javax.jcr.Node feedNode = getNode(parent, Text.escapeIllegalJcrChars(feed.title), true)
 		updateProperty(feedNode, 'url', url)
 		updateProperty(feedNode, 'title', feed?.title)
 
@@ -230,23 +231,26 @@ class Aggregator extends AbstractNodeManager {
 			}
 			
 			// XXX: properties below not being updated..
-			
-			if (entryNode.isNew()) {
-				if (!feedNode.hasProperty('date') || feedNode.getProperty('date')?.date.time.before(now.time)) {
-					updateProperty(feedNode, 'date', now)
+			use(JcrNodeCategory) {
+				if (entryNode.isNew()) {
+					if (!feedNode['date'] || feedNode['date'].date.time.before(now.time)) {
+						updateProperty(feedNode, 'date', now)
+					}
+					updateProperty(entryNode, 'seen', false)
+					updateProperty(entryNode, 'source', feedNode)
 				}
-				updateProperty(entryNode, 'seen', false)
-				updateProperty(entryNode, 'source', feedNode)
-			}
-			
-			// XXX: future published dates are ignored..
-			if (entry.publishedDate && (!entryNode.hasProperty('date') || entryNode.getProperty('date').date.time.after(entry.publishedDate))) {
-				def publishedDate = Calendar.instance
-				publishedDate.time = entry.publishedDate
-				updateProperty(entryNode, 'date', publishedDate)
-			}
-			else if (entryNode.isNew()) {
-				updateProperty(entryNode, 'date', now)
+				
+				// XXX: future published dates are ignored..
+				if (entry.publishedDate?.before(now.time)
+					 && (!entryNode['date'] || entryNode['date'].date.time.after(entry.publishedDate))) {
+					 
+					def publishedDate = Calendar.instance
+					publishedDate.time = entry.publishedDate
+					updateProperty(entryNode, 'date', publishedDate)
+				}
+				else if (entryNode.isNew()) {
+					updateProperty(entryNode, 'date', now)
+				}
 			}
 		}
 		save feedNode
