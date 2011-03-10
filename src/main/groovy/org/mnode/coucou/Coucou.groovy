@@ -105,6 +105,14 @@ import ca.odell.glazedlists.swing.TreeTableSupport
 
 LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
 
+try {
+	s = new Socket('localhost', 1337)
+	println 'Already running'
+	System.exit(0)
+}
+catch (Exception e) {
+}
+
 UIManager.put(SubstanceLookAndFeel.TABBED_PANE_CONTENT_BORDER_KIND, SubstanceConstants.TabContentPaneBorderKind.SINGLE_FULL)
 UIManager.installLookAndFeel(new LookAndFeelInfo('Nebula', 'substance-nebula'))
 UIManager.installLookAndFeel(new LookAndFeelInfo('Office Blue 2007', 'substance-office-blue-2007'))
@@ -135,6 +143,20 @@ configFile.text = Coucou.getResourceAsStream("/config.xml").text
 
 
 def ousia = new OusiaBuilder()
+
+Thread.start {
+	def server = new ServerSocket(1337)
+	while(true) {
+		try {
+			server.accept {}
+		}
+		finally {
+			ousia.doLater {
+				frame.visible = true
+			}
+		}
+	}
+}
 
 def repositoryLocation = new File(System.getProperty("user.home"), ".coucou/data")
 
