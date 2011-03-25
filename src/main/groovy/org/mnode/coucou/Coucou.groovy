@@ -78,6 +78,7 @@ import org.mnode.coucou.search.SearchPathResult
 import org.mnode.juicer.query.QueryBuilder
 import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
 import org.mnode.ousia.OusiaBuilder
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener
@@ -1437,17 +1438,23 @@ ousia.edt {
 //						contentTitle.font = contentTitle.font.deriveFont(Font.BOLD, 14f)
 					}
 					
-					scrollPane {
-						def styleSheet = new StyleSheet()
-						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
-				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
-				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
-				//        styleSheet.addRule("img {border-width:0; }")
-						
-						def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
-				
-						editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
-						contentView.addHyperlinkListener(new HyperlinkBrowser())
+					def statusLayer = new StatusLayerUI()
+					layer(statusLayer) {
+						scrollPane {
+							def styleSheet = new StyleSheet()
+							styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+					//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+					//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+					//        styleSheet.addRule("img {border-width:0; }")
+							
+							def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+					
+							editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+							contentView.addHyperlinkListener(new HyperlinkBrowser(feedback: [
+									show: { uri -> statusLayer.showStatusMessage uri.toString() },
+									hide: { statusLayer.hideStatusMessage() }
+								] as HyperlinkFeedback))
+						}
 					}
 				}
 			}
