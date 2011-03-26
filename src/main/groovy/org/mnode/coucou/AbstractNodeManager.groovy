@@ -34,7 +34,7 @@ import org.mnode.base.log.LogEntry.Level
  * @author fortuna
  *
  */
-@Invariant({ session && rootNode })
+//@Invariant({ session && rootNode })
 abstract class AbstractNodeManager {
 	
 	private Lock lock = new ReentrantLock()
