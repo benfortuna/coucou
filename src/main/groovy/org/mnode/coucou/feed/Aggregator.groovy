@@ -231,26 +231,24 @@ class Aggregator extends AbstractNodeManager {
 			}
 			
 			// XXX: properties below not being updated..
-			use(JcrNodeCategory) {
-				if (entryNode.isNew()) {
-					if (!feedNode['date'] || feedNode['date'].date.time.before(now.time)) {
-						updateProperty(feedNode, 'date', now)
-					}
-					updateProperty(entryNode, 'seen', false)
-					updateProperty(entryNode, 'source', feedNode)
+			if (entryNode.isNew()) {
+				if (!feedNode['date'] || feedNode['date'].date.time.before(now.time)) {
+					updateProperty(feedNode, 'date', now)
 				}
-				
-				// XXX: future published dates are ignored..
-				if (entry.publishedDate?.before(now.time)
-					 && (!entryNode['date'] || entryNode['date'].date.time.after(entry.publishedDate))) {
-					 
-					def publishedDate = Calendar.instance
-					publishedDate.time = entry.publishedDate
-					updateProperty(entryNode, 'date', publishedDate)
-				}
-				else if (entryNode.isNew()) {
-					updateProperty(entryNode, 'date', now)
-				}
+				updateProperty(entryNode, 'seen', false)
+				updateProperty(entryNode, 'source', feedNode)
+			}
+			
+			// XXX: future published dates are ignored..
+			if (entry.publishedDate?.before(now.time)
+				 && (!entryNode['date'] || entryNode['date'].date.time.after(entry.publishedDate))) {
+				 
+				def publishedDate = Calendar.instance
+				publishedDate.time = entry.publishedDate
+				updateProperty(entryNode, 'date', publishedDate)
+			}
+			else if (entryNode.isNew()) {
+				updateProperty(entryNode, 'date', now)
 			}
 		}
 		save feedNode
