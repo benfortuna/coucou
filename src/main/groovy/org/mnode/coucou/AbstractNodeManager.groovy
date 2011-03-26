@@ -18,19 +18,16 @@
  */
 package org.mnode.coucou
 
-import java.util.concurrent.locks.ReadWriteLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
 
 import javax.jcr.Repository
 import javax.jcr.Session
 import javax.jcr.SimpleCredentials
 
 import org.mnode.base.log.FormattedLogEntry
-import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
-import org.mnode.base.log.adapter.Slf4jAdapter
-import org.slf4j.LoggerFactory
 
 /**
  * @author fortuna
@@ -38,7 +35,7 @@ import org.slf4j.LoggerFactory
  */
 abstract class AbstractNodeManager {
 	
-	static ReadWriteLock lock = new ReentrantReadWriteLock()
+	static Lock lock = new ReentrantLock()
 	
 	protected static LogEntry adding_path = new FormattedLogEntry(Level.Info, 'Adding path: %s')
 	protected static LogEntry saving_node = new FormattedLogEntry(Level.Info, 'Saving node: %s')
@@ -53,30 +50,17 @@ abstract class AbstractNodeManager {
 		rootNode = getNode(session.rootNode, nodeName)
 		save rootNode
 	}
-	
-	def lock() {
-		lock.writeLock().lock()
-//		println '*** Save lock obtained'
-	}
-
-	def unlock() {
-		lock.writeLock().unlock()
-//		println '*** Save lock released'
-	}
 
 	def getNode = { rootNode, path, referenceable = false ->
 		if (!rootNode.hasNode(path)) {
 			log.log adding_path, path
+			
 			// lock to avoid concurrent modification..
-			try {
-				lock()
+			session.withLock(lock) {
 				def node = rootNode.addNode(path)
 				if (referenceable) {
 					node.addMixin('mix:referenceable')
 				}
-			}
-			finally {
-				unlock()
 			}
 		}
 		return rootNode.getNode(path)
@@ -85,12 +69,8 @@ abstract class AbstractNodeManager {
 	def updateProperty = { aNode, propertyName, value ->
 		if (value != null) { // && (!aNode.hasProperty(propertyName)) || aNode.getProperty(propertyName).string != value)) {
 			// lock to avoid concurrent modification..
-			try {
-				lock()
+			session.withLock(lock) {
 				aNode.setProperty(propertyName, value)
-			}
-			finally {
-				unlock()
 			}
 		}
 	}
@@ -103,15 +83,8 @@ abstract class AbstractNodeManager {
 			parent = parent.parent
 		}
 		// lock to avoid concurrent modification..
-//		parent.save()
-		try {
-//			parent.session.workspace.lockManager.lock(parent.path, true, true, 5, getClass().name)
-			lock()
+		session.withLock(lock) {
 			parent.save()
-		}
-		finally {
-//			parent.session.workspace.lockManager.unlock(parent.path)
-			unlock()
 		}
 	}
 }
