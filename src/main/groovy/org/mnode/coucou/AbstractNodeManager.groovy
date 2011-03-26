@@ -25,6 +25,7 @@ import javax.jcr.Repository
 import javax.jcr.Session
 import javax.jcr.SimpleCredentials
 
+import org.gcontracts.annotations.Invariant;
 import org.mnode.base.log.FormattedLogEntry
 import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
@@ -33,9 +34,10 @@ import org.mnode.base.log.LogEntry.Level
  * @author fortuna
  *
  */
+@Invariant({ session && rootNode })
 abstract class AbstractNodeManager {
 	
-	static Lock lock = new ReentrantLock()
+	private Lock lock = new ReentrantLock()
 	
 	protected static LogEntry adding_path = new FormattedLogEntry(Level.Info, 'Adding path: %s')
 	protected static LogEntry saving_node = new FormattedLogEntry(Level.Info, 'Saving node: %s')
@@ -51,7 +53,7 @@ abstract class AbstractNodeManager {
 		save rootNode
 	}
 
-	def getNode = { rootNode, path, referenceable = false ->
+	javax.jcr.Node getNode(javax.jcr.Node rootNode, String path, boolean referenceable = false) {
 		if (!rootNode.hasNode(path)) {
 			log.log adding_path, path
 			
@@ -66,7 +68,7 @@ abstract class AbstractNodeManager {
 		return rootNode."$path"
 	}
 
-	def updateProperty = { aNode, propertyName, value ->
+	void updateProperty(javax.jcr.Node aNode, String propertyName, Object value) {
 		// XXX: value may be a boolean value itself..
 		if (value != null) {
 			// lock to avoid concurrent modification..
@@ -77,7 +79,7 @@ abstract class AbstractNodeManager {
 	}
 
 	// save a node hierarchy..
-	def save = { node ->
+	void save(javax.jcr.Node node) {
 		log.log saving_node, node.path
 		def parent = node
 		while (parent.isNew()) {
