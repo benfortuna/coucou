@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Coucou.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.mnode.coucou;
+package org.mnode.coucou.layer;
 
 import java.awt.Color;
 import java.awt.FlowLayout;

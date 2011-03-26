@@ -53,6 +53,8 @@ class Aggregator extends AbstractNodeManager {
 	def updateThread
 	
 	Query allFeedsQuery
+	
+	def progressMonitor;
 		
 	Aggregator(Repository repository, String nodeName) {
 		super(repository, 'feeds', nodeName)
@@ -66,7 +68,9 @@ class Aggregator extends AbstractNodeManager {
 	
 	void start() {
 	   updateThread.scheduleAtFixedRate({
-		   for (node in allFeedsQuery.execute().nodes) {
+		   def allFeeds = allFeedsQuery.execute().nodes
+		   progressMonitor?.maximum = allFeeds.size
+		   for (node in allFeeds) {
 				log.log updating_feed, node.getProperty('title').value.string
 				
 				GParsExecutorsPool.withPool(10) {
@@ -252,6 +256,11 @@ class Aggregator extends AbstractNodeManager {
 			}
 		}
 		save feedNode
+		
+		if (progressMonitor) {
+			progressMonitor.progress = progressMonitor.progress + 1
+		}
+
 		return feedNode
 	}
 
