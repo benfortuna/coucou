@@ -72,6 +72,8 @@ import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
 import org.mnode.coucou.feed.FeedsNodePathResult;
+import org.mnode.coucou.layer.ProgressLayerUI;
+import org.mnode.coucou.layer.StatusLayerUI;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
@@ -1475,9 +1477,13 @@ ousia.edt {
 //		def accounts = windowManager.registerToolWindow(rs("Accounts"), rs("Accounts"), null, new JXPanel(), ToolWindowAnchor.RIGHT)
 //		bind(source: viewAccounts, sourceProperty:'selected', target: accounts, targetProperty:'available')
 
-		statusBar(constraints: BorderLayout.SOUTH, id: 'statusBar') {
-			label(id: 'statusMessage', text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
-//			bind(source: viewStatusBar, sourceProperty: 'selected', target: statusBar, targetProperty:'visible')
+		def progressLayer = new ProgressLayerUI()
+		aggregator.progressMonitor = progressLayer
+		layer(progressLayer, constraints: BorderLayout.SOUTH, id: 'statusBar') {
+			statusBar() {
+				label(id: 'statusMessage', text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
+	//			bind(source: viewStatusBar, sourceProperty: 'selected', target: statusBar, targetProperty:'visible')
+			}
 		}
 	}
 		
