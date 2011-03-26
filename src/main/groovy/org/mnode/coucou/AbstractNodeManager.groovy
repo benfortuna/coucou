@@ -63,15 +63,13 @@ abstract class AbstractNodeManager {
 				}
 			}
 		}
-		return rootNode.getNode(path)
+		return rootNode."$path"
 	}
 
 	def updateProperty = { aNode, propertyName, value ->
-		if (value != null) { // && (!aNode.hasProperty(propertyName)) || aNode.getProperty(propertyName).string != value)) {
-			// lock to avoid concurrent modification..
-			session.withLock(lock) {
-				aNode.setProperty(propertyName, value)
-			}
+		// lock to avoid concurrent modification..
+		session.withLock(lock) {
+			aNode."$propertyName" = value
 		}
 	}
 
