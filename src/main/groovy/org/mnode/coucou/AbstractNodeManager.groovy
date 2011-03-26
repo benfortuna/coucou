@@ -67,9 +67,12 @@ abstract class AbstractNodeManager {
 	}
 
 	def updateProperty = { aNode, propertyName, value ->
-		// lock to avoid concurrent modification..
-		session.withLock(lock) {
-			aNode."$propertyName" = value
+		// XXX: value may be a boolean value itself..
+		if (value != null) {
+			// lock to avoid concurrent modification..
+			session.withLock(lock) {
+				aNode."$propertyName" = value
+			}
 		}
 	}
 
