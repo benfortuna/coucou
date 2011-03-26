@@ -210,13 +210,11 @@ Runtime.getRuntime().addShutdownHook({
 })
 
 def mailbox = new Mailbox(repository, 'Mail')
-mailbox.start()
 
 def mailDateFormat = new MailDateFormat()
 
 // initialise feeds..
 def aggregator = new Aggregator(repository, 'Feeds')
-aggregator.start()
 
 def contactsManager = new ContactsManager(repository, 'Contacts')
 
@@ -1489,6 +1487,9 @@ ousia.edt {
 		
 		
 	Thread.defaultUncaughtExceptionHandler = new DefaultExceptionHandler(dialogOwner: frame)
+	
+	aggregator.start()
+	mailbox.start()
 	
 /*
 	def content = windowManager.contentManager.addContent('tabs', 'Tabs', null, tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
