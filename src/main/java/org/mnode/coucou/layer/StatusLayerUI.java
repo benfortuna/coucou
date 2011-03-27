@@ -20,7 +20,8 @@ package org.mnode.coucou.layer;
 
 import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.event.MouseEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -28,7 +29,7 @@ import javax.swing.JLabel;
 import org.jdesktop.jxlayer.JXLayer;
 import org.jdesktop.jxlayer.plaf.AbstractLayerUI;
 
-public class StatusLayerUI extends AbstractLayerUI<JComponent> {
+public class StatusLayerUI extends AbstractLayerUI<JComponent> implements ComponentListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -48,6 +49,7 @@ public class StatusLayerUI extends AbstractLayerUI<JComponent> {
 		JXLayer<JComponent> l = (JXLayer<JComponent>) c;
         l.getGlassPane().setLayout(null);
         l.getGlassPane().add(statusPane);
+        l.addComponentListener(this);
 	}
     
     @Override
@@ -57,16 +59,7 @@ public class StatusLayerUI extends AbstractLayerUI<JComponent> {
 		JXLayer<JComponent> l = (JXLayer<JComponent>) c;
         l.getGlassPane().setLayout(new FlowLayout());
         l.getGlassPane().remove(statusPane);
-    }
-    
-    @Override
-    protected void processMouseEvent(MouseEvent mouseEvent,
-    		JXLayer<? extends JComponent> layer) {
-    	super.processMouseEvent(mouseEvent, layer);
-    	if (mouseEvent.getID() == MouseEvent.MOUSE_ENTERED) {
-    		statusPane.setLocation(10, layer.getView().getHeight() - 30);
-    		statusPane.setSize(layer.getView().getWidth() - 20, 30);
-    	}
+        l.removeComponentListener(this);
     }
     
     public void showStatusMessage(String message) {
@@ -77,4 +70,22 @@ public class StatusLayerUI extends AbstractLayerUI<JComponent> {
     public void hideStatusMessage() {
     	statusPane.setVisible(false);
     }
+	
+	@Override
+	public void componentShown(ComponentEvent e) {
+	}
+	
+	@Override
+	public void componentResized(ComponentEvent e) {
+		statusPane.setLocation(10, e.getComponent().getHeight() - 30);
+		statusPane.setSize(e.getComponent().getWidth() - 20, 30);
+	}
+	
+	@Override
+	public void componentMoved(ComponentEvent e) {
+	}
+	
+	@Override
+	public void componentHidden(ComponentEvent e) {
+	}
 }
