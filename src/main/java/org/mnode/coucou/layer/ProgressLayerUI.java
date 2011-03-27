@@ -19,6 +19,8 @@
 package org.mnode.coucou.layer;
 
 import java.awt.FlowLayout;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
@@ -27,7 +29,7 @@ import javax.swing.JProgressBar;
 import org.jdesktop.jxlayer.JXLayer;
 import org.jdesktop.jxlayer.plaf.AbstractLayerUI;
 
-public class ProgressLayerUI extends AbstractLayerUI<JComponent> {
+public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements ComponentListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -45,6 +47,7 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> {
 		JXLayer<JComponent> l = (JXLayer<JComponent>) c;
         l.getGlassPane().setLayout(null);
         l.getGlassPane().add(progressBar);
+        l.addComponentListener(this);
 	}
     
     @Override
@@ -54,6 +57,7 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> {
 		JXLayer<JComponent> l = (JXLayer<JComponent>) c;
         l.getGlassPane().setLayout(new FlowLayout());
         l.getGlassPane().remove(progressBar);
+        l.removeComponentListener(this);
     }
     
     @Override
@@ -85,4 +89,22 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> {
     public void setMaximum(int maximum) {
     	progressBar.setMaximum(maximum);
     }
+	
+	@Override
+	public void componentShown(ComponentEvent e) {
+	}
+	
+	@Override
+	public void componentResized(ComponentEvent e) {
+		progressBar.setLocation(e.getComponent().getWidth() - 220, 5);
+		progressBar.setSize(200, e.getComponent().getHeight() - 10);
+	}
+	
+	@Override
+	public void componentMoved(ComponentEvent e) {
+	}
+	
+	@Override
+	public void componentHidden(ComponentEvent e) {
+	}
 }
