@@ -72,7 +72,7 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
     
     public void setProgress(int progress) {
     	progressBar.setValue(progress);
-    	if (progress >= progressBar.getMinimum() && progress <= progressBar.getMaximum()) {
+    	if (progress > progressBar.getMinimum() && progress < progressBar.getMaximum()) {
     		if (!progressBar.isVisible()) {
         		progressBar.setVisible(true);
     		}
