@@ -81,6 +81,11 @@ class Aggregator extends AbstractNodeManager {
 					catch (Exception e) {
 						log.log unexpected_error, e
 					}
+					finally {
+						if (progressMonitor) {
+							progressMonitor.progress = progressMonitor.progress + 1
+						}
+					}
 				}
 			}
 	   }, 0, 30, TimeUnit.MINUTES)
@@ -257,10 +262,6 @@ class Aggregator extends AbstractNodeManager {
 			}
 		}
 		save feedNode
-		
-		if (progressMonitor) {
-			progressMonitor.progress = progressMonitor.progress + 1
-		}
 
 		return feedNode
 	}
