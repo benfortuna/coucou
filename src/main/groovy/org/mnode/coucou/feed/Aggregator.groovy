@@ -70,6 +70,7 @@ class Aggregator extends AbstractNodeManager {
 	   updateThread.scheduleAtFixedRate({
 		   def allFeeds = allFeedsQuery.execute().nodes
 		   progressMonitor?.maximum = allFeeds.size
+		   progressMonitor?.progress = 0
 		   for (node in allFeeds) {
 				log.log updating_feed, node.getProperty('title').value.string
 				
