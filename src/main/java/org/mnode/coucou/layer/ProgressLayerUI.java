@@ -61,16 +61,6 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
         l.removeComponentListener(this);
     }
     
-    @Override
-    protected void processMouseEvent(MouseEvent mouseEvent,
-    		JXLayer<? extends JComponent> layer) {
-    	super.processMouseEvent(mouseEvent, layer);
-    	if (mouseEvent.getID() == MouseEvent.MOUSE_ENTERED) {
-    		progressBar.setLocation(layer.getView().getWidth() - 220, 5);
-    		progressBar.setSize(200, layer.getView().getHeight() - 10);
-    	}
-    }
-    
     public void setProgress(final int progress) {
     	SwingUtilities.invokeLater(new Runnable() {
 			
@@ -93,8 +83,14 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
     	return progressBar.getValue();
     }
     
-    public void setMaximum(int maximum) {
-    	progressBar.setMaximum(maximum);
+    public void setMaximum(final int maximum) {
+    	SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+		    	progressBar.setMaximum(maximum);
+			}
+		});
     }
 	
 	@Override
