@@ -166,7 +166,7 @@ def repositoryLocation = new File(System.getProperty("user.home"), ".coucou/data
 ousia.edt {
 	
 	//	lookAndFeel('substance-nebula')
-	lookAndFeel('system')
+	lookAndFeel(prefs(Coucou).get('lookAndFeel', 'system'))
 	
 	fileChooser(id: 'dirChooser', fileSelectionMode: JFileChooser.FILES_AND_DIRECTORIES)
 	
@@ -738,6 +738,7 @@ ousia.edt {
 								SwingUtilities.updateComponentTreeUI(frame)
 								SwingUtilities.updateComponentTreeUI(preferencesDialog)
 								e.source.selectedItem = currentLookAndFeelInfo()
+								prefs(Coucou).put('lookAndFeel', e.source.selectedItem.className)
 							}
 						})
 				}
