@@ -21,7 +21,6 @@ package org.mnode.coucou.layer;
 import java.awt.FlowLayout;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
 import javax.swing.JProgressBar;
