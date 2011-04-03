@@ -958,7 +958,7 @@ ousia.edt {
 
 		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
-				component: commandToggleButton(rs('Status Bar'), selected: true, actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
+				component: commandToggleButton(id: 'toggleStatusBar', rs('Status Bar'), actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
 				priority: RibbonElementPriority.TOP
 			])
 		}
@@ -1478,12 +1478,13 @@ ousia.edt {
 
 		def progressLayer = new ProgressLayerUI()
 		aggregator.progressMonitor = progressLayer
-		layer(progressLayer, constraints: BorderLayout.SOUTH, id: 'statusBar') {
+		layer(progressLayer, constraints: BorderLayout.SOUTH, id: 'statusBar', trackingEnabled: true) {
 			statusBar() {
 				label(id: 'statusMessage', text: rs('Ready'), constraints: new JXStatusBar.Constraint(FILL))
 	//			bind(source: viewStatusBar, sourceProperty: 'selected', target: statusBar, targetProperty:'visible')
 			}
 		}
+		toggleStatusBar.actionModel.selected = statusBar.visible
 	}
 		
 		
