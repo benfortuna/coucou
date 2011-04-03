@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
+import javax.swing.SwingUtilities;
 
 import ca.odell.glazedlists.Filterator;
 import ca.odell.glazedlists.matchers.AbstractMatcherEditor;
@@ -61,12 +62,18 @@ public class JCheckboxMatcherEditor<E> extends AbstractMatcherEditor<E> {
 	
 	private void refilter() {
 		Logger.getLogger("Global").info("Refiltering..");
-		if (!component.isSelected()) {
-			fireMatchAll();
-		}
-		else {
-			fireChanged(matcher);
-		}
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				if (!component.isSelected()) {
+					fireMatchAll();
+				}
+				else {
+					fireChanged(matcher);
+				}
+			}
+		});
 	}
 	
 	/**
