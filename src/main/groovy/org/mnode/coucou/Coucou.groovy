@@ -1389,6 +1389,7 @@ ousia.edt {
 									doOutside {
 			                            Desktop.desktop.browse(URI.create(selectedItem.node.getProperty('link').value.string))
 										aggregator.markNodeRead selectedItem.node
+										activityTable.model.fireTableRowsUpdated activityTable.selectedRow, activityTable.selectedRow
 									}
 		                        }
 								/*
