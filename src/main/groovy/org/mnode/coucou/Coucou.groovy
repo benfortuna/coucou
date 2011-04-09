@@ -513,7 +513,13 @@ def buildActivityTableModel = {
 		new EventTableModel<?>(activityTree,
 			[
 				getColumnCount: {3},
-				getColumnName: {column -> },
+				getColumnName: {column -> switch(column) {
+						case 0: return 'Source'
+						case 1: return 'Title'
+						case 2: return 'When'
+						default: return null
+					}
+				},
 				getColumnValue: {object, column -> switch(column) {
 					case 0: if (object instanceof String) {
 						return object
