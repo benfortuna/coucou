@@ -26,6 +26,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Desktop
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font
 import java.awt.GraphicsEnvironment
@@ -957,10 +958,25 @@ ousia.edt {
 		}
 
 		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
+			ribbonComponent(
+				component: commandToggleButton(id: 'toggleTableHeader', rs('Table Header'),
+					 actionPerformed: { e->
+						 if (e.source.actionModel.selected) {
+							 activityTable.tableHeader.visible = true
+							 activityTable.tableHeader.preferredSize = null
+				 		 }
+						 else {
+							 activityTable.tableHeader.visible = false
+							 activityTable.tableHeader.preferredSize = new Dimension(-1, 0)
+						 }
+					 } as ActionListener),
+				priority: RibbonElementPriority.TOP
+			)
+			
+			ribbonComponent(
 				component: commandToggleButton(id: 'toggleStatusBar', rs('Status Bar'), actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
 				priority: RibbonElementPriority.TOP
-			])
+			)
 		}
 		
 		ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand', resizePolicies: ['mirror']) {
@@ -1252,8 +1268,9 @@ ousia.edt {
 						
 						activityTable.model = buildActivityTableModel()
 						
-						activityTable.tableHeader = null
-	
+						activityTable.tableHeader.visible = false
+						activityTable.tableHeader.preferredSize = new Dimension(-1, 0)
+						
 						ttsupport = TreeTableSupport.install(activityTable, activityTree, 0)
 						ttsupport.arrowKeyExpansionEnabled = true
 	//					ttsupport.delegateRenderer = new DefaultTableCellRenderer(opaque: false)
