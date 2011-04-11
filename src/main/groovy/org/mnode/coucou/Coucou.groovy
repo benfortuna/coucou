@@ -575,7 +575,7 @@ ousia.edt {
             System.exit(0)
         }
 		
-		action id: 'addFeedAction', name: rs('Add Feed'), SmallIcon: feedIcon, closure: {
+		action id: 'addFeedAction', name: rs('Add Subscription'), SmallIcon: feedIcon, closure: {
 			url = JOptionPane.showInputDialog(frame, rs('URL'))
 			if (url) {
 				doOutside {
@@ -805,7 +805,7 @@ ousia.edt {
 		}
 		
 		action id: 'bookmarkFeedAction', name: rs('Bookmark'), closure: {
-//			actionContext.toggleBookmark()
+			actionContext.toggleBookmark()
 		}
 
 		action id: 'newFolderAction', name: rs('New Folder'), closure: {
@@ -1071,7 +1071,7 @@ ousia.edt {
 		
 		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
-				component: commandToggleButton(bookmarkIcon, action: bookmarkFeedAction),
+				component: commandToggleButton(bookmarkIcon, id: 'bookmarkFeedButton', enabled: false, action: bookmarkFeedAction),
 				priority: RibbonElementPriority.TOP
 			])
 			ribbonComponent([
@@ -1339,6 +1339,14 @@ ousia.edt {
 												aggregator.delete entry['node']
 												activityTree.remove entryIndex
 											}
+											
+											actionContext.toggleBookmark = {
+												entry['node'].flagged = !(entry['node'].flagged && entry['node'].flagged.boolean)
+												aggregator.save entry['node']
+												activityTable.model.fireTableRowsUpdated activityTable.selectedRow, activityTable.selectedRow
+											}
+											bookmarkFeedButton.enabled = true
+											bookmarkFeedButton.actionModel.selected = entry['node'].flagged && entry['node'].flagged.boolean
 										}
 										else if (entry['node'].parent.path == '/Feeds') {
 											actionContext.markAsRead = null
@@ -1346,10 +1354,14 @@ ousia.edt {
 												aggregator.delete entry['node']
 												activityTree.remove entryIndex
 											}
+											bookmarkFeedButton.enabled = false
+											bookmarkFeedButton.actionModel.selected = false
 										}
 										else {
 											actionContext.markAsRead = null
 											actionContext.delete = null
+											bookmarkFeedButton.enabled = false
+											bookmarkFeedButton.actionModel.selected = false
 										}
 										
 										edt {
@@ -1390,6 +1402,8 @@ ousia.edt {
 										contentTitle.text = ''
 										contentView.text = null
 										actionContext.markAsRead = null
+										bookmarkFeedButton.enabled = false
+										bookmarkFeedButton.actionModel.selected = false
 									}
 								}
 								else {
@@ -1400,6 +1414,8 @@ ousia.edt {
 									actionContext.markAsRead = null
 									actionContext.previousItem = null
 									actionContext.nextItem = null
+									bookmarkFeedButton.enabled = false
+									bookmarkFeedButton.actionModel.selected = false
 								}
 							}
 						}
