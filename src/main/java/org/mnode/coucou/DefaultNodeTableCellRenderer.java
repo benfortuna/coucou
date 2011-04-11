@@ -43,6 +43,8 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     
     private final Color defaultForeground;
     private final Color nonItemForeground;
+    private final Color flaggedBackground;
+    private final Color defaultBackground;
     
 //    private final Node parent;
     private final TreeList<Map<String, ?>> items;
@@ -54,6 +56,8 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
         unreadFont = getFont().deriveFont(Font.BOLD);
         defaultForeground = Color.BLACK;
         nonItemForeground = Color.LIGHT_GRAY;
+        flaggedBackground = new Color(255, 255, 0, 32);
+        defaultBackground = Color.WHITE;
 //        this.parent = parent;
         this.items = items;
         this.groupNames = groupNames;
@@ -62,13 +66,16 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
-        
+
+		setForeground(defaultForeground);
+    	setBackground(defaultBackground);
+		setFont(defaultFont);
+    	
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         try {
 //        	if (Arrays.asList(null, "", "Today", "Older Items").contains(value)) {
 //        	if (Arrays.asList("Today", "Yesterday", "Older Items").contains(value)) {
         	if (column == 0 && groupNames.contains(value)) {
-        		setFont(defaultFont);
         		setForeground(nonItemForeground);
         	}
         	else {
@@ -80,10 +87,10 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
                 if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
                     setFont(unreadFont);
                 }
-                else {
-                    setFont(defaultFont);
+                
+                if (!isSelected && node.hasProperty("flagged") && node.getProperty("flagged").getBoolean()) {
+                	setBackground(flaggedBackground);
                 }
-        		setForeground(defaultForeground);
         	}
         }
         catch (Exception e) {
