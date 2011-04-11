@@ -1241,9 +1241,7 @@ ousia.edt {
 							}
 						} as Filterator)
 						filters << new JCheckboxMatcherEditor(importantFilterCheckbox, { baseList, e ->
-							if (e['node'].hasProperty('flagged')) {
-								baseList << !e['node'].getProperty('flagged').boolean
-							}
+							baseList << (e['node'].flagged && e['node'].flagged.boolean)
 						} as Filterator)
 
 						def filterMatcherEditor = new CompositeMatcherEditor<?>(filters)
