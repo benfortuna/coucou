@@ -75,6 +75,7 @@ import org.mnode.coucou.feed.FeedNodePathResult;
 import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.layer.ProgressLayerUI;
 import org.mnode.coucou.layer.StatusLayerUI;
+import org.mnode.coucou.mail.DialogAuthenticator;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
@@ -604,7 +605,7 @@ ousia.edt {
 		}
 		
 		action id: 'addCalendarAction', name: rs('Calendar'), closure: {
-			url = JOptionPane.showInputDialog(frame, rs('URL'))
+			def url = JOptionPane.showInputDialog(frame, rs('URL'))
 			if (url) {
 				doOutside {
 					try {
@@ -626,6 +627,16 @@ ousia.edt {
 			}
 		}
 
+		action id: 'addMailAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
+			def emailAddress = JOptionPane.showInputDialog(frame, rs('Email Address'))
+			if (emailAddress) {
+				def accountNode = mailbox.addAccount(emailAddress)
+				doOutside {
+					mailbox.updateAccount accountNode
+				}
+			}
+		}
+		
 		action id: 'importFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
 				doOutside {
@@ -1023,6 +1034,13 @@ ousia.edt {
 				priority: RibbonElementPriority.MEDIUM
 			])
 		}
+
+		ribbonBand(rs('Configure'), id: 'mailConfigurationBand', resizePolicies: ['mirror']) {
+			ribbonComponent([
+				component: commandButton(addMailAccountAction),
+				priority: RibbonElementPriority.TOP
+			])
+		}
 		
 		ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand', resizePolicies: ['mirror']) {
 			ribbonComponent([
@@ -1200,7 +1218,7 @@ ousia.edt {
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
 		frame.ribbon.addTask new RibbonTask(rs('Tools'), toolsBand)
 		
-		mailRibbonTask = new RibbonTask(rs('Action'), respondBand, organiseBand, actionExtrasBand)
+		mailRibbonTask = new RibbonTask(rs('Action'), mailConfigurationBand, respondBand, organiseBand, actionExtrasBand)
 		feedRibbonTask = new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand)
 		
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
@@ -1373,7 +1391,7 @@ ousia.edt {
 											}
 											else if (entry['node'].hasNode('body')) {
 												def content = entry['node'].getNode('body').getNode('part').getNode('jcr:content')
-												if (content.getProperty('jcr:mimeType').string.startsWith('text/plain')) {
+												if (content.getProperty('jcr:mimeType').string =~ /(?i)^text\/plain.*$/) {
 													contentView.text = "<html><pre>${content.getProperty('jcr:data').string}"
 												}
 												else {
@@ -1529,6 +1547,8 @@ ousia.edt {
 	Thread.defaultUncaughtExceptionHandler = new DefaultExceptionHandler(dialogOwner: frame)
 	
 	aggregator.start()
+	
+	mailbox.passwordPrompt = new DialogAuthenticator(frame)
 	mailbox.start()
 	
 /*

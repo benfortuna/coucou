@@ -95,6 +95,14 @@ public class MailboxNodePathResult extends NodePathResult {
 					results.add(node);
 				}
 			}
+			
+			final NodeIterator accountNodes = getElement().getNode("accounts").getNodes();
+			while (accountNodes.hasNext()) {
+				final Node node = accountNodes.nextNode();
+				if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
+					results.add(node);
+				}
+			}
 		}
 		catch (RepositoryException re) {
 			throw new PathResultException(re);

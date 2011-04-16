@@ -46,6 +46,8 @@ class Mailbox extends AbstractNodeManager {
 
 	javax.mail.Session mailSession
 	
+	Authenticator passwordPrompt
+	
 	def updateThread
 	
 	Mailbox(Repository repository, String nodeName) {
@@ -54,7 +56,10 @@ class Mailbox extends AbstractNodeManager {
 		if (!rootNode.hasNode('folders')) {
 			rootNode.addNode('folders')
 		}
-		
+		if (!rootNode.hasNode('accounts')) {
+			rootNode.addNode('accounts')
+		}
+
 		save rootNode
 		
 		// email init..
@@ -89,13 +94,37 @@ class Mailbox extends AbstractNodeManager {
 
 	void start() {
 	   updateThread.scheduleAtFixedRate({
-		   Session importSession = Session.getInstance(new Properties())
-		   Store importStore = importSession.getStore('pop3')
-		   importStore.connect('mail.internode.on.net', 'username', 'password')
-		   
-		   importMail importStore
+		   for (account in rootNode.accounts.nodes) {
+			   try {
+				   updateAccount account
+			   }
+			   catch (Exception e) {
+				  log.log unexpected_error, e
+			   }
+		   }
 
 	   }, 0, 30, TimeUnit.MINUTES)
+	}
+	
+	def addAccount = { emailAddress ->
+		def accountNode = getNode(rootNode.accounts, emailAddress, true)
+		accountNode.address = emailAddress
+		if (emailAddress =~ /^.*@gmail\.com$/) {
+			accountNode.protocol = 'imaps'
+			accountNode.server = 'imap.gmail.com'
+		}
+		save accountNode
+	}
+	
+	def updateAccount = { account ->
+		Properties props = new Properties()
+		props.setProperty("mail.store.protocol", account.protocol.string)
+		props.setProperty("mail.host", account.server.string)
+		props.setProperty("mail.user", account.address.string)
+		Session session = Session.getInstance(props, passwordPrompt)
+		Store store = session.getStore(account.protocol.string)
+		store.connect()
+		importMail store
 	}
 	
 	def importMail = { importStore ->
