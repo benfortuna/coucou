@@ -79,7 +79,7 @@ abstract class AbstractNodeManager {
 	}
 
 	// save a node hierarchy..
-	void save(javax.jcr.Node node) {
+	javax.jcr.Node save(javax.jcr.Node node) {
 		log.log saving_node, node.path
 		def parent = node
 		while (parent.isNew()) {
@@ -89,5 +89,6 @@ abstract class AbstractNodeManager {
 		session.withLock(lock) {
 			parent.save()
 		}
+		return node
 	}
 }
