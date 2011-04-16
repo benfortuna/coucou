@@ -1383,6 +1383,8 @@ ousia.edt {
 										edt {
 											contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
 											
+											contentView.editorKit = defaultEditorKit
+											
 											if (entry['node'].hasProperty('description')) {
 			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
 												def content = entry['node'].getProperty('description').string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, 'http://coucou.im/favicon.gif') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
@@ -1504,7 +1506,7 @@ ousia.edt {
 					//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
 					//        styleSheet.addRule("img {border-width:0; }")
 							
-							def defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+							defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
 					
 							editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
 							contentView.addHyperlinkListener(new HyperlinkBrowser(feedback: [
