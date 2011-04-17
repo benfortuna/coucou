@@ -18,11 +18,15 @@
  */
 package org.mnode.coucou;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.logging.LogFactory;
@@ -95,6 +99,11 @@ public class PropertiesTableModel extends AbstractTableModel {
                 case 1:
                     if (prop.isMultiple()) {
                         // XXX: concat prop types..
+                    	final List<String> types = new ArrayList<String>();
+                    	for (Value v : prop.getValues()) {
+                    		types.add(PropertyType.nameFromValue(v.getType()));
+                    	}
+                    	value = types;
                     }
                     else {
                         value = PropertyType.nameFromValue(prop.getValue().getType());
@@ -103,6 +112,11 @@ public class PropertiesTableModel extends AbstractTableModel {
                 case 2:
                     if (prop.isMultiple()) {
                         // XXX: concat prop values..
+                    	final List<String> values = new ArrayList<String>();
+                    	for (Value v : prop.getValues()) {
+                    		values.add(v.getString());
+                    	}
+                    	value = values;
                     }
                     else {
                         value = prop.getString();
