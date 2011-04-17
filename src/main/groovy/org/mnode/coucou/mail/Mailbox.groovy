@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit
 import javax.jcr.Repository
 import javax.jcr.query.qom.QueryObjectModelConstants
 import javax.mail.Authenticator
+import javax.mail.Flags;
+import javax.mail.Flags.Flag;
 import javax.mail.Folder
 import javax.mail.MessagingException
 import javax.mail.PasswordAuthentication
@@ -169,6 +171,25 @@ class Mailbox extends AbstractNodeManager {
 			} catch (MessagingException e) {
 				e.printStackTrace()
 			}
+		}
+	}
+	
+	def delete = { node ->
+		def localStore = mailSession.store
+		
+		try {
+			localStore.connect()
+			Folder folder = localStore.defaultFolder.getFolder(node.parent.parent.name)
+			folder.open(Folder.READ_WRITE)
+			int msgNum = node.messageNumber.long as Integer
+			folder.setFlags(msgNum, msgNum, new Flags(Flag.DELETED), true)
+		}
+		catch (Exception e) {
+			e.printStackTrace()
+		}
+		finally {
+			folder.close(false)
+			localStore.close()
 		}
 	}
 }

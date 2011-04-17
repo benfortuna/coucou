@@ -554,6 +554,8 @@ ousia.edt {
 	resizableIcon('/ok_all.svg', size: [16, 16], id: 'okAllIcon')
 	resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelIcon')
 	resizableIcon('/cancel.svg', size: [12, 12], id: 'clearIcon')
+	resizableIcon('/cancel.svg', size: [12, 12], id: 'deleteIcon')
+	resizableIcon('/cancel.svg', size: [12, 12], id: 'deleteMailIcon')
 	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
 	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
 	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
@@ -811,7 +813,7 @@ ousia.edt {
 			actionContext.markAllRead()
 		}
 
-		action id: 'deleteAction', name: rs('Delete'), closure: {
+		action id: 'deleteAction', name: rs('Delete'), SmallIcon: deleteIcon, closure: {
 			actionContext.delete()
 		}
 		
@@ -1070,12 +1072,16 @@ ousia.edt {
 				component: commandButton(rs('Tag')),
 				priority: RibbonElementPriority.MEDIUM
 			])
+//			ribbonComponent([
+//				component: commandButton(rs('Move To')),
+//				priority: RibbonElementPriority.MEDIUM
+//			])
 			ribbonComponent([
-				component: commandButton(rs('Move To')),
+				component: commandButton(rs('Archive')),
 				priority: RibbonElementPriority.MEDIUM
 			])
 			ribbonComponent([
-				component: commandButton(rs('Archive')),
+				component: commandButton(rs('Delete'), icon: deleteMailIcon, actionPerformed: deleteAction),
 				priority: RibbonElementPriority.MEDIUM
 			])
 		}
@@ -1101,7 +1107,7 @@ ousia.edt {
 				priority: RibbonElementPriority.MEDIUM
 			])
 			ribbonComponent([
-				component: commandButton(cancelIcon, action: deleteAction),
+				component: commandButton(deleteAction),
 				priority: RibbonElementPriority.MEDIUM
 			])
 		}
@@ -1368,6 +1374,15 @@ ousia.edt {
 											actionContext.markAsRead = null
 											actionContext.delete = {
 												aggregator.delete entry['node']
+												activityTree.remove entryIndex
+											}
+											bookmarkFeedButton.enabled = false
+											bookmarkFeedButton.actionModel.selected = false
+										}
+										else if (entry['node'].hasNode('headers')) {
+											actionContext.markAsRead = null
+											actionContext.delete = {
+												mailbox.delete entry['node']
 												activityTree.remove entryIndex
 											}
 											bookmarkFeedButton.enabled = false
