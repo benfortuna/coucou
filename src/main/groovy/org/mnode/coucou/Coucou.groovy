@@ -395,20 +395,20 @@ def reloadResults = {
 			 
 			 if (it.hasProperty('source')) {
 				 if (it.getProperty('source').type == PropertyType.REFERENCE) {
-					 item['source'] = it.getProperty('source').getNode().getProperty('title').string
+					 item['source'] = it.getProperty('source').getNode().getProperty('title').string.intern()
 				 }
 				 else {
-					 item['source'] = it.getProperty('source').string
+					 item['source'] = it.getProperty('source').string.intern()
 				 }
 			 }
 			 // mail messages..
 			 else if (it.hasNode('headers')) {
 				 def headers = it.getNode('headers')
 				 if (it.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
-					 item['source'] = headers.getProperty('To').string
+					 item['source'] = headers.getProperty('To').string.intern()
 				 }
 				 else if (headers.hasProperty('From')) {
-					 item['source'] = headers.getProperty('From').string
+					 item['source'] = headers.getProperty('From').string.intern()
 				 }
 				 else {
 					 item['source'] = '<Unknown Sender>'
@@ -419,10 +419,10 @@ def reloadResults = {
 				 def message = it.parent.parent
 				 def headers = message.getNode('headers')
 				 if (message.parent.parent.name == 'Sent' && headers.hasProperty('To')) {
-					 item['source'] = headers.getProperty('To').string
+					 item['source'] = headers.getProperty('To').string.intern()
 				 }
 				 else if (headers.hasProperty('From')) {
-					 item['source'] = headers.getProperty('From').string
+					 item['source'] = headers.getProperty('From').string.intern()
 				 }
 				 else {
 					 item['source'] = '<Unknown Sender>'
