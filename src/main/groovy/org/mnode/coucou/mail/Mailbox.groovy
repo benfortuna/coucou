@@ -175,20 +175,29 @@ class Mailbox extends AbstractNodeManager {
 	}
 	
 	def delete = { node ->
+		addFlags(node, new Flags(Flag.DELETED))
+	}
+	
+	def archive = { node ->
+		addFlags(node, new Flags('archived'))
+	}
+	
+	private void addFlags(javax.jcr.Node node, Flags flags) {
 		def localStore = mailSession.store
 		
+		Folder folder = null
 		try {
 			localStore.connect()
-			Folder folder = localStore.defaultFolder.getFolder(node.parent.parent.name)
+			folder = localStore.defaultFolder.getFolder(node.parent.parent.name)
 			folder.open(Folder.READ_WRITE)
 			int msgNum = node.messageNumber.long as Integer
-			folder.setFlags(msgNum, msgNum, new Flags(Flag.DELETED), true)
+			folder.setFlags(msgNum, msgNum, flags, true)
 		}
 		catch (Exception e) {
 			e.printStackTrace()
 		}
 		finally {
-			folder.close(false)
+			folder?.close(false)
 			localStore.close()
 		}
 	}
