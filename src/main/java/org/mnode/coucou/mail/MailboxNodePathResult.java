@@ -39,16 +39,34 @@ import org.mnode.coucou.search.SearchPathResult;
  */
 public class MailboxNodePathResult extends NodePathResult {
 
+	private Query receivedItemsQuery;
+//	private Query sentItemsQuery;
+//	private Query archivedItemsQuery;
+//	private Query deletedItemsQuery;
+
 	/**
 	 * @param node
 	 */
 	public MailboxNodePathResult(Node node) {
 		super(node);
+		try {
+			receivedItemsQuery = node.getSession().getWorkspace().getQueryManager().createQuery(
+				String.format("SELECT messages.* FROM [nt:unstructured] AS messages INNER JOIN [nt:unstructured] AS headers ON ISCHILDNODE(headers, messages) WHERE ISDESCENDANTNODE(messages, ['%s']) AND NAME(headers) = 'headers' AND headers.Received IS NOT NULL", node.getPath()),
+				Query.JCR_JQOM);
+		}
+		catch (RepositoryException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public List<PathResult<?, Node>> getChildren() throws PathResultException {
 		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+		
+		if (receivedItemsQuery != null) {
+			children.add(new SearchPathResult(receivedItemsQuery, "Received Items", "messages"));
+		}
+		
 		try {
 			// add search queries..
 			final NodeIterator childNodes = getElement().getNodes();

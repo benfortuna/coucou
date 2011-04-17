@@ -25,6 +25,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
+import javax.jcr.query.RowIterator;
 
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
@@ -37,10 +38,17 @@ public class SearchPathResult implements PathResult<Query, Node> {
 
 	private final Query query;
 	
+	private final String selector;
+	
 	private final String name;
 	
 	public SearchPathResult(Query query, String name) {
+		this(query, name, null);
+	}
+	
+	public SearchPathResult(Query query, String name, String selector) {
 		this.query = query;
+		this.selector = selector;
 		this.name = name;
 	}
 	
@@ -73,10 +81,19 @@ public class SearchPathResult implements PathResult<Query, Node> {
 	public List<Node> getResults() throws PathResultException {
 		final List<Node> results = new ArrayList<Node>();
 		try {
-			final NodeIterator resultNodes = query.execute().getNodes();
-			while (resultNodes.hasNext()) {
-				final Node node = resultNodes.nextNode();
-				results.add(node);
+			if (selector != null) {
+				final RowIterator rows = query.execute().getRows();
+				while (rows.hasNext()) {
+					final Node node = rows.nextRow().getNode(selector);
+					results.add(node);
+				}
+			}
+			else {
+				final NodeIterator resultNodes = query.execute().getNodes();
+				while (resultNodes.hasNext()) {
+					final Node node = resultNodes.nextNode();
+					results.add(node);
+				}
 			}
 		}
 		catch (RepositoryException re) {
