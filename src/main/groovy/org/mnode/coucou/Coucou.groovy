@@ -1263,6 +1263,12 @@ ousia.edt {
 							if (e['node'].hasProperty('seen')) {
 								baseList << !e['node'].getProperty('seen').boolean
 							}
+							else if (e['node'].hasProperty('flags') && e['node'].flags.values.collect { it.string}.contains('seen')) {
+								baseList << false
+							}
+							else {
+								baseList << true
+							}
 						} as Filterator)
 						filters << new JCheckboxMatcherEditor(importantFilterCheckbox, { baseList, e ->
 							baseList << (e['node'].flagged && e['node'].flagged.boolean)
