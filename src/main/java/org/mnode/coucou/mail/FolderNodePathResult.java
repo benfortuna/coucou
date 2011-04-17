@@ -18,6 +18,8 @@
  */
 package org.mnode.coucou.mail;
 
+import static org.mnode.juicer.JuicerUtils.hasPropertyValue;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,7 +127,10 @@ public class FolderNodePathResult extends NodePathResult {
 				final NodeIterator messageNodes = getElement().getNode("messages").getNodes();
 				while (messageNodes.hasNext()) {
 					final Node node = messageNodes.nextNode();
-					if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
+					if (node.isNodeType(NodeType.NT_UNSTRUCTURED)
+							&& !hasPropertyValue(node.getProperty("flags").getValues(), "deleted")
+							&& !hasPropertyValue(node.getProperty("flags").getValues(), "archived")) {
+						
 						results.add(node);
 					}
 				}

@@ -18,6 +18,8 @@
  */
 package org.mnode.coucou;
 
+import static org.mnode.juicer.JuicerUtils.hasPropertyValue;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -25,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -103,16 +103,5 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     		setForeground(defaultForeground);
         }
         return this;
-    }
-    
-    private boolean hasPropertyValue(Value[] values, String valueString) throws RepositoryException {
-    	boolean hasPropertyValue = false;
-    	for (Value value : values) {
-    		if (valueString.equals(value.getString())) {
-    			hasPropertyValue = true;
-    			break;
-    		}
-    	}
-    	return hasPropertyValue;
     }
 }

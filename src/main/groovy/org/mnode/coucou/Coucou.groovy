@@ -564,6 +564,7 @@ ousia.edt {
 	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
 	resizableIcon('/copy.svg', size: [16, 16], id: 'copyIcon')
 	resizableIcon('/document.svg', size: [16, 16], id: 'documentIcon')
+	resizableIcon('/document.svg', size: [16, 16], id: 'archiveIcon')
 	resizableIcon('/import.svg', size: [16, 16], id: 'importIcon')
 	resizableIcon('/export.svg', size: [16, 16], id: 'exportIcon')
 	resizableIcon('/previous.svg', size: [16, 16], id: 'previousIcon')
@@ -817,6 +818,10 @@ ousia.edt {
 			actionContext.delete()
 		}
 		
+		action id: 'archiveAction', name: rs('Archive'), SmallIcon: archiveIcon, closure: {
+			actionContext.archive()
+		}
+
 		action id: 'bookmarkFeedAction', name: rs('Bookmark'), closure: {
 			actionContext.toggleBookmark()
 		}
@@ -1077,7 +1082,7 @@ ousia.edt {
 //				priority: RibbonElementPriority.MEDIUM
 //			])
 			ribbonComponent([
-				component: commandButton(rs('Archive')),
+				component: commandButton(archiveAction),
 				priority: RibbonElementPriority.MEDIUM
 			])
 			ribbonComponent([
@@ -1391,12 +1396,17 @@ ousia.edt {
 												mailbox.delete entry['node']
 												activityTree.remove entryIndex
 											}
+											actionContext.archive = {
+												mailbox.archive entry['node']
+												activityTree.remove entryIndex
+											}
 											bookmarkFeedButton.enabled = false
 											bookmarkFeedButton.actionModel.selected = false
 										}
 										else {
 											actionContext.markAsRead = null
 											actionContext.delete = null
+											actionContext.archive = null
 											bookmarkFeedButton.enabled = false
 											bookmarkFeedButton.actionModel.selected = false
 										}
