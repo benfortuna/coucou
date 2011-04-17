@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -87,6 +89,9 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
                 if (node.hasProperty("seen") && !node.getProperty("seen").getBoolean()) {
                     setFont(unreadFont);
                 }
+                else if (node.hasProperty("flags") && !hasPropertyValue(node.getProperty("flags").getValues(), "seen")) {
+                    setFont(unreadFont);
+                }
                 
                 if (!isSelected && node.hasProperty("flagged") && node.getProperty("flagged").getBoolean()) {
                 	setBackground(flaggedBackground);
@@ -98,5 +103,16 @@ public class DefaultNodeTableCellRenderer extends DefaultTableCellRenderer {
     		setForeground(defaultForeground);
         }
         return this;
+    }
+    
+    private boolean hasPropertyValue(Value[] values, String valueString) throws RepositoryException {
+    	boolean hasPropertyValue = false;
+    	for (Value value : values) {
+    		if (valueString.equals(value.getString())) {
+    			hasPropertyValue = true;
+    			break;
+    		}
+    	}
+    	return hasPropertyValue;
     }
 }
