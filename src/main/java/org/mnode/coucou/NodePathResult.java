@@ -73,8 +73,8 @@ public class NodePathResult implements PathResult<Node, Node> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public List<PathResult<?, Node>> getChildren() throws PathResultException {
-		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+	public List<PathResult<?, ?>> getChildren() throws PathResultException {
+		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		try {
 			final NodeIterator childNodes = node.getNodes();
 			while (childNodes.hasNext()) {

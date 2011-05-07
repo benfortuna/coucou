@@ -49,14 +49,14 @@ public interface PathResult<T, R> {
 	 * @return the child elements
 	 * @throws PathResultException
 	 */
-	List<PathResult<?, R>> getChildren() throws PathResultException;
+	List<PathResult<?, ?>> getChildren() throws PathResultException;
 	
 	/**
 	 * @param result a result element
 	 * @return the corresponding path for the specified result
 	 * @throws PathResultException
 	 */
-	PathResult<?, R> getChild(R result) throws PathResultException;
+	PathResult<?, ?> getChild(R result) throws PathResultException;
 	
 	/**
 	 * @return the list of results for the path

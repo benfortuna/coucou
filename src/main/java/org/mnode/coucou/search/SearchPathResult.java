@@ -68,7 +68,7 @@ public class SearchPathResult implements PathResult<Query, Node> {
 	}
 
 	@Override
-	public List<PathResult<?, Node>> getChildren() throws PathResultException {
+	public List<PathResult<?, ?>> getChildren() throws PathResultException {
 		return null;
 	}
 
