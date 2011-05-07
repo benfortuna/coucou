@@ -19,6 +19,7 @@
 package org.mnode.coucou.feed
 
 import groovyx.gpars.GParsExecutorsPool
+import groovyx.gpars.GParsPool;
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -68,26 +69,28 @@ class Aggregator extends AbstractNodeManager {
 	
 	void start() {
 	   updateThread.scheduleAtFixedRate({
-		   def allFeeds = allFeedsQuery.execute().nodes
-		   progressMonitor?.maximum = allFeeds.size
-		   progressMonitor?.progress = 0
-		   for (node in allFeeds) {
-				log.log updating_feed, node.getProperty('title').value.string
-				
-				GParsExecutorsPool.withPool(10) {
+		   GParsPool.withPool {
+			   def asyncUpdateFeed = updateFeed.async()
+			   def allFeeds = allFeedsQuery.execute().nodes
+			   progressMonitor?.maximum = allFeeds.size
+			   progressMonitor?.progress = 0
+			   for (node in allFeeds) {
+					log.log updating_feed, node.title.string
+					
 					try {
-						def future = updateFeed.callAsync(node.getProperty('url').value.string, node.parent)
+						asyncUpdateFeed(node.url.string, node.parent)
 					}
 					catch (Exception e) {
 						log.log unexpected_error, e
 					}
 					finally {
+						// technically as this is async we haven't completed the update here, but the effect is good..
 						if (progressMonitor) {
 							progressMonitor.progress = progressMonitor.progress + 1
 						}
 					}
 				}
-			}
+		   }
 	   }, 0, 30, TimeUnit.MINUTES)
 	}
 /*	
