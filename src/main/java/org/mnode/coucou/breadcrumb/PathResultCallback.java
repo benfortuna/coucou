@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.jcr.Node;
 import javax.swing.Icon;
 
 import org.mnode.coucou.PathResult;
@@ -36,9 +35,9 @@ import org.pushingpixels.flamingo.api.common.StringValuePair;
  * @author fortuna
  *
  */
-public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node>> {
+public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, ?>> {
 
-	private PathResult<Node, Node> root;
+	private PathResult<?, ?> root;
 
 	private Map<Class<? extends PathResult<?, ?>>, Icon> pathIcons;
 	
@@ -47,24 +46,24 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 //	}
 	
 	@Override
-	public List<StringValuePair<PathResult<?, Node>>> getPathChoices(List<BreadcrumbItem<PathResult<?, Node>>> path)
+	public List<StringValuePair<PathResult<?, ?>>> getPathChoices(List<BreadcrumbItem<PathResult<?, ?>>> path)
 			throws BreadcrumbBarException {
 		
-		final List<StringValuePair<PathResult<?, Node>>> pathChoices = new ArrayList<StringValuePair<PathResult<?, Node>>>();
+		final List<StringValuePair<PathResult<?, ?>>> pathChoices = new ArrayList<StringValuePair<PathResult<?, ?>>>();
 		try {
 			if (path == null) {
-				for (PathResult<?, Node> result : root.getChildren()) {
-					pathChoices.add(new StringValuePair<PathResult<?, Node>>(result.getName(), result));
+				for (PathResult<?, ?> result : root.getChildren()) {
+					pathChoices.add(new StringValuePair<PathResult<?, ?>>(result.getName(), result));
 				}
 			}
 			else if (path.isEmpty()) {
 				return null;
 			}
 			else {
-				final PathResult<?, Node> lastPathResult = path.get(path.size() - 1).getData();
+				final PathResult<?, ?> lastPathResult = path.get(path.size() - 1).getData();
 				if (!lastPathResult.isLeaf()) {
-					for (PathResult<?, Node> result : lastPathResult.getChildren()) {
-						final StringValuePair<PathResult<?, Node>> pathChoice = new StringValuePair<PathResult<?, Node>>(result.getName(), result);
+					for (PathResult<?, ?> result : lastPathResult.getChildren()) {
+						final StringValuePair<PathResult<?, ?>> pathChoice = new StringValuePair<PathResult<?, ?>>(result.getName(), result);
 						pathChoice.set("icon", pathIcons.get(result.getClass()));
 						pathChoices.add(pathChoice);
 					}
@@ -100,14 +99,14 @@ public class PathResultCallback extends BreadcrumbBarCallBack<PathResult<?, Node
 	/**
 	 * @return the root
 	 */
-	public PathResult<Node, Node> getRoot() {
+	public PathResult<?, ?> getRoot() {
 		return root;
 	}
 
 	/**
 	 * @param root the root to set
 	 */
-	public void setRoot(PathResult<Node, Node> root) {
+	public void setRoot(PathResult<?, ?> root) {
 		this.root = root;
 	}
 }
