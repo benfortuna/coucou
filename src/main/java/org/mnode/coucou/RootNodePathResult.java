@@ -39,7 +39,7 @@ public class RootNodePathResult extends NodePathResult {
 	}
 	
 	@Override
-	public PathResult<?, Node> getChild(Node result) throws PathResultException {
+	public PathResult<?, ?> getChild(Node result) throws PathResultException {
 		try {
 			if ("/Mail".equals(result.getPath())) {
 				return new MailboxNodePathResult(result);

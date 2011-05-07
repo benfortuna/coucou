@@ -55,6 +55,9 @@ public class StorePathResult implements PathResult<Store, Folder> {
 	@Override
 	public List<Folder> getResults() throws PathResultException {
 		try {
+			if (!store.isConnected()) {
+				store.connect();
+			}
 			return Arrays.asList(store.getDefaultFolder().list());
 		} catch (MessagingException e) {
 			throw new PathResultException(e);

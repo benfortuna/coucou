@@ -103,7 +103,7 @@ public class FolderNodePathResult extends NodePathResult {
 	}
 	
 	@Override
-	public PathResult<?, Node> getChild(Node result) throws PathResultException {
+	public PathResult<?, ?> getChild(Node result) throws PathResultException {
 		try {
 			if ("messages".equals(result.getParent().getName())) {
 				return new MessageNodePathResult(result);
