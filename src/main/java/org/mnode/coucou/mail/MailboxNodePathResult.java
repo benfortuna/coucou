@@ -20,12 +20,16 @@ package org.mnode.coucou.mail;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Store;
 
 import org.apache.jackrabbit.util.Text;
 import org.mnode.coucou.NodePathResult;
@@ -98,24 +102,27 @@ public class MailboxNodePathResult extends NodePathResult {
 	}
 	
 	@Override
-	public PathResult<?, Node> getChild(Node result) throws PathResultException {
+	public PathResult<?, ?> getChild(Node result) throws PathResultException {
 		try {
 			if (result.getParent().getName().equals("accounts")) {
-//			final Properties props = new Properties();
-//			props.setProperty("mail.store.protocol", result.getProperty("protocol").getString());
-//			props.setProperty("mail.host", result.getProperty("server").getString());
-//			props.setProperty("mail.user", result.getProperty("address").getString());
-//			
-//			final Session session = Session.getInstance(props, new DialogAuthenticator(null));
-//			final Store store = session.getStore(result.getProperty("protocol").getString());
-//			store.connect();
-//			return new StorePathResult(store, getName());
+				final Properties props = new Properties();
+				props.setProperty("mail.store.protocol", result.getProperty("protocol").getString());
+				props.setProperty("mail.host", result.getProperty("server").getString());
+				props.setProperty("mail.user", result.getProperty("address").getString());
+				
+				final Session session = Session.getInstance(props, new DialogAuthenticator(null));
+				final Store store = session.getStore(result.getProperty("protocol").getString());
+				return new StorePathResult(store, result.getName());
 			}
-//			else {
+			else {
 				return new FolderNodePathResult(result);
-//			}
-		} catch (RepositoryException e) {
+			}
+		}
+		catch (RepositoryException e) {
 			throw new PathResultException(e);
+		}
+		catch (MessagingException nspe) {
+			throw new PathResultException(nspe);
 		}
 	}
 	

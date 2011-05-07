@@ -94,7 +94,7 @@ public class NodePathResult implements PathResult<Node, Node> {
 	}
 	
 	@Override
-	public PathResult<?, Node> getChild(Node result) throws PathResultException {
+	public PathResult<?, ?> getChild(Node result) throws PathResultException {
 		return new NodePathResult(result);
 	}
 	
