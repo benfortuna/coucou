@@ -72,6 +72,7 @@ import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
+import org.mnode.coucou.feed.FeedNodeResultLoader;
 import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.layer.ProgressLayerUI;
 import org.mnode.coucou.layer.StatusLayerUI;
@@ -111,7 +112,7 @@ import ca.odell.glazedlists.swing.TreeTableSupport
 LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(Coucou))
 
 try {
-	s = new Socket('localhost', 1337)
+	new Socket('localhost', 1337)
 	println 'Already running'
 	System.exit(0)
 }
@@ -150,7 +151,7 @@ configFile.text = Coucou.getResourceAsStream("/config.xml").text
 def ousia = new OusiaBuilder()
 
 Thread.start {
-	def server = new ServerSocket(1337)
+	ServerSocket server = [1337]
 	while(true) {
 		try {
 			server.accept {}
@@ -163,7 +164,7 @@ Thread.start {
 	}
 }
 
-def repositoryLocation = new File(System.getProperty("user.home"), ".coucou/data")
+File repositoryLocation = [System.getProperty("user.home"), ".coucou/data"]
 
 ousia.edt {
 	
@@ -188,7 +189,7 @@ ousia.edt {
 		panel(constraints: BorderLayout.SOUTH) {
 			flowLayout(new FlowLayout(FlowLayout.TRAILING))
 			button(text: rs('Ok'), id: 'repositoryLocationOkButton', actionPerformed: {
-				repositoryLocation = new File(repositoryLocationField.text)
+				repositoryLocation = [repositoryLocationField.text]
 				repositoryLocationDialog.dispose()
 			})
 			button(text: rs('Cancel'), actionPerformed: { System.exit(0)})
@@ -211,14 +212,14 @@ Runtime.getRuntime().addShutdownHook({
     RegistryHelper.unregisterRepository(context, 'coucou')
 })
 
-def mailbox = new Mailbox(repository, 'Mail')
+Mailbox mailbox = [repository, 'Mail']
 
 def mailDateFormat = new MailDateFormat()
 
 // initialise feeds..
-def aggregator = new Aggregator(repository, 'Feeds')
+Aggregator aggregator = [repository, 'Feeds']
 
-def contactsManager = new ContactsManager(repository, 'Contacts')
+ContactsManager contactsManager = [repository, 'Contacts']
 
 def newContact = { events ->
 	for (event in events) {
@@ -226,7 +227,7 @@ def newContact = { events ->
 		def message = session.getNode(event.path)
 		if (message.hasNode('headers')) {
 			def headers = message.getNode('headers')
-			def to = new InternetAddress(headers.getProperty('To').string)
+			InternetAddress to = [headers.getProperty('To').string]
 			def contactNode = contactsManager.add(to)
 //			println "Added contact: ${contactNode.path}"
 		}
@@ -235,7 +236,7 @@ def newContact = { events ->
 
 session.workspace.observationManager.addEventListener(newContact, 1, '/Mail/folders/Sent', true, null, null, false)
 
-def planner = new Planner(repository, 'Planner')
+Planner planner = [repository, 'Planner']
 
 //def searchManager = new SearchManager(session)
 
@@ -297,6 +298,9 @@ def breadcrumbTitle = { items ->
 	return title
 }
 
+def resultLoaders = [:]
+resultLoaders[FeedsNodePathResult] = new FeedNodeResultLoader()
+
 def reloadResults = {
 	ousia.edt {
 		filterTextField.text = null
@@ -342,11 +346,11 @@ def reloadResults = {
 		doLater {
 			// install new renderer..
 //							def defaultRenderer = new DefaultNodeTableCellRenderer(breadcrumb.model.items[-1].data)
-			def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, ['Today', 'Yesterday', 'Older Items'])
+			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
 			defaultRenderer.background = Color.WHITE
 			
 //							def dateRenderer = new DateCellRenderer(breadcrumb.model.items[-1].data)
-			def dateRenderer = new DateCellRenderer(activityTree)
+			DateCellRenderer dateRenderer = [activityTree]
 			dateRenderer.background = Color.WHITE
 			
 			ttsupport.delegateRenderer = defaultRenderer
@@ -598,8 +602,8 @@ ousia.edt {
 					}
 					catch (Exception e2) {
 						doLater {
-							def error = new ErrorInfo('Error', "${e2.message}",
-								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null)
+							ErrorInfo error = ['Error', "${e2.message}",
+								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null]
 							JXErrorPane.showDialog(frame, error);
 						}
 					}
@@ -621,8 +625,8 @@ ousia.edt {
 					}
 					catch (Exception e2) {
 						doLater {
-							def error = new ErrorInfo('Error', "${e2.message}",
-								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null)
+							ErrorInfo error = ['Error', "${e2.message}",
+								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null]
 							JXErrorPane.showDialog(frame, error);
 						}
 					}
@@ -682,8 +686,8 @@ ousia.edt {
 		action id: 'exportFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showSaveDialog() == JFileChooser.APPROVE_OPTION) {
 				doOutside {
-			        def writer = new FileWriter(chooser.selectedFile)
-			        def opmlBuilder = new MarkupBuilder(writer)
+			        FileWriter writer = [chooser.selectedFile]
+			        MarkupBuilder opmlBuilder = [writer]
 			        opmlBuilder.opml(version: '1.0') {
 			            body {
 			                for (feedNode in session.rootNode.getNode('Feeds').nodes) {
@@ -799,7 +803,7 @@ ousia.edt {
 						)
 					)
 				}
-				def pr = new SearchPathResult(searchQuery, quickSearchField.text)
+				SearchPathResult pr = [searchQuery, quickSearchField.text]
 				def searchResult = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
 				searchResult.icon = searchIcon
 				breadcrumb.model.addLast(searchResult)
@@ -876,159 +880,12 @@ ousia.edt {
 		}
 		frame.ribbon.applicationMenu = appMenu
 		frame.ribbon.configureHelp helpIcon, aboutAction
- 
-		ribbonBand(rs('New Folder'), id: 'newFolderBand', resizePolicies: ['mirror']) {
-			ribbonComponent(
-				component: commandButton(newIcon, action: newFolderAction),
-				priority: RibbonElementPriority.TOP
-			)
-		}
-		
+/*
 		ribbonBand(rs('Avatar'), id: 'avatarBand', resizePolicies: ['mirror']) {
 			ribbonComponent(
 				component: commandButton(forwardIcon),
 				priority: RibbonElementPriority.TOP
 			)
-		}
-
-		ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand', resizePolicies: ['mirror']) {
-			ribbonComponent(
-				component: textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}),
-				rowSpan: 1
-			) {
-				filterTextField.addBuddy commandButton(clearIcon, actionPerformed: {filterTextField.text = null} as ActionListener), BuddySupport.Position.RIGHT
-			}
-			ribbonComponent(
-				component: checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'),
-				rowSpan: 1
-			)
-			ribbonComponent(
-				component: checkBox(text: rs('Important Items'), id: 'importantFilterCheckbox'),
-				rowSpan: 1
-			)
-		}
-		
-		ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false, itemStateChanged: { e->
-					doLater {
-						selectedGroup = e.source.selectedItem
-						sortedActivities.comparator = sortComparators[selectedSort]
-						
-						if (e.source.selectedItem == rs('Source')) {
-							treeList(sortedActivities,
-								 expansionModel: TreeList.NODES_START_COLLAPSED, format: [
-							        allowsChildren: {element -> true},
-							        getComparator: {depth -> },
-							        getPath: {path, element ->
-										path << element.source
-										path << element
-									 }
-							    ] as Format<?>, id: 'activityTree')
-							
-							activityTable.model = buildActivityTableModel()
-						}
-						else {
-							treeList(sortedActivities,
-								 expansionModel: new DateExpansionModel(), format: [
-							        allowsChildren: {element -> true},
-							        getComparator: {depth -> },
-							        getPath: {path, element ->
-										path << dateGroup(element.date)
-										path << element
-									 }
-							    ] as Format<?>, id: 'activityTree')
-							
-							activityTable.model = buildActivityTableModel()
-						}
-						
-						ttsupport.uninstall()
-						ttsupport = TreeTableSupport.install(activityTable, activityTree, 0)
-						ttsupport.arrowKeyExpansionEnabled = true
-						ttsupport.delegateRenderer.background = Color.WHITE
-						
-						def defaultRenderer = new DefaultNodeTableCellRenderer(activityTree, [])
-						defaultRenderer.background = Color.WHITE
-						
-						def dateRenderer = new DateCellRenderer(activityTree)
-						dateRenderer.background = Color.WHITE
-						
-						ttsupport.delegateRenderer = defaultRenderer
-						activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
-						activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
-						
-					}
-				}),
-				rowSpan: 1
-			])
-		}
-		
-		ribbonBand(rs('Sort By'), icon: forwardIcon, id: 'sortBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
-					doLater {
-						selectedSort = e.source.selectedItem
-						sortedActivities.comparator = sortComparators[selectedSort]
-					}
-				}),
-				rowSpan: 1
-			])
-//			commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: {
-//				commandPopupMenu() {
-//					commandToggleMenuButton(rs('Ascending'))
-//					commandToggleMenuButton(rs('Descending'))
-//				}
-//			} as PopupPanelCallback)
-		}
-
-		ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand', resizePolicies: ['mirror']) {
-			ribbonComponent(
-				component: commandToggleButton(id: 'toggleTableHeader', rs('Table Header'),
-					 actionPerformed: { e->
-						 if (e.source.actionModel.selected) {
-							 activityTable.tableHeader.visible = true
-							 activityTable.tableHeader.preferredSize = null
-				 		 }
-						 else {
-							 activityTable.tableHeader.visible = false
-							 activityTable.tableHeader.preferredSize = new Dimension(-1, 0)
-						 }
-					 } as ActionListener),
-				priority: RibbonElementPriority.TOP
-			)
-			
-			ribbonComponent(
-				component: commandToggleButton(id: 'toggleStatusBar', rs('Status Bar'), actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
-				priority: RibbonElementPriority.TOP
-			)
-		}
-		
-		ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction),
-				priority: RibbonElementPriority.TOP
-			])
-		}
-		
-		ribbonBand(rs('Quick Search'), icon: forwardIcon, id: 'quickSearchBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
-					keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
-					
-					quickSearchField.addActionListener quickSearchAction
-					quickSearchField.addBuddy commandButton(searchIcon, enabled: false, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
-				},
-				rowSpan: 1
-			])
-
-			ribbonComponent([
-				component: checkBox(text: rs('Include Archived')),
-				rowSpan: 1
-			])
-			ribbonComponent([
-				component: checkBox(text: rs('Include Deleted')),
-				rowSpan: 1
-			])
 		}
 		
 		ribbonBand(rs('Advanced'), id: 'advancedSearchBand', resizePolicies: ['mirror']) {
@@ -1041,196 +898,354 @@ ousia.edt {
 				priority: RibbonElementPriority.MEDIUM
 			])
 		}
-
-		ribbonBand(rs('Configure'), id: 'mailConfigurationBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(addMailAccountAction),
-				priority: RibbonElementPriority.TOP
-			])
-		}
+*/
+		frame.ribbon.addTask(ribbonTask(rs('Home'), bands: [
 		
-		ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(replyIcon, text: rs('Reply')),
-				priority: RibbonElementPriority.TOP
-			])
-			ribbonComponent([
-				component: commandButton(replyAllIcon, text: rs('Reply To All')),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(forwardIcon, text: rs('Forward')),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(chatIcon, text: rs('Chat')),
-				priority: RibbonElementPriority.MEDIUM
-			])
-		}
-		
-		ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(rs('Flag')),
-				priority: RibbonElementPriority.TOP
-			])
-			ribbonComponent([
-				component: commandButton(rs('Tag')),
-				priority: RibbonElementPriority.MEDIUM
-			])
-//			ribbonComponent([
-//				component: commandButton(rs('Move To')),
-//				priority: RibbonElementPriority.MEDIUM
-//			])
-			ribbonComponent([
-				component: commandButton(archiveAction),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(rs('Delete'), icon: deleteMailIcon, actionPerformed: deleteAction),
-				priority: RibbonElementPriority.MEDIUM
-			])
-		}
-		
-		ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(addFeedAction),
-				priority: RibbonElementPriority.TOP
-			])
-		}
-		
-		ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandToggleButton(bookmarkIcon, id: 'bookmarkFeedButton', enabled: false, action: bookmarkFeedAction),
-				priority: RibbonElementPriority.TOP
-			])
-			ribbonComponent([
-				component: commandButton(okIcon, action: markAsReadAction),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(okAllIcon, action: markAllReadAction),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(deleteAction),
-				priority: RibbonElementPriority.MEDIUM
-			])
-		}
-
-		ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(rs('Post To Buzz'), actionPerformed: {
-					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-					// feed item..
-					if (selectedItem.node.hasProperty('link')) {
-						Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
-					}
-				} as ActionListener),
-				priority: RibbonElementPriority.TOP
-			])
-			ribbonComponent([
-				component: commandButton(rs('Twitter'), actionPerformed: {
-					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-					// feed item..
-					if (selectedItem.node.hasProperty('link')) {
-						Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
-					}
-				} as ActionListener),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent([
-				component: commandButton(rs('Facebook'), actionPerformed: {
-					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-					// feed item..
-					if (selectedItem.node.hasProperty('link')) {
-						Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
-					}
-				} as ActionListener),
-				priority: RibbonElementPriority.MEDIUM
-			])
-			ribbonComponent(
-				component: commandButton(rs('Reddit'), actionPerformed: {
-					def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-					// feed item..
-					if (selectedItem.node.hasProperty('link')) {
-						Desktop.desktop.browse(URI.create("http://reddit.com/submit?url=${selectedItem.node.getProperty('link').value.string}&title=${URLEncoder.encode(selectedItem.node.getProperty('title').value.string, 'UTF-8')}"))
-					}
-				} as ActionListener),
-				priority: RibbonElementPriority.MEDIUM
-			)
-		}
-
-		ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand', resizePolicies: ['mirror']) {
-			ribbonComponent([
-				component: commandButton(copyIcon, text: rs('Copy')),
-				priority: RibbonElementPriority.TOP
-			])
-			ribbonComponent([
-				component: commandButton(eventIcon, text: rs('Add To Planner')),
-				priority: RibbonElementPriority.MEDIUM
-			])
-		}
-
-		ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicies: ['mirror']) {
-			ribbonComponent(
-				component: commandButton(taskIcon, action: openExplorerView),
-				priority: RibbonElementPriority.TOP
-			)
-			ribbonComponent(
-				component: commandButton(taskIcon, action: openLogView),
-				priority: RibbonElementPriority.MEDIUM
-			)
-		}
-		
-		ribbonBand(rs('Navigate'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
-            /*
-			ribbonComponent([
-				component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
-					commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
-						bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
-					}
-					commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
-						bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
-					}
-				},
-				rowSpan: 3
-			])
-			*/
-            ribbonComponent(
-                component: commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
-                        bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
-                    },
-                priority: RibbonElementPriority.TOP
-            )
-            ribbonComponent(
-                component: commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
-                        bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
-                    },
-                priority: RibbonElementPriority.TOP
-            )
-		}
+			ribbonBand(rs('Navigate'), icon: taskIcon, id: 'navigationBand', resizePolicies: ['mirror']) {
+	            /*
+				ribbonComponent([
+					component: commandButtonStrip(displayState: CommandButtonDisplayState.BIG) {
+						commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
+							bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
+						}
+						commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
+							bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
+						}
+					},
+					rowSpan: 3
+				])
+				*/
+	            ribbonComponent(
+	                component: commandButton(previousIcon, text: rs('Previous'), id: 'previousButton', actionPerformed: {actionContext.previousItem()} as ActionListener) {
+	                        bind(source: actionContext, sourceProperty: 'previousItem', target: previousButton, targetProperty: 'enabled', converter: {it != null})
+	                    },
+	                priority: RibbonElementPriority.TOP
+	            )
+	            ribbonComponent(
+	                component: commandButton(nextIcon, text: rs('Next'), id: 'nextButton', actionPerformed: {actionContext.nextItem()} as ActionListener) {
+	                        bind(source: actionContext, sourceProperty: 'nextItem', target: nextButton, targetProperty: 'enabled', converter: {it != null})
+	                    },
+	                priority: RibbonElementPriority.TOP
+	            )
+			},
         
-        ribbonBand(rs('Load'), icon: taskIcon, id: 'loadBand', resizePolicies: ['mirror']) {
-            ribbonComponent(
-                component: commandButton(refreshIcon, action: refreshAction),
-                priority: RibbonElementPriority.TOP
-            )
-            ribbonComponent(
-                component: commandButton(cancelLoadIcon, text: rs('Cancel')),
-                priority: RibbonElementPriority.TOP
-            )
-        }
+	        ribbonBand(rs('Load'), icon: taskIcon, id: 'loadBand', resizePolicies: ['mirror']) {
+	            ribbonComponent(
+	                component: commandButton(refreshIcon, action: refreshAction),
+	                priority: RibbonElementPriority.TOP
+	            )
+	            ribbonComponent(
+	                component: commandButton(cancelLoadIcon, text: rs('Cancel')),
+	                priority: RibbonElementPriority.TOP
+	            )
+	        },
+		
+			ribbonBand(rs('Quick Search'), icon: forwardIcon, id: 'quickSearchBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: textField(id: 'quickSearchField', columns: 14, enabled: false, prompt: quickSearchAction.getValue('Name'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY,
+						keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}) {
+						
+						quickSearchField.addActionListener quickSearchAction
+						quickSearchField.addBuddy commandButton(searchIcon, enabled: false, actionPerformed: quickSearchAction, id: 'quickSearchButton'), BuddySupport.Position.RIGHT
+					},
+					rowSpan: 1
+				])
+	
+				ribbonComponent([
+					component: checkBox(text: rs('Include Archived')),
+					rowSpan: 1
+				])
+				ribbonComponent([
+					component: checkBox(text: rs('Include Deleted')),
+					rowSpan: 1
+				])
+			},
+		]))
+		
+		frame.ribbon.addTask(ribbonTask(rs('View'), bands: [
+		
+			ribbonBand(rs('Group By'), icon: forwardIcon, id: 'groupByBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: comboBox(items: [rs('Date'), rs('Source')] as Object[], editable: false, itemStateChanged: { e->
+						doLater {
+							selectedGroup = e.source.selectedItem
+							sortedActivities.comparator = sortComparators[selectedSort]
+							
+							if (e.source.selectedItem == rs('Source')) {
+								treeList(sortedActivities,
+									 expansionModel: TreeList.NODES_START_COLLAPSED, format: [
+								        allowsChildren: {element -> true},
+								        getComparator: {depth -> },
+								        getPath: {path, element ->
+											path << element.source
+											path << element
+										 }
+								    ] as Format<?>, id: 'activityTree')
+								
+								activityTable.model = buildActivityTableModel()
+							}
+							else {
+								treeList(sortedActivities,
+									 expansionModel: new DateExpansionModel(), format: [
+								        allowsChildren: {element -> true},
+								        getComparator: {depth -> },
+								        getPath: {path, element ->
+											path << dateGroup(element.date)
+											path << element
+										 }
+								    ] as Format<?>, id: 'activityTree')
+								
+								activityTable.model = buildActivityTableModel()
+							}
+							
+							ttsupport.uninstall()
+							ttsupport = TreeTableSupport.install(activityTable, activityTree, 0)
+							ttsupport.arrowKeyExpansionEnabled = true
+							ttsupport.delegateRenderer.background = Color.WHITE
+							
+							DefaultNodeTableCellRenderer defaultRenderer = [activityTree, []]
+							defaultRenderer.background = Color.WHITE
+							
+							DateCellRenderer dateRenderer = [activityTree]
+							dateRenderer.background = Color.WHITE
+							
+							ttsupport.delegateRenderer = defaultRenderer
+							activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+							activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+							
+						}
+					}),
+					rowSpan: 1
+				])
+			},
+		
+			ribbonBand(rs('Sort By'), icon: forwardIcon, id: 'sortBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: comboBox(items: sortComparators.keySet() as Object[], editable: false, itemStateChanged: { e->
+						doLater {
+							selectedSort = e.source.selectedItem
+							sortedActivities.comparator = sortComparators[selectedSort]
+						}
+					}),
+					rowSpan: 1
+				])
+	//			commandButton(rs('Sort Order'), commandButtonKind: CommandButtonKind.POPUP_ONLY, popupOrientationKind: CommandButtonPopupOrientationKind.SIDEWARD, popupCallback: {
+	//				commandPopupMenu() {
+	//					commandToggleMenuButton(rs('Ascending'))
+	//					commandToggleMenuButton(rs('Descending'))
+	//				}
+	//			} as PopupPanelCallback)
+			},
 
-		frame.ribbon.addTask new RibbonTask(rs('Home'), navigationBand, loadBand, quickSearchBand)
-		frame.ribbon.addTask new RibbonTask(rs('View'), groupByBand, sortBand, filterBand, showHideBand, viewModeBand)
-		frame.ribbon.addTask new RibbonTask(rs('Folder'), newFolderBand)
+			ribbonBand(rs('Filter'), icon: forwardIcon, id: 'filterBand', resizePolicies: ['mirror']) {
+				ribbonComponent(
+					component: textField(columns: 14, prompt: rs('Type To Filter..'), promptFontStyle: Font.ITALIC, promptForeground: Color.LIGHT_GRAY, id: 'filterTextField', keyPressed: {e-> if (e.keyCode == KeyEvent.VK_ESCAPE) e.source.text = null}),
+					rowSpan: 1
+				) {
+					filterTextField.addBuddy commandButton(clearIcon, actionPerformed: {filterTextField.text = null} as ActionListener), BuddySupport.Position.RIGHT
+				}
+				ribbonComponent(
+					component: checkBox(text: rs('Unread Items'), id: 'unreadFilterCheckbox'),
+					rowSpan: 1
+				)
+				ribbonComponent(
+					component: checkBox(text: rs('Important Items'), id: 'importantFilterCheckbox'),
+					rowSpan: 1
+				)
+			},
+
+			ribbonBand(rs('Show/Hide'), icon: forwardIcon, id: 'showHideBand', resizePolicies: ['mirror']) {
+				ribbonComponent(
+					component: commandToggleButton(id: 'toggleTableHeader', rs('Table Header'),
+						 actionPerformed: { e->
+							 if (e.source.actionModel.selected) {
+								 activityTable.tableHeader.visible = true
+								 activityTable.tableHeader.preferredSize = null
+					 		 }
+							 else {
+								 activityTable.tableHeader.visible = false
+								 activityTable.tableHeader.preferredSize = [-1, 0]
+							 }
+						 } as ActionListener),
+					priority: RibbonElementPriority.TOP
+				)
+				
+				ribbonComponent(
+					component: commandToggleButton(id: 'toggleStatusBar', rs('Status Bar'), actionPerformed: {e-> statusBar.visible = e.source.actionModel.selected} as ActionListener),
+					priority: RibbonElementPriority.TOP
+				)
+			},
+		
+			ribbonBand(rs('Mode'), icon: forwardIcon, id: 'viewModeBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandToggleButton(rs('Fullscreen'), actionPerformed: fullScreenAction),
+					priority: RibbonElementPriority.TOP
+				])
+			},
+		]))
+		
+		frame.ribbon.addTask(ribbonTask(rs('Folder'), bands: [
+ 
+			ribbonBand(rs('New Folder'), id: 'newFolderBand', resizePolicies: ['mirror']) {
+				ribbonComponent(
+					component: commandButton(newIcon, action: newFolderAction),
+					priority: RibbonElementPriority.TOP
+				)
+			},
+		]))
+		
 //		frame.ribbon.addTask new RibbonTask(rs('Search'), advancedSearchBand, quickSearchBand)
 //		frame.ribbon.addTask(new RibbonTask(rs('Action'), updateBand, organiseBand, actionExtrasBand))
 //		frame.ribbon.addTask(new RibbonTask(rs('Presence'), avatarBand))
-		frame.ribbon.addTask new RibbonTask(rs('Tools'), toolsBand)
 		
-		mailRibbonTask = new RibbonTask(rs('Action'), mailConfigurationBand, respondBand, organiseBand, actionExtrasBand)
-		feedRibbonTask = new RibbonTask(rs('Action'), feedSubscriptionBand, updateBand, shareBand)
+		frame.ribbon.addTask(ribbonTask(rs('Tools'), bands: [
+
+			ribbonBand(rs('Tools'), icon: taskIcon, id: 'toolsBand', resizePolicies: ['mirror']) {
+				ribbonComponent(
+					component: commandButton(taskIcon, action: openExplorerView),
+					priority: RibbonElementPriority.TOP
+				)
+				ribbonComponent(
+					component: commandButton(taskIcon, action: openLogView),
+					priority: RibbonElementPriority.MEDIUM
+				)
+			},
+		]))
+		
+		ribbonTask(rs('Action'), id: 'mailRibbonTask', bands: [
+
+			ribbonBand(rs('Configure'), id: 'mailConfigurationBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(addMailAccountAction),
+					priority: RibbonElementPriority.TOP
+				])
+			},
+		
+			ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(replyIcon, text: rs('Reply')),
+					priority: RibbonElementPriority.TOP
+				])
+				ribbonComponent([
+					component: commandButton(replyAllIcon, text: rs('Reply To All')),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(forwardIcon, text: rs('Forward')),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(chatIcon, text: rs('Chat')),
+					priority: RibbonElementPriority.MEDIUM
+				])
+			},
+		
+			ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(rs('Flag')),
+					priority: RibbonElementPriority.TOP
+				])
+				ribbonComponent([
+					component: commandButton(rs('Tag')),
+					priority: RibbonElementPriority.MEDIUM
+				])
+	//			ribbonComponent([
+	//				component: commandButton(rs('Move To')),
+	//				priority: RibbonElementPriority.MEDIUM
+	//			])
+				ribbonComponent([
+					component: commandButton(archiveAction),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(rs('Delete'), icon: deleteMailIcon, actionPerformed: deleteAction),
+					priority: RibbonElementPriority.MEDIUM
+				])
+			},
+
+			ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(copyIcon, text: rs('Copy')),
+					priority: RibbonElementPriority.TOP
+				])
+				ribbonComponent([
+					component: commandButton(eventIcon, text: rs('Add To Planner')),
+					priority: RibbonElementPriority.MEDIUM
+				])
+			},
+		])
+		
+		ribbonTask(rs('Action'), id: 'feedRibbonTask', bands: [
+		
+			ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(addFeedAction),
+					priority: RibbonElementPriority.TOP
+				])
+			},
+		
+			ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandToggleButton(bookmarkIcon, id: 'bookmarkFeedButton', enabled: false, action: bookmarkFeedAction),
+					priority: RibbonElementPriority.TOP
+				])
+				ribbonComponent([
+					component: commandButton(okIcon, action: markAsReadAction),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(okAllIcon, action: markAllReadAction),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(deleteAction),
+					priority: RibbonElementPriority.MEDIUM
+				])
+			},
+
+			ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(rs('Post To Buzz'), actionPerformed: {
+						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+						// feed item..
+						if (selectedItem.node.hasProperty('link')) {
+							Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
+						}
+					} as ActionListener),
+					priority: RibbonElementPriority.TOP
+				])
+				ribbonComponent([
+					component: commandButton(rs('Twitter'), actionPerformed: {
+						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+						// feed item..
+						if (selectedItem.node.hasProperty('link')) {
+							Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
+						}
+					} as ActionListener),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent([
+					component: commandButton(rs('Facebook'), actionPerformed: {
+						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+						// feed item..
+						if (selectedItem.node.hasProperty('link')) {
+							Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
+						}
+					} as ActionListener),
+					priority: RibbonElementPriority.MEDIUM
+				])
+				ribbonComponent(
+					component: commandButton(rs('Reddit'), actionPerformed: {
+						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
+						// feed item..
+						if (selectedItem.node.hasProperty('link')) {
+							Desktop.desktop.browse(URI.create("http://reddit.com/submit?url=${selectedItem.node.getProperty('link').value.string}&title=${URLEncoder.encode(selectedItem.node.getProperty('title').value.string, 'UTF-8')}"))
+						}
+					} as ActionListener),
+					priority: RibbonElementPriority.MEDIUM
+				)
+			},
+		])
 		
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
@@ -1279,7 +1294,7 @@ ousia.edt {
 							baseList << (e['node'].flagged && e['node'].flagged.boolean)
 						} as Filterator)
 
-						def filterMatcherEditor = new CompositeMatcherEditor<?>(filters)
+						CompositeMatcherEditor filterMatcherEditor = [filters]
 						filterMatcherEditor.mode = CompositeMatcherEditor.AND
 						filterList(activities, id: 'filteredActivities', matcherEditor: filterMatcherEditor)
 						
@@ -1308,7 +1323,7 @@ ousia.edt {
 						activityTable.model = buildActivityTableModel()
 						
 						activityTable.tableHeader.visible = false
-						activityTable.tableHeader.preferredSize = new Dimension(-1, 0)
+						activityTable.tableHeader.preferredSize = [-1, 0]
 						
 						ttsupport = TreeTableSupport.install(activityTable, activityTree, 0)
 						ttsupport.arrowKeyExpansionEnabled = true
@@ -1497,7 +1512,7 @@ ousia.edt {
 								// mail attachment..
 								else if (selectedItem.node.hasNode('jcr:content')) {
 									doOutside {
-										def file = new File(System.getProperty('java.io.tmpdir'), selectedItem.node.name)
+										File file = [System.getProperty('java.io.tmpdir'), selectedItem.node.name]
 										file.bytes = selectedItem.node.getNode('jcr:content').getProperty('jcr:data').binary.stream.bytes
 										Desktop.desktop.open(file)
 									}
@@ -1550,7 +1565,13 @@ ousia.edt {
 			}
 
 			breadcrumb.model.addPathListener({
-				reloadResults()
+				def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
+				if (resultLoader) {
+					resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
+				}
+				else {
+					reloadResults()
+				}
 			} as BreadcrumbPathListener)
 		}
 		
