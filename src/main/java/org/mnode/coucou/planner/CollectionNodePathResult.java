@@ -56,8 +56,8 @@ public class CollectionNodePathResult extends NodePathResult {
 	}
 
 	@Override
-	public List<PathResult<?, Node>> getChildren() throws PathResultException {
-		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+	public List<PathResult<?, ?>> getChildren() throws PathResultException {
+		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		try {
 			// add search queries..
 			

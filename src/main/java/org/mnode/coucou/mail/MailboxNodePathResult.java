@@ -60,8 +60,8 @@ public class MailboxNodePathResult extends NodePathResult {
 	}
 
 	@Override
-	public List<PathResult<?, Node>> getChildren() throws PathResultException {
-		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+	public List<PathResult<?, ?>> getChildren() throws PathResultException {
+		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		
 		if (receivedItemsQuery != null) {
 			children.add(new SearchPathResult(receivedItemsQuery, "Received Items", "messages"));
@@ -99,7 +99,24 @@ public class MailboxNodePathResult extends NodePathResult {
 	
 	@Override
 	public PathResult<?, Node> getChild(Node result) throws PathResultException {
-		return new FolderNodePathResult(result);
+		try {
+			if (result.getParent().getName().equals("accounts")) {
+//			final Properties props = new Properties();
+//			props.setProperty("mail.store.protocol", result.getProperty("protocol").getString());
+//			props.setProperty("mail.host", result.getProperty("server").getString());
+//			props.setProperty("mail.user", result.getProperty("address").getString());
+//			
+//			final Session session = Session.getInstance(props, new DialogAuthenticator(null));
+//			final Store store = session.getStore(result.getProperty("protocol").getString());
+//			store.connect();
+//			return new StorePathResult(store, getName());
+			}
+//			else {
+				return new FolderNodePathResult(result);
+//			}
+		} catch (RepositoryException e) {
+			throw new PathResultException(e);
+		}
 	}
 	
 	@Override

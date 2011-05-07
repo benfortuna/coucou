@@ -67,8 +67,8 @@ public class FolderNodePathResult extends NodePathResult {
 	}
 	
 	@Override
-	public List<PathResult<?, Node>> getChildren() throws PathResultException {
-		final List<PathResult<?, Node>> children = new ArrayList<PathResult<?, Node>>();
+	public List<PathResult<?, ?>> getChildren() throws PathResultException {
+		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		
 		if (attachmentsQuery != null) {
 			children.add(new SearchPathResult(attachmentsQuery, "Attachments"));
