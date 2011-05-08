@@ -21,6 +21,8 @@ package org.mnode.coucou.layer;
 import java.awt.FlowLayout;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JComponent;
 import javax.swing.JProgressBar;
@@ -33,11 +35,14 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
 
 	private static final long serialVersionUID = 1L;
 
-	private JProgressBar progressBar;
+	private final JProgressBar progressBar;
+	
+	private final Lock progressLock;
 	
 	public ProgressLayerUI() {
 		progressBar = new JProgressBar();
 		progressBar.setVisible(false);
+		progressLock = new ReentrantLock();
 	}
 	
 	@Override
@@ -65,15 +70,21 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
 			
 			@Override
 			public void run() {
-		    	progressBar.setValue(progress);
-		    	if (progress > progressBar.getMinimum() && progress < progressBar.getMaximum()) {
-		    		if (!progressBar.isVisible()) {
-		        		progressBar.setVisible(true);
-		    		}
-		    	}
-		    	else if (progressBar.isVisible()) {
-		    		progressBar.setVisible(false);
-		    	}
+				try {
+					progressLock.lock();
+			    	progressBar.setValue(progress);
+			    	if (progress > progressBar.getMinimum() && progress < progressBar.getMaximum()) {
+			    		if (!progressBar.isVisible()) {
+			        		progressBar.setVisible(true);
+			    		}
+			    	}
+			    	else if (progressBar.isVisible()) {
+			    		progressBar.setVisible(false);
+			    	}
+				}
+				finally {
+					progressLock.unlock();
+				}
 			}
 		});
     }
