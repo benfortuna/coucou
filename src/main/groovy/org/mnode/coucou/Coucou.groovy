@@ -30,6 +30,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font
 import java.awt.GraphicsEnvironment
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.event.ActionListener
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -578,6 +580,8 @@ ousia.edt {
 	resizableIcon('/forward.svg', size: [12, 12], id: 'folderIcon')
 	resizableIcon('/star.svg', size: [16, 16], id: 'bookmarkIcon')
 	
+	def frameIconImages = [imageIcon('/globe64.png').image, imageIcon('/globe48.png').image, imageIcon('/globe32.png').image, imageIcon('/globe16.png').image]
+	
 	actions {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
@@ -847,7 +851,7 @@ ousia.edt {
 	
 	ribbonFrame(title: rs('Coucou'), size: [640, 480], show: true, locationRelativeTo: null,
 		defaultCloseOperation: JFrame.EXIT_ON_CLOSE, id: 'frame',
-		iconImages: [imageIcon('/globe64.png').image, imageIcon('/globe48.png').image, imageIcon('/globe32.png').image, imageIcon('/globe16.png').image],
+		iconImages: frameIconImages,
 		applicationIcon: logoIcon, trackingEnabled: true) {
 
 		ribbonApplicationMenu(id: 'appMenu') {
@@ -1635,4 +1639,40 @@ ousia.edt {
 	content.selected = true
 	tabs.setIconAt(tabs.indexOfComponent(homeTab), paddedIcon(imageIcon('/logo-12.png'), size: [width: 14, height: 20]))
 */	
+	
+	frame(id: 'chatFrame', size: [300, 200], locationRelativeTo: null, defaultCloseOperation: JFrame.HIDE_ON_CLOSE,
+		iconImages: frameIconImages, trackingEnabled: true) {
+		
+		panel() {
+			borderLayout()
+			comboBox(id: 'peers', constraints: BorderLayout.NORTH)
+			textArea(id: 'messages')
+			textField(id: 'entry', constraints: BorderLayout.SOUTH)
+		}
+	}
+/*
+	popup = new PopupMenu()
+	MenuItem open = [rs('Open')]
+	open.font = new Font('Helvetica', Font.BOLD, 12)
+	open.actionPerformed = {openDialog()}
+	popup.add open
+	popup.addSeparator()
+	MenuItem exit = [rs('Exit')]
+	exit.actionPerformed = {System.exit(0)}
+	popup.add exit
+*/
+	trayIcon = new TrayIcon(ousia.imageIcon('/icons/liquidicity/red-chat.png').image, rs('Coucou')) //, popup)
+	trayIcon.imageAutoSize = true
+	trayIcon.mouseReleased = { e ->
+		if (e.button == MouseEvent.BUTTON1) {
+			if (System.getProperty('os.name') =~ /(?i)windows/ && e.clickCount < 2) {
+				return
+			}
+			chatFrame.visible = !chatFrame.active
+		}
+	}
+	
+	SystemTray tray = SystemTray.systemTray
+	tray.add trayIcon
+
 }
