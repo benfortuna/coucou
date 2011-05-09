@@ -73,6 +73,7 @@ public class ProgressLayerUI extends AbstractLayerUI<JComponent> implements Comp
 				try {
 					progressLock.lock();
 			    	progressBar.setValue(progress);
+			    	progressBar.setToolTipText(String.format("%s/%s", progressBar.getValue(), progressBar.getMaximum()));
 			    	if (progress > progressBar.getMinimum() && progress < progressBar.getMaximum()) {
 			    		if (!progressBar.isVisible()) {
 			        		progressBar.setVisible(true);
