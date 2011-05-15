@@ -20,6 +20,10 @@ package org.mnode.coucou.contacts
 
 import javax.jcr.Repository
 
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.ChatStateManager;
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
@@ -36,6 +40,12 @@ class ContactsManager extends AbstractNodeManager {
 	
 //	javax.jcr.Node rootNode
 	
+	def xmppConnections = []
+	
+	def activeChats = [:]
+	
+	def passwordPrompt
+	
 	ContactsManager(Repository repository, String nodeName) {
 //		if (!session.rootNode.hasNode(nodeName)) {
 //			rootNode = session.rootNode.addNode(nodeName)
@@ -45,6 +55,36 @@ class ContactsManager extends AbstractNodeManager {
 //			rootNode = session.rootNode.getNode(nodeName)
 //		}		
 		super(repository, 'contacts', nodeName)
+		if (!rootNode.hasNode('accounts')) {
+			rootNode.addNode('accounts')
+		}
+
+		save rootNode
+	}
+	
+	void connect() {
+		for (account in rootNode.accounts.nodes) {
+			connect account
+		}
+	}
+	
+	def connect = { account ->
+		ConnectionConfiguration config = [account.host.string, account.port.long as Integer, account.serviceName.string]
+		XMPPConnection xmpp = [config]
+		xmpp.connect()
+		
+		def password = passwordPrompt("Password for $account.user.string:")
+		if (password) {
+			xmpp.login(account.user.string, password)
+		}
+		
+		// NOTE: getInstance(org.jivesoftware.smack.XMPPConnection) needs to be
+		// called in order for the listeners to be registered appropriately with
+		// the connection. If this does not occur you will not receive the
+		// update notifications.
+		ChatStateManager.getInstance(xmpp)
+		
+		xmppConnections << xmpp
 	}
 	
 	javax.jcr.Node add(def address) {
@@ -59,5 +99,29 @@ class ContactsManager extends AbstractNodeManager {
 		node.setProperty('personal', address.personal)
 		save node
 		return node
+	}
+	
+	def addAccount = { user ->
+		def accountNode = getNode(rootNode.accounts, user, true)
+		accountNode.user = user
+		if (user =~ /^.*@gmail\.com$/) {
+			accountNode.host = 'talk.google.com'
+			accountNode.port = 5222
+			accountNode.serviceName = 'gmail.com'
+		}
+		save accountNode
+	}
+
+	def getXmppName = { message, xmpp ->
+		def participant = xmpp.roster.getEntry(StringUtils.parseBareAddress(message.from))
+		if (participant?.name) {
+			return participant.name
+		}
+		else if (participant?.user) {
+			return participant.user
+		}
+		else {
+			StringUtils.parseName(message.from)
+		}
 	}
 }
