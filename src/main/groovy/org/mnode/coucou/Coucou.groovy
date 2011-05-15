@@ -47,6 +47,7 @@ import javax.mail.URLName
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MailDateFormat
 import javax.naming.InitialContext
+import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JOptionPane
@@ -55,6 +56,11 @@ import javax.swing.JSplitPane
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.UIManager.LookAndFeelInfo
+import javax.swing.event.DocumentListener;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.html.StyleSheet
 
 import org.apache.jackrabbit.core.jndi.RegistryHelper
@@ -64,6 +70,13 @@ import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.error.ErrorInfo
 import org.jdesktop.swingx.prompt.BuddySupport
+import org.jivesoftware.smack.ChatManager;
+import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smackx.ChatState;
+import org.jivesoftware.smackx.ChatStateListener;
+import org.jivesoftware.smackx.ChatStateManager;
 import org.mnode.base.log.FormattedLogEntry
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.LogEntry
@@ -71,6 +84,8 @@ import org.mnode.base.log.LogEntry.Level
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.activity.DateExpansionModel
 import org.mnode.coucou.breadcrumb.PathResultCallback
+import org.mnode.coucou.chat.MessageListCellRenderer;
+import org.mnode.coucou.chat.PeerListCellRenderer;
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
@@ -335,6 +350,16 @@ def reloadResults = {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
 		}
 		
+		if (breadcrumb.model.items[0].data.element.path == '/Contacts') {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(2), true
+			if (breadcrumb.model.items[-1].data.name == 'Contacts') {
+				frame.ribbon.selectedTask = contactsRibbonTask
+			}
+		}
+		else {
+			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(2), false
+		}
+
 		actionContext.addFolder = { folderName ->
 			breadcrumb.model.items[-1].data.element.addNode(Text.escapeIllegalJcrChars(folderName))
 			breadcrumb.model.items[-1].data.element.save()
@@ -648,6 +673,16 @@ ousia.edt {
 			}
 		}
 		
+		action id: 'addXmppAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
+			def user = JOptionPane.showInputDialog(frame, rs('User'))
+			if (user) {
+				def accountNode = contactsManager.addAccount(user)
+				doOutside {
+					contactsManager.connect accountNode
+				}
+			}
+		}
+
 		action id: 'importFeedsAction', name: rs('Feeds'), closure: {
 			if (chooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
 				doOutside {
@@ -1251,8 +1286,20 @@ ousia.edt {
 			},
 		])
 		
+		ribbonTask(rs('Action'), id: 'contactsRibbonTask', bands: [
+			
+			ribbonBand(rs('Configure'), id: 'xmppConfigurationBand', resizePolicies: ['mirror']) {
+				ribbonComponent([
+					component: commandButton(addXmppAccountAction),
+					priority: RibbonElementPriority.TOP
+				])
+			},
+
+		])
+		
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
 		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
+		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Contacts'), Color.YELLOW, contactsRibbonTask)
 
 		panel {
 			borderLayout()
@@ -1609,6 +1656,16 @@ ousia.edt {
 	mailbox.passwordPrompt = new DialogAuthenticator(frame)
 	mailbox.start()
 	
+	contactsManager.passwordPrompt = { message ->
+		passwordField(id: 'passwordField', columns: 20)
+		if (JOptionPane.showConfirmDialog(frame, passwordField,
+				message, JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+			return passwordField.text
+		}
+	}
+	contactsManager.connect()
+	
+	
 /*
 	def content = windowManager.contentManager.addContent('tabs', 'Tabs', null, tabbedPane(tabLayoutPolicy: JTabbedPane.SCROLL_TAB_LAYOUT, id: 'tabs') {
 		panel(name: rs('Home'), id: 'homeTab') {
@@ -1639,15 +1696,91 @@ ousia.edt {
 	content.selected = true
 	tabs.setIconAt(tabs.indexOfComponent(homeTab), paddedIcon(imageIcon('/logo-12.png'), size: [width: 14, height: 20]))
 */	
-	
+	if (!contactsManager.xmppConnections.isEmpty()) {
 	frame(id: 'chatFrame', size: [300, 200], locationRelativeTo: null, defaultCloseOperation: JFrame.HIDE_ON_CLOSE,
-		iconImages: frameIconImages, trackingEnabled: true) {
+		iconImages: frameIconImages, trackingEnabled: true, title: 'Conversations - Coucou') {
 		
 		panel() {
 			borderLayout()
-			comboBox(id: 'peers', constraints: BorderLayout.NORTH)
-			textArea(id: 'messages')
-			textField(id: 'entry', constraints: BorderLayout.SOUTH)
+			comboBox(id: 'peers', constraints: BorderLayout.NORTH, items: contactsManager.xmppConnections[0].roster.entries as Object[], editable: false) {
+				peers.renderer = new PeerListCellRenderer(contactsManager.xmppConnections[0])
+			}
+			scrollPane() {
+//				list(id: 'messages', model: new DefaultListModel()) {
+//					messages.cellRenderer = new MessageListCellRenderer(contactsManager.xmpp)
+//				}
+				StyledDocument messagesDoc = new DefaultStyledDocument()
+				participantStyle = messagesDoc.addStyle 'participant', StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
+				StyleConstants.setForeground(participantStyle, Color.LIGHT_GRAY)
+				messagesDoc.addStyle 'message', StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
+				
+				textPane(document: messagesDoc, editable: false, id: 'messages')
+			}
+			panel(constraints: BorderLayout.SOUTH) {
+				borderLayout()
+				
+				textField(id: 'chatStatus', editable: false, foreground: Color.LIGHT_GRAY, border: emptyBorder(2), constraints: BorderLayout.NORTH)
+				
+				scrollPane(horizontalScrollBarPolicy: JScrollPane.HORIZONTAL_SCROLLBAR_NEVER) {
+					
+					textArea(id: 'entry', rows: 4, wrapStyleWord: true) {
+						entry.keyPressed = { e ->
+							if (e.keyCode == KeyEvent.VK_ENTER && entry.text) {
+		                        Message message = new Message()
+		                        message.body = entry.text
+		                        entry.text = null
+								def chat = contactsManager.activeChats[peers.selectedItem]
+								if (!chat) {
+									contactsManager.activeChats[peers.selectedItem] = contactsManager.xmppConnections[0].chatManager.createChat(peers.selectedItem.user,
+										[ 
+											processMessage: { achat, msg ->
+												if (msg.body) {
+//							                        messages.model.addElement msg
+//							                        messages.ensureIndexIsVisible(messages.model.size - 1);
+													messages.document.append "${contactsManager.getXmppName(msg, contactsManager.xmppConnections[0])}: ", 'participant'
+													messages.document.append "${msg.body}\n", 'message'
+													messages.caretPosition = messages.document.length
+												}
+											},
+										
+											stateChanged: { achat, state ->
+												if (state == ChatState.composing) {
+													chatStatus.text = "$achat.participant is typing.."
+												}
+												else if (state == ChatState.gone) {
+													chatStatus.text = "$achat.participant has left the conversation."
+												}
+												else {
+													chatStatus.text = null
+												}
+											}
+										] as ChatStateListener)
+									chat = contactsManager.activeChats[peers.selectedItem]
+								}
+		                        chat.sendMessage(message);
+//		                        messages.model.addElement message
+//		                        messages.ensureIndexIsVisible(messages.model.size - 1);
+								messages.document.append "${contactsManager.getXmppName(message, contactsManager.xmppConnections[0])}: ", 'participant'
+								messages.document.append "${message.body}\n", 'message'
+								messages.caretPosition = messages.document.length
+								e.consume()
+							}
+						}
+					}
+				}
+				
+				entry.document.addDocumentListener({
+					def chat = contactsManager.activeChats[peers.selectedItem]
+					if (chat) {
+						if (entry.text.isEmpty()) {
+	                        ChatStateManager.getInstance(contactsManager.xmppConnections[0]).setCurrentState(ChatState.inactive, chat);
+						}
+						else {
+							ChatStateManager.getInstance(contactsManager.xmppConnections[0]).setCurrentState(ChatState.composing, chat)
+						}
+					}
+				} as DocumentListener)
+			}
 		}
 	}
 /*
@@ -1674,5 +1807,5 @@ ousia.edt {
 	
 	SystemTray tray = SystemTray.systemTray
 	tray.add trayIcon
-
+	}
 }
