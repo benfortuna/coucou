@@ -94,6 +94,7 @@ import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.layer.ProgressLayerUI;
 import org.mnode.coucou.layer.StatusLayerUI;
 import org.mnode.coucou.mail.DialogAuthenticator;
+import org.mnode.coucou.mail.FolderNodePathResult;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
@@ -578,6 +579,7 @@ ousia.edt {
 	resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
 	resizableIcon('/feed.svg', size: [12, 12], id: 'feedIconSmall')
 	resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
+	resizableIcon('/mail.svg', size: [12, 12], id: 'mailIconSmall')
 	resizableIcon('/task.svg', size: [16, 16], id: 'taskIcon')
 	resizableIcon('/exit.svg', size: [16, 16], id: 'exitIcon')
 	resizableIcon('/help.svg', size: [16, 16], id: 'helpIcon')
@@ -1309,6 +1311,7 @@ ousia.edt {
 			def pathIcons = [:]
 			pathIcons[SearchPathResult] = searchIcon
 			pathIcons[FeedNodePathResult] = feedIconSmall
+			pathIcons[FolderNodePathResult] = mailIconSmall
 			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			activities = new BasicEventList<?>()
