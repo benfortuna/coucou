@@ -27,6 +27,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 
 import org.apache.jackrabbit.util.Text;
+import org.mnode.coucou.DataException;
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
@@ -51,7 +52,7 @@ public class FeedsNodePathResult extends NodePathResult {
 				Query.JCR_JQOM);
 		}
 		catch (RepositoryException e) {
-			e.printStackTrace();
+			throw new DataException(e);
 		}
 	}
 	
