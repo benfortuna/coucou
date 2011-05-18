@@ -21,6 +21,7 @@ package org.mnode.coucou;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
+import org.mnode.coucou.contacts.ContactsNodePathResult;
 import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.mail.MailboxNodePathResult;
 import org.mnode.coucou.planner.PlannerNodePathResult;
@@ -49,6 +50,9 @@ public class RootNodePathResult extends NodePathResult {
 			}
 			else if ("/Planner".equals(result.getPath())) {
 				return new PlannerNodePathResult(result);
+			}
+			else if ("/Contacts".equals(result.getPath())) {
+				return new ContactsNodePathResult(result);
 			}
 		}
 		catch (RepositoryException re) {
