@@ -30,6 +30,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.mail.Folder;
 
+import org.mnode.coucou.DataException;
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
@@ -53,7 +54,7 @@ public class FolderNodePathResult extends NodePathResult {
 					String.format("SELECT * FROM [nt:file] AS files WHERE ISDESCENDANTNODE(files, [%s]) AND (NOT NAME(files) = 'part') AND (NOT NAME(files) = 'data')", node.getPath()), Query.JCR_JQOM);
 		}
 		catch (RepositoryException e) {
-			e.printStackTrace();
+			throw new DataException(e);
 		}
 	}
 
