@@ -87,6 +87,8 @@ import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.chat.MessageListCellRenderer;
 import org.mnode.coucou.chat.PeerListCellRenderer;
 import org.mnode.coucou.contacts.ContactsManager
+import org.mnode.coucou.contacts.RosterEntryResultLoader;
+import org.mnode.coucou.contacts.RosterPathResult;
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
 import org.mnode.coucou.feed.FeedNodeResultLoader;
@@ -95,9 +97,14 @@ import org.mnode.coucou.layer.ProgressLayerUI;
 import org.mnode.coucou.layer.StatusLayerUI;
 import org.mnode.coucou.mail.DialogAuthenticator;
 import org.mnode.coucou.mail.FolderNodePathResult;
+import org.mnode.coucou.mail.FolderPathResult;
+import org.mnode.coucou.mail.FolderResultLoader;
 import org.mnode.coucou.mail.Mailbox
+import org.mnode.coucou.mail.StorePathResult;
+import org.mnode.coucou.mail.StoreResultLoader;
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.search.SearchPathResult
+import org.mnode.coucou.util.HtmlCodes;
 import org.mnode.juicer.query.QueryBuilder
 import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
@@ -318,6 +325,10 @@ def breadcrumbTitle = { items ->
 
 def resultLoaders = [:]
 resultLoaders[FeedsNodePathResult] = new FeedNodeResultLoader()
+//resultLoaders[FeedNodePathResult] = new FeedNodeResultLoader()
+resultLoaders[StorePathResult] = new StoreResultLoader()
+resultLoaders[FolderPathResult] = new FolderResultLoader()
+resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
 
 def reloadResults = {
 	ousia.edt {
@@ -378,7 +389,7 @@ def reloadResults = {
 			defaultRenderer.background = Color.WHITE
 			
 //							def dateRenderer = new DateCellRenderer(breadcrumb.model.items[-1].data)
-			DateCellRenderer dateRenderer = [activityTree]
+			DateCellRenderer dateRenderer = [defaultRenderer]
 			dateRenderer.background = Color.WHITE
 			
 			ttsupport.delegateRenderer = defaultRenderer
@@ -401,7 +412,7 @@ def reloadResults = {
 			 def item = [:]
 			 // feeds / items..
 			 if (it.hasProperty('title')) {
-				 item['title'] = it.getProperty('title').string
+				 item['title'] = HtmlCodes.unescape(it.getProperty('title').string)
 			 }
 			 // mail messages..
 			 else if (it.hasNode('headers')) {
@@ -427,10 +438,10 @@ def reloadResults = {
 			 
 			 if (it.hasProperty('source')) {
 				 if (it.getProperty('source').type == PropertyType.REFERENCE) {
-					 item['source'] = it.getProperty('source').getNode().getProperty('title').string.intern()
+					 item['source'] = HtmlCodes.unescape(it.getProperty('source').getNode().getProperty('title').string).intern()
 				 }
 				 else {
-					 item['source'] = it.getProperty('source').string.intern()
+					 item['source'] = HtmlCodes.unescape(it.getProperty('source').string).intern()
 				 }
 			 }
 			 // mail messages..
@@ -498,7 +509,14 @@ def reloadResults = {
 			 }
 
 			 item['node'] = it
-
+			 item.seen = { node ->
+				 node.seen?.boolean == true
+			 }.curry(it)
+			 
+			 item.flagged = { node ->
+				 node.flagged?.boolean == true
+			 }.curry(it)
+			 
 			 doLater {
 				 try {
 					 // lock for list modification..
@@ -557,10 +575,11 @@ def buildActivityTableModel = {
 					case 0: if (object instanceof String) {
 						return object
 					} else {
-						return object['source'].replaceAll('&amp;', '&')
+						return object['source']
 					}
 					case 1: if (!(object instanceof String)) {
-						return object['title'].replaceAll('&amp;', '&').replaceAll('<(/*)[^>]+>', '')
+//						return object['title'].replaceAll('&amp;', '&').replaceAll('<(/*)[^>]+>', '')
+						return object['title']
 					}
 					case 2: if (!(object instanceof String)) {
 	//									return new PrettyTime().format(object['date'])
@@ -591,6 +610,7 @@ ousia.edt {
 	resizableIcon('/cancel.svg', size: [12, 12], id: 'deleteMailIcon')
 	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
 	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
+	resizableIcon('/im.svg', size: [12, 12], id: 'chatIconSmall')
 	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
 	resizableIcon('/reply.svg', size: [16, 16], id: 'replyIcon')
 	resizableIcon('/replyAll.svg', size: [16, 16], id: 'replyAllIcon')
@@ -1312,7 +1332,11 @@ ousia.edt {
 			pathIcons[SearchPathResult] = searchIcon
 			pathIcons[FeedNodePathResult] = feedIconSmall
 			pathIcons[FolderNodePathResult] = mailIconSmall
-			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
+			pathIcons[StorePathResult] = mailIconSmall
+			pathIcons[RosterPathResult] = chatIconSmall
+			
+			pathResultContext = new PathResultContext()
+			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode, pathResultContext), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
 
 			activities = new BasicEventList<?>()
 			
@@ -1334,6 +1358,7 @@ ousia.edt {
 							baseList << e['title']
 						} as TextFilterator, true)
 						filters << new JCheckboxMatcherEditor(unreadFilterCheckbox, { baseList, e ->
+							/*
 							if (e['node'].hasProperty('seen')) {
 								baseList << !e['node'].getProperty('seen').boolean
 							}
@@ -1343,9 +1368,12 @@ ousia.edt {
 							else {
 								baseList << true
 							}
+							*/
+							baseList << !e.seen()
 						} as Filterator)
 						filters << new JCheckboxMatcherEditor(importantFilterCheckbox, { baseList, e ->
-							baseList << (e['node'].flagged && e['node'].flagged.boolean)
+//							baseList << (e['node'].flagged && e['node'].flagged.boolean)
+							baseList << e.flagged()
 						} as Filterator)
 
 						CompositeMatcherEditor filterMatcherEditor = [filters]
@@ -1667,6 +1695,8 @@ ousia.edt {
 		}
 	}
 	contactsManager.connect()
+	pathResultContext.putSharedValue('xmppConnections', contactsManager.xmppConnections)
+	
 	
 	
 /*
