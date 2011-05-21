@@ -122,8 +122,8 @@ public class MailboxNodePathResult extends NodePathResult {
 		catch (RepositoryException e) {
 			throw new PathResultException(e);
 		}
-		catch (MessagingException nspe) {
-			throw new PathResultException(nspe);
+		catch (MessagingException me) {
+			throw new PathResultException(me);
 		}
 	}
 	

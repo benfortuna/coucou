@@ -19,56 +19,78 @@
 package org.mnode.coucou.mail;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import javax.mail.FetchProfile;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 
+import org.mnode.coucou.AbstractPathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
-public class FolderPathResult implements PathResult<Folder, Message> {
+public class FolderPathResult extends AbstractPathResult<Folder, Object> {
 
-	private final Folder folder;
-
-	FolderPathResult(Folder folder) {
-		this.folder = folder;
+	public FolderPathResult(Folder folder) {
+		super(folder, null);
 	}
 	
 	@Override
 	public String getName() throws PathResultException {
-		return folder.getName();
-	}
-
-	@Override
-	public Folder getElement() {
-		return folder;
-	}
-
-	@Override
-	public boolean isLeaf() {
-		return false;
+		return getElement().getName();
 	}
 
 	@Override
 	public List<PathResult<?, ?>> getChildren() throws PathResultException {
-		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
-		return children;
+		try {
+			final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
+			for (Folder folder : getElement().list()) {
+				children.add(getChild(folder));
+			}
+			return children;
+		}
+		catch (MessagingException me) {
+			throw new PathResultException(me);
+		}
 	}
 
 	@Override
-	public PathResult<?, Message> getChild(Message result) throws PathResultException {
-		return null;
+	public PathResult<?, ?> getChild(Object result) throws PathResultException {
+		return new FolderPathResult((Folder) result);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<Message> getResults() throws PathResultException {
+	public List<Object> getResults() throws PathResultException {
 		try {
-			return Arrays.asList(folder.getMessages());
+			if (!getElement().isOpen()) {
+				getElement().open(Folder.READ_ONLY);
+			}
+			if ((getElement().getType() & Folder.HOLDS_MESSAGES) > 0) {
+				final Message[] messages = getElement().getMessages();
+				
+				FetchProfile fp = new FetchProfile();
+				fp.add(FetchProfile.Item.ENVELOPE);
+				fp.add(FetchProfile.Item.FLAGS);
+
+				getElement().fetch(messages, fp);
+				
+				List<Message> messageList = new ArrayList<Message>(Arrays.asList(messages));
+				for (Iterator<Message> it = messageList.iterator(); it.hasNext();) {
+					if (it.next().isExpunged()) {
+						it.remove();
+					}
+				}
+				
+				return new ArrayList<Object>(messageList);
+			}
+			else {
+				return Arrays.asList(getElement().list());
+			}
 		} catch (MessagingException e) {
 			throw new PathResultException(e);
 		}

@@ -25,58 +25,48 @@ import javax.mail.Folder;
 import javax.mail.MessagingException;
 import javax.mail.Store;
 
+import org.mnode.coucou.AbstractPathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
-public class StorePathResult implements PathResult<Store, Folder> {
-
-	private final Store store;
+public class StorePathResult extends AbstractPathResult<Store, Folder> {
 	
-	private final String name;
-	
-	StorePathResult(Store store, String name) {
-		this.store = store;
-		this.name = name;
-	}
-	
-	@Override
-	public String getName() throws PathResultException {
-		return name;
-	}
-
-	@Override
-	public Store getElement() {
-		return store;
-	}
-
-	@Override
-	public boolean isLeaf() {
-		return false;
+	public StorePathResult(Store store, String name) {
+		super(store, name);
 	}
 
 	@Override
 	public List<PathResult<?, ?>> getChildren() throws PathResultException {
-		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
-//		return store.getDefaultFolder().list();
-		return children;
+		try {
+			final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
+			if (!getElement().isConnected()) {
+				getElement().connect();
+			}
+			for (Folder folder : getElement().getDefaultFolder().list()) {
+				children.add(getChild(folder));
+			}
+			return children;
+		}
+		catch (MessagingException me) {
+			throw new PathResultException(me);
+		}
 	}
 
 	@Override
-	public PathResult<?, Folder> getChild(Folder result) throws PathResultException {
-		// TODO Auto-generated method stub
-		return null;
+	public PathResult<?, Object> getChild(Folder result) throws PathResultException {
+		return new FolderPathResult(result);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<Folder> getResults() throws PathResultException {
 		try {
-			if (!store.isConnected()) {
-				store.connect();
+			if (!getElement().isConnected()) {
+				getElement().connect();
 			}
-			return Arrays.asList(store.getDefaultFolder().list());
+			return Arrays.asList(getElement().getDefaultFolder().list());
 		} catch (MessagingException e) {
 			throw new PathResultException(e);
 		}
