@@ -23,6 +23,7 @@ import javax.jcr.RepositoryException;
 
 import org.mnode.coucou.LeafNodePathResult;
 import org.mnode.coucou.PathResultException;
+import org.mnode.coucou.util.HtmlCodes;
 
 /**
  * @author fortuna
@@ -40,7 +41,7 @@ public class FeedNodePathResult extends LeafNodePathResult {
 	@Override
 	public String getName() throws PathResultException {
 		try {
-			return getElement().getProperty("title").getString();
+			return HtmlCodes.unescape(getElement().getProperty("title").getString());
 		} catch (RepositoryException e) {
 			throw new PathResultException(e);
 		}
