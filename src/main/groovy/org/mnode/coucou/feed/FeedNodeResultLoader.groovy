@@ -27,6 +27,7 @@ import javax.mail.internet.MailDateFormat;
 import org.apache.jackrabbit.util.Text;
 import org.mnode.coucou.DateCellRenderer;
 import org.mnode.coucou.DefaultNodeTableCellRenderer;
+import org.mnode.coucou.util.HtmlCodes;
 
 class FeedNodeResultLoader {
 	
@@ -77,7 +78,7 @@ class FeedNodeResultLoader {
 				DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
 				defaultRenderer.background = Color.WHITE
 				
-				DateCellRenderer dateRenderer = [activityTree]
+				DateCellRenderer dateRenderer = [defaultRenderer]
 				dateRenderer.background = Color.WHITE
 				
 				ttsupport.delegateRenderer = defaultRenderer
@@ -99,18 +100,18 @@ class FeedNodeResultLoader {
 				 def item = [:]
 				 // feeds / items..
 				 if (it.hasProperty('title')) {
-					 item['title'] = it.title.string
+					 item['title'] = HtmlCodes.unescape(it.title.string)
 				 }
 				 else {
-					 item['title'] = it.name
+					 item['title'] = HtmlCodes.unescape(it.name)
 				 }
 				 
 				 if (it.hasProperty('source')) {
 					 if (it.source.type == PropertyType.REFERENCE) {
-						 item['source'] = it.source.node.title.string.intern()
+						 item['source'] = HtmlCodes.unescape(it.source.node.title.string).intern()
 					 }
 					 else {
-						 item['source'] = it.source.string.intern()
+						 item['source'] = HtmlCodes.unescape(it.source.string).intern()
 					 }
 				 }
 				 else {
@@ -125,7 +126,13 @@ class FeedNodeResultLoader {
 				 }
 	
 				 item['node'] = it
-	
+				 item.seen = { node ->
+					 node.seen?.boolean == true
+				 }.curry(it)
+				 item.flagged = { node ->
+					 node.flagged?.boolean == true
+				 }.curry(it)
+				 
 				 doLater {
 					 try {
 						 // lock for list modification..
