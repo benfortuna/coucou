@@ -37,14 +37,16 @@ import org.apache.jackrabbit.util.Text;
  * @author fortuna
  *
  */
-public class NodePathResult implements PathResult<Node, Node> {
+public class NodePathResult extends AbstractPathResult<Node, Node> {
 
 	private static final Comparator<PathResult<?, ?>> COMPARATOR = new PathResultComparator();
 	
-	private final Node node;
-	
 	public NodePathResult(Node node) {
-		this.node = node;
+		this(node, null);
+	}
+	
+	public NodePathResult(Node node, PathResultContext context) {
+		super(node, null, context);
 	}
 	
 	/**
@@ -53,20 +55,10 @@ public class NodePathResult implements PathResult<Node, Node> {
 	@Override
 	public String getName() throws PathResultException {
 		try {
-			return Text.unescapeIllegalJcrChars(node.getName());
+			return Text.unescapeIllegalJcrChars(getElement().getName());
 		} catch (RepositoryException e) {
 			throw new PathResultException(e);
 		}
-	}
-
-	@Override
-	public Node getElement() {
-		return node;
-	}
-	
-	@Override
-	public boolean isLeaf() {
-		return false;
 	}
 	
 	/**
@@ -76,7 +68,7 @@ public class NodePathResult implements PathResult<Node, Node> {
 	public List<PathResult<?, ?>> getChildren() throws PathResultException {
 		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		try {
-			final NodeIterator childNodes = node.getNodes();
+			final NodeIterator childNodes = getElement().getNodes();
 			while (childNodes.hasNext()) {
 				final Node node = childNodes.nextNode();
 				if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
@@ -102,7 +94,7 @@ public class NodePathResult implements PathResult<Node, Node> {
 	public List<Node> getResults() throws PathResultException {
 		final List<Node> results = new ArrayList<Node>();
 		try {
-			final NodeIterator childNodes = node.getNodes();
+			final NodeIterator childNodes = getElement().getNodes();
 			while (childNodes.hasNext()) {
 				final Node node = childNodes.nextNode();
 				if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
