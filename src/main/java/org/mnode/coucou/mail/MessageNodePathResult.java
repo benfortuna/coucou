@@ -27,6 +27,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
 
+import org.mnode.coucou.DataException;
 import org.mnode.coucou.LeafNodePathResult;
 import org.mnode.coucou.PathResultException;
 
@@ -48,7 +49,7 @@ public class MessageNodePathResult extends LeafNodePathResult {
 					String.format("SELECT * FROM [nt:unstructured] AS headers WHERE ISDESCENDANTNODE(headers, [/Mail]) AND NAME(headers) = 'headers' AND (headers.[In-Reply-To] = $messageId OR headers.References = $messageId)"), Query.JCR_JQOM);
 		}
 		catch (RepositoryException e) {
-			e.printStackTrace();
+			throw new DataException(e);
 		}
 	}
 
