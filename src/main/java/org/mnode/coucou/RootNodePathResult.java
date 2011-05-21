@@ -35,8 +35,8 @@ public class RootNodePathResult extends NodePathResult {
 	/**
 	 * @param node
 	 */
-	public RootNodePathResult(Node node) {
-		super(node);
+	public RootNodePathResult(Node node, PathResultContext context) {
+		super(node, context);
 	}
 	
 	@Override
@@ -52,7 +52,7 @@ public class RootNodePathResult extends NodePathResult {
 				return new PlannerNodePathResult(result);
 			}
 			else if ("/Contacts".equals(result.getPath())) {
-				return new ContactsNodePathResult(result);
+				return new ContactsNodePathResult(result, getContext());
 			}
 		}
 		catch (RepositoryException re) {
