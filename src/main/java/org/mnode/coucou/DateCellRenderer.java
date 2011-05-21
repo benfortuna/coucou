@@ -18,14 +18,13 @@
  */
 package org.mnode.coucou;
 
+import java.awt.Color;
 import java.awt.Component;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
 
 import javax.swing.JTable;
-
-import ca.odell.glazedlists.TreeList;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 
 import com.ocpsoft.pretty.time.PrettyTime;
 
@@ -33,24 +32,30 @@ import com.ocpsoft.pretty.time.PrettyTime;
  * @author Ben
  *
  */
-public class DateCellRenderer extends DefaultNodeTableCellRenderer {
+public class DateCellRenderer implements TableCellRenderer {
 
     private static final long serialVersionUID = 1L;
     
     private final PrettyTime df = new PrettyTime();
     
-    public DateCellRenderer(TreeList<Map<String, ?>> items) {
-        super(items, new ArrayList<String>());
+    private final DefaultTableCellRenderer parent;
+    
+    public DateCellRenderer(DefaultTableCellRenderer parent) {
+        this.parent = parent;
     }
     
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
 
-        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        final Component renderer = parent.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         if (value instanceof Date) {
-            setText(df.format((Date) value));
+            ((DefaultTableCellRenderer) renderer).setText(df.format((Date) value));
         }
-        return this;
+        return renderer;
+    }
+    
+    public void setBackground(Color background) {
+    	parent.setBackground(background);
     }
 }
