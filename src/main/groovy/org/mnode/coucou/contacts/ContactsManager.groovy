@@ -40,7 +40,7 @@ class ContactsManager extends AbstractNodeManager {
 	
 //	javax.jcr.Node rootNode
 	
-	def xmppConnections = []
+	List<XMPPConnection> xmppConnections = []
 	
 	def activeChats = [:]
 	
@@ -57,6 +57,9 @@ class ContactsManager extends AbstractNodeManager {
 		super(repository, 'contacts', nodeName)
 		if (!rootNode.hasNode('accounts')) {
 			rootNode.addNode('accounts')
+		}
+		if (!rootNode.hasNode('conversations')) {
+			rootNode.addNode('conversations')
 		}
 
 		save rootNode
