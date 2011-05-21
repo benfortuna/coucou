@@ -19,14 +19,18 @@
 package org.mnode.coucou.search;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.query.Query;
 import javax.jcr.query.RowIterator;
 
+import org.mnode.coucou.AbstractPathResult;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
 
@@ -34,32 +38,30 @@ import org.mnode.coucou.PathResultException;
  * @author fortuna
  *
  */
-public class SearchPathResult implements PathResult<Query, Node> {
-
-	private final Query query;
+public class SearchPathResult extends AbstractPathResult<Query, Node> {
 	
 	private final String selector;
 	
-	private final String name;
+	private final Map<String, Value> bindValues;
 	
+	@SuppressWarnings("unchecked")
 	public SearchPathResult(Query query, String name) {
-		this(query, name, null);
+		this(query, name, null, Collections.EMPTY_MAP);
 	}
 	
+	public SearchPathResult(Query query, String name, Map<String, Value> bindValues) {
+		this(query, name, null, bindValues);
+	}
+	
+	@SuppressWarnings("unchecked")
 	public SearchPathResult(Query query, String name, String selector) {
-		this.query = query;
-		this.selector = selector;
-		this.name = name;
+		this(query, name, selector, Collections.EMPTY_MAP);
 	}
 	
-	@Override
-	public String getName() throws PathResultException {
-		return name;
-	}
-
-	@Override
-	public Query getElement() {
-		return query;
+	public SearchPathResult(Query query, String name, String selector, Map<String, Value> bindValues) {
+		super(query, name);
+		this.selector = selector;
+		this.bindValues = bindValues;
 	}
 
 	@Override
@@ -81,15 +83,18 @@ public class SearchPathResult implements PathResult<Query, Node> {
 	public List<Node> getResults() throws PathResultException {
 		final List<Node> results = new ArrayList<Node>();
 		try {
+			for (String key : bindValues.keySet()) {
+				getElement().bindValue(key, bindValues.get(key));
+			}
 			if (selector != null) {
-				final RowIterator rows = query.execute().getRows();
+				final RowIterator rows = getElement().execute().getRows();
 				while (rows.hasNext()) {
 					final Node node = rows.nextRow().getNode(selector);
 					results.add(node);
 				}
 			}
 			else {
-				final NodeIterator resultNodes = query.execute().getNodes();
+				final NodeIterator resultNodes = getElement().execute().getNodes();
 				while (resultNodes.hasNext()) {
 					final Node node = resultNodes.nextNode();
 					results.add(node);
