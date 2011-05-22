@@ -54,7 +54,7 @@ class RosterEntryResultLoader {
 	
 			 items.reverseEach {
 				 def item = [:]
-				 item['title'] = it.name
+				 item['title'] = it.name ? it.name : it.user
 				 item['entry'] = it
 	
 				 doLater {

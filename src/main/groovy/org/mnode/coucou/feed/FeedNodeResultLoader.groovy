@@ -85,15 +85,9 @@ class FeedNodeResultLoader {
 				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
 				activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
 				
-				 try {
-					 // lock for list modification..
-					 activities.readWriteLock.writeLock().lock()
-					 activities.clear()
-				 }
-				 finally {
-					 // unlock post-list modification..
-					 activities.readWriteLock.writeLock().unlock()
-				 }
+				activities.withWriteLock {
+					clear()
+				}
 			}
 	
 			 items.reverseEach {
@@ -134,14 +128,8 @@ class FeedNodeResultLoader {
 				 }.curry(it)
 				 
 				 doLater {
-					 try {
-						 // lock for list modification..
-						 activities.readWriteLock.writeLock().lock()
-						 activities.add(item)
-					 }
-					 finally {
-						 // unlock post-list modification..
-						 activities.readWriteLock.writeLock().unlock()
+					 activities.withWriteLock {
+						 add(item)
 					 }
 				 }
 			}

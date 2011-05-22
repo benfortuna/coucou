@@ -396,16 +396,9 @@ def reloadResults = {
 			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
 			activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
 			
-			 try {
-				 // lock for list modification..
-				 activities.readWriteLock.writeLock().lock()
-				 
-				 activities.clear()
-			 }
-			 finally {
-				 // unlock post-list modification..
-				 activities.readWriteLock.writeLock().unlock()
-			 }
+			activities.withWriteLock {
+				clear()
+			}
 		}
 
 		 items.reverseEach {
@@ -518,15 +511,8 @@ def reloadResults = {
 			 }.curry(it)
 			 
 			 doLater {
-				 try {
-					 // lock for list modification..
-					 activities.readWriteLock.writeLock().lock()
-					 activities.add(item)
-//									 statusMessage.text = "${activities.size()} ${rs('items')}"
-				 }
-				 finally {
-					 // unlock post-list modification..
-					 activities.readWriteLock.writeLock().unlock()
+				 activities.withWriteLock {
+					 add(item)
 				 }
 			 }
 		}
@@ -1331,9 +1317,9 @@ ousia.edt {
 			def pathIcons = [:]
 			pathIcons[SearchPathResult] = searchIcon
 			pathIcons[FeedNodePathResult] = feedIconSmall
-			pathIcons[FolderNodePathResult] = mailIconSmall
-			pathIcons[StorePathResult] = mailIconSmall
-			pathIcons[RosterPathResult] = chatIconSmall
+//			pathIcons[FolderNodePathResult] = mailIconSmall
+//			pathIcons[StorePathResult] = mailIconSmall
+//			pathIcons[RosterPathResult] = chatIconSmall
 			
 			pathResultContext = new PathResultContext()
 			breadcrumbBar(new PathResultCallback(root: new RootNodePathResult(session.rootNode, pathResultContext), pathIcons: pathIcons), throwsExceptions: false, constraints: BorderLayout.NORTH, id: 'breadcrumb')
@@ -1343,7 +1329,9 @@ ousia.edt {
 			// XXX: when look and feel changes the breadcrumb is reset..
 			UIManager.addPropertyChangeListener({ e ->
 				if (e.propertyName == 'lookAndFeel') {
-					activities.clear()
+					activities.withWriteLock {
+						clear()
+					}
 				}
 			} as PropertyChangeListener)
 

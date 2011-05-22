@@ -43,15 +43,9 @@ class FolderResultLoader {
 				ttsupport.delegateRenderer = defaultRenderer
 				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
 				
-				 try {
-					 // lock for list modification..
-					 activities.readWriteLock.writeLock().lock()
-					 activities.clear()
-				 }
-				 finally {
-					 // unlock post-list modification..
-					 activities.readWriteLock.writeLock().unlock()
-				 }
+				activities.withWriteLock {
+					clear()
+				}
 			}
 	
 			 items.reverseEach {
@@ -68,14 +62,8 @@ class FolderResultLoader {
 				 }.curry(it)
 				 
 				 doLater {
-					 try {
-						 // lock for list modification..
-						 activities.readWriteLock.writeLock().lock()
-						 activities.add(item)
-					 }
-					 finally {
-						 // unlock post-list modification..
-						 activities.readWriteLock.writeLock().unlock()
+					 activities.withWriteLock {
+						 add(item)
 					 }
 				 }
 			}
