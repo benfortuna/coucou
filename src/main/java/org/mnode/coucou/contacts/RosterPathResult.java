@@ -68,7 +68,8 @@ public class RosterPathResult extends AbstractPathResult<Roster, RosterEntry> {
 		try {
 			final Map<String, Value> bindValues = new HashMap<String, Value>();
 			bindValues.put("participant", conversationsNode.getSession().getValueFactory().createValue(result.getUser()));
-			return new SearchPathResult(conversationsQuery, result.getName(), bindValues);
+			final String name = result.getName() != null ? result.getName() : result.getUser();
+			return new SearchPathResult(conversationsQuery, name, bindValues);
 		}
 		catch (RepositoryException e) {
 			throw new PathResultException(e);
