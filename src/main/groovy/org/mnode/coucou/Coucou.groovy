@@ -87,11 +87,13 @@ import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.chat.MessageListCellRenderer;
 import org.mnode.coucou.chat.PeerListCellRenderer;
 import org.mnode.coucou.contacts.ContactsManager
+import org.mnode.coucou.contacts.ContactsModule;
 import org.mnode.coucou.contacts.RosterEntryResultLoader;
 import org.mnode.coucou.contacts.RosterPathResult;
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult;
 import org.mnode.coucou.feed.FeedNodeResultLoader;
+import org.mnode.coucou.feed.FeedsModule;
 import org.mnode.coucou.feed.FeedsNodePathResult;
 import org.mnode.coucou.layer.ProgressLayerUI;
 import org.mnode.coucou.layer.StatusLayerUI;
@@ -99,6 +101,7 @@ import org.mnode.coucou.mail.DialogAuthenticator;
 import org.mnode.coucou.mail.FolderNodePathResult;
 import org.mnode.coucou.mail.FolderPathResult;
 import org.mnode.coucou.mail.FolderResultLoader;
+import org.mnode.coucou.mail.MailModule;
 import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.mail.StorePathResult;
 import org.mnode.coucou.mail.StoreResultLoader;
@@ -619,35 +622,7 @@ ousia.edt {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
         }
-		
-		action id: 'addFeedAction', name: rs('Add Subscription'), SmallIcon: feedIcon, closure: {
-			url = JOptionPane.showInputDialog(frame, rs('URL'))
-			if (url) {
-				doOutside {
-					try {
-						if (breadcrumb.model.items[-1].data instanceof FeedsNodePathResult) {
-							aggregator.addFeed(url, breadcrumb.model.items[-1].data.element)
-						}
-						else {
-							aggregator.addFeed(url)
-						}
-					}
-					catch (MalformedURLException e) {
-						doLater {
-							JOptionPane.showMessageDialog(frame, "Invalid URL: ${url}")
-						}
-					}
-					catch (Exception e2) {
-						doLater {
-							ErrorInfo error = ['Error', "${e2.message}",
-								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null]
-							JXErrorPane.showDialog(frame, error);
-						}
-					}
-				}
-			}
-		}
-		
+
 		action id: 'addCalendarAction', name: rs('Calendar'), closure: {
 			def url = JOptionPane.showInputDialog(frame, rs('URL'))
 			if (url) {
@@ -667,26 +642,6 @@ ousia.edt {
 							JXErrorPane.showDialog(frame, error);
 						}
 					}
-				}
-			}
-		}
-
-		action id: 'addMailAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
-			def emailAddress = JOptionPane.showInputDialog(frame, rs('Email Address'))
-			if (emailAddress) {
-				def accountNode = mailbox.addAccount(emailAddress)
-				doOutside {
-					mailbox.updateAccount accountNode
-				}
-			}
-		}
-		
-		action id: 'addXmppAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
-			def user = JOptionPane.showInputDialog(frame, rs('User'))
-			if (user) {
-				def accountNode = contactsManager.addAccount(user)
-				doOutside {
-					contactsManager.connect accountNode
 				}
 			}
 		}
@@ -871,10 +826,6 @@ ousia.edt {
 		
 		action id: 'archiveAction', name: rs('Archive'), SmallIcon: archiveIcon, closure: {
 			actionContext.archive()
-		}
-
-		action id: 'bookmarkFeedAction', name: rs('Bookmark'), closure: {
-			actionContext.toggleBookmark()
 		}
 
 		action id: 'newFolderAction', name: rs('New Folder'), closure: {
@@ -1158,156 +1109,15 @@ ousia.edt {
 				)
 			},
 		]))
-		
-		ribbonTask(rs('Action'), id: 'mailRibbonTask', bands: [
 
-			ribbonBand(rs('Configure'), id: 'mailConfigurationBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(addMailAccountAction),
-					priority: RibbonElementPriority.TOP
-				])
-			},
+		mailModule = new MailModule(mailbox: mailbox)
+		mailModule.initUI(ousia)
 		
-			ribbonBand(rs('Respond'), icon: forwardIcon, id: 'respondBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(replyIcon, text: rs('Reply')),
-					priority: RibbonElementPriority.TOP
-				])
-				ribbonComponent([
-					component: commandButton(replyAllIcon, text: rs('Reply To All')),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(forwardIcon, text: rs('Forward')),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(chatIcon, text: rs('Chat')),
-					priority: RibbonElementPriority.MEDIUM
-				])
-			},
+		feedsModule = new FeedsModule(aggregator: aggregator)
+		feedsModule.initUI(ousia)
 		
-			ribbonBand(rs('Organise'), icon: forwardIcon, id: 'organiseBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(rs('Flag')),
-					priority: RibbonElementPriority.TOP
-				])
-				ribbonComponent([
-					component: commandButton(rs('Tag')),
-					priority: RibbonElementPriority.MEDIUM
-				])
-	//			ribbonComponent([
-	//				component: commandButton(rs('Move To')),
-	//				priority: RibbonElementPriority.MEDIUM
-	//			])
-				ribbonComponent([
-					component: commandButton(archiveAction),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(rs('Delete'), icon: deleteMailIcon, actionPerformed: deleteAction),
-					priority: RibbonElementPriority.MEDIUM
-				])
-			},
-
-			ribbonBand(rs('Extras'), icon: forwardIcon, id: 'actionExtrasBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(copyIcon, text: rs('Copy')),
-					priority: RibbonElementPriority.TOP
-				])
-				ribbonComponent([
-					component: commandButton(eventIcon, text: rs('Add To Planner')),
-					priority: RibbonElementPriority.MEDIUM
-				])
-			},
-		])
-		
-		ribbonTask(rs('Action'), id: 'feedRibbonTask', bands: [
-		
-			ribbonBand(rs('Subscribe'), id: 'feedSubscriptionBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(addFeedAction),
-					priority: RibbonElementPriority.TOP
-				])
-			},
-		
-			ribbonBand(rs('Update'), icon: forwardIcon, id: 'updateBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandToggleButton(bookmarkIcon, id: 'bookmarkFeedButton', enabled: false, action: bookmarkFeedAction),
-					priority: RibbonElementPriority.TOP
-				])
-				ribbonComponent([
-					component: commandButton(okIcon, action: markAsReadAction),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(okAllIcon, action: markAllReadAction),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(deleteAction),
-					priority: RibbonElementPriority.MEDIUM
-				])
-			},
-
-			ribbonBand(rs('Share'), icon: forwardIcon, id: 'shareBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(rs('Post To Buzz'), actionPerformed: {
-						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-						// feed item..
-						if (selectedItem.node.hasProperty('link')) {
-							Desktop.desktop.browse(URI.create("http://www.google.com/buzz/post?url=${selectedItem.node.getProperty('link').value.string}"))
-						}
-					} as ActionListener),
-					priority: RibbonElementPriority.TOP
-				])
-				ribbonComponent([
-					component: commandButton(rs('Twitter'), actionPerformed: {
-						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-						// feed item..
-						if (selectedItem.node.hasProperty('link')) {
-							Desktop.desktop.browse(URI.create("http://twitter.com/share?url=${selectedItem.node.getProperty('link').value.string}"))
-						}
-					} as ActionListener),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent([
-					component: commandButton(rs('Facebook'), actionPerformed: {
-						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-						// feed item..
-						if (selectedItem.node.hasProperty('link')) {
-							Desktop.desktop.browse(URI.create("http://www.facebook.com/sharer.php?u=${selectedItem.node.getProperty('link').value.string}"))
-						}
-					} as ActionListener),
-					priority: RibbonElementPriority.MEDIUM
-				])
-				ribbonComponent(
-					component: commandButton(rs('Reddit'), actionPerformed: {
-						def selectedItem = activityTree[activityTable.convertRowIndexToModel(activityTable.selectedRow)]
-						// feed item..
-						if (selectedItem.node.hasProperty('link')) {
-							Desktop.desktop.browse(URI.create("http://reddit.com/submit?url=${selectedItem.node.getProperty('link').value.string}&title=${URLEncoder.encode(selectedItem.node.getProperty('title').value.string, 'UTF-8')}"))
-						}
-					} as ActionListener),
-					priority: RibbonElementPriority.MEDIUM
-				)
-			},
-		])
-		
-		ribbonTask(rs('Action'), id: 'contactsRibbonTask', bands: [
-			
-			ribbonBand(rs('Configure'), id: 'xmppConfigurationBand', resizePolicies: ['mirror']) {
-				ribbonComponent([
-					component: commandButton(addXmppAccountAction),
-					priority: RibbonElementPriority.TOP
-				])
-			},
-
-		])
-		
-		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
-		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
-		frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Contacts'), Color.YELLOW, contactsRibbonTask)
+		contactsModule = new ContactsModule(contactsManager: contactsManager)
+		contactsModule.initUI(ousia)
 
 		panel {
 			borderLayout()
@@ -1457,12 +1267,13 @@ ousia.edt {
 												aggregator.delete entry['node']
 												activityTree.remove entryIndex
 											}
-											
+/*
 											actionContext.toggleBookmark = {
 												entry['node'].flagged = !(entry['node'].flagged && entry['node'].flagged.boolean)
 												aggregator.save entry['node']
 												activityTable.model.fireTableRowsUpdated activityTable.selectedRow, activityTable.selectedRow
 											}
+*/
 											bookmarkFeedButton.enabled = true
 											bookmarkFeedButton.actionModel.selected = entry['node'].flagged && entry['node'].flagged.boolean
 										}
