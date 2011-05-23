@@ -42,7 +42,8 @@ class FeedsModule {
 			
 			resizableIcon('/feed.svg', size: [16, 16], id: 'feedIcon')
 			resizableIcon('/feed.svg', size: [12, 12], id: 'feedIconSmall')
-		
+			resizableIcon('/star.svg', size: [16, 16], id: 'bookmarkIcon')
+			
 			actions {
 				
 				action id: 'importFeedsAction', name: rs('Feeds'), closure: {

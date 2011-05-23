@@ -19,19 +19,16 @@
 package org.mnode.coucou
 
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
-import groovy.xml.MarkupBuilder
-import groovyx.gpars.GParsExecutorsPool
 
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Desktop
-import java.awt.Dimension;
-import java.awt.FlowLayout;
+import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.GraphicsEnvironment
-import java.awt.SystemTray;
-import java.awt.TrayIcon;
+import java.awt.SystemTray
+import java.awt.TrayIcon
 import java.awt.event.ActionListener
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -41,13 +38,9 @@ import javax.jcr.Node
 import javax.jcr.PropertyType
 import javax.jcr.SimpleCredentials
 import javax.jcr.observation.EventListener
-import javax.mail.Session
-import javax.mail.Store
-import javax.mail.URLName
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MailDateFormat
 import javax.naming.InitialContext
-import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JOptionPane
@@ -56,70 +49,59 @@ import javax.swing.JSplitPane
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.UIManager.LookAndFeelInfo
-import javax.swing.event.DocumentListener;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
+import javax.swing.event.DocumentListener
+import javax.swing.text.DefaultStyledDocument
+import javax.swing.text.StyleConstants
+import javax.swing.text.StyleContext
+import javax.swing.text.StyledDocument
 import javax.swing.text.html.StyleSheet
 
 import org.apache.jackrabbit.core.jndi.RegistryHelper
-import org.apache.jackrabbit.util.Text;
-import org.jdesktop.swingx.JXDialog;
+import org.apache.jackrabbit.util.Text
 import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.JXStatusBar
 import org.jdesktop.swingx.error.ErrorInfo
 import org.jdesktop.swingx.prompt.BuddySupport
-import org.jivesoftware.smack.ChatManager;
-import org.jivesoftware.smack.MessageListener;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smackx.ChatState;
-import org.jivesoftware.smackx.ChatStateListener;
-import org.jivesoftware.smackx.ChatStateManager;
-import org.mnode.base.log.FormattedLogEntry
+import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smackx.ChatState
+import org.jivesoftware.smackx.ChatStateListener
+import org.jivesoftware.smackx.ChatStateManager
 import org.mnode.base.log.LogAdapter
-import org.mnode.base.log.LogEntry
-import org.mnode.base.log.LogEntry.Level
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.activity.DateExpansionModel
 import org.mnode.coucou.breadcrumb.PathResultCallback
-import org.mnode.coucou.chat.MessageListCellRenderer;
-import org.mnode.coucou.chat.PeerListCellRenderer;
+import org.mnode.coucou.chat.PeerListCellRenderer
 import org.mnode.coucou.contacts.ContactsManager
-import org.mnode.coucou.contacts.ContactsModule;
-import org.mnode.coucou.contacts.RosterEntryResultLoader;
-import org.mnode.coucou.contacts.RosterPathResult;
+import org.mnode.coucou.contacts.ContactsModule
+import org.mnode.coucou.contacts.RosterEntryResultLoader
+import org.mnode.coucou.contacts.RosterPathResult
 import org.mnode.coucou.feed.Aggregator
-import org.mnode.coucou.feed.FeedNodePathResult;
-import org.mnode.coucou.feed.FeedNodeResultLoader;
-import org.mnode.coucou.feed.FeedsModule;
-import org.mnode.coucou.feed.FeedsNodePathResult;
-import org.mnode.coucou.layer.ProgressLayerUI;
-import org.mnode.coucou.layer.StatusLayerUI;
-import org.mnode.coucou.mail.DialogAuthenticator;
-import org.mnode.coucou.mail.FolderNodePathResult;
-import org.mnode.coucou.mail.FolderPathResult;
-import org.mnode.coucou.mail.FolderResultLoader;
-import org.mnode.coucou.mail.MailModule;
+import org.mnode.coucou.feed.FeedNodePathResult
+import org.mnode.coucou.feed.FeedNodeResultLoader
+import org.mnode.coucou.feed.FeedsModule
+import org.mnode.coucou.feed.FeedsNodePathResult
+import org.mnode.coucou.layer.ProgressLayerUI
+import org.mnode.coucou.layer.StatusLayerUI
+import org.mnode.coucou.mail.DialogAuthenticator
+import org.mnode.coucou.mail.FolderPathResult
+import org.mnode.coucou.mail.FolderResultLoader
+import org.mnode.coucou.mail.MailModule
 import org.mnode.coucou.mail.Mailbox
-import org.mnode.coucou.mail.StorePathResult;
-import org.mnode.coucou.mail.StoreResultLoader;
+import org.mnode.coucou.mail.StorePathResult
+import org.mnode.coucou.mail.StoreResultLoader
 import org.mnode.coucou.planner.Planner
+import org.mnode.coucou.planner.PlannerModule;
 import org.mnode.coucou.search.SearchPathResult
-import org.mnode.coucou.util.HtmlCodes;
+import org.mnode.coucou.util.HtmlCodes
 import org.mnode.juicer.query.QueryBuilder
 import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
-import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
 import org.mnode.ousia.OusiaBuilder
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener
-import org.pushingpixels.flamingo.api.common.CommandButtonDisplayState
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
-import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.substance.api.SubstanceConstants
 import org.pushingpixels.substance.api.SubstanceLookAndFeel
 import org.slf4j.LoggerFactory
@@ -596,7 +578,6 @@ ousia.edt {
 	resizableIcon('/search.svg', size: [12, 12], id: 'searchIcon')
 	resizableIcon('/im.svg', size: [16, 16], id: 'chatIcon')
 	resizableIcon('/im.svg', size: [12, 12], id: 'chatIconSmall')
-	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
 	resizableIcon('/reply.svg', size: [16, 16], id: 'replyIcon')
 	resizableIcon('/replyAll.svg', size: [16, 16], id: 'replyAllIcon')
 	resizableIcon('/forward.svg', size: [16, 16], id: 'forwardIcon')
@@ -610,7 +591,7 @@ ousia.edt {
 	resizableIcon('/reload.svg', size: [16, 16], id: 'refreshIcon')
     resizableIcon('/cancel.svg', size: [16, 16], id: 'cancelLoadIcon')
 	resizableIcon('/forward.svg', size: [12, 12], id: 'folderIcon')
-	resizableIcon('/star.svg', size: [16, 16], id: 'bookmarkIcon')
+	resizableIcon('/event.svg', size: [16, 16], id: 'eventIcon')
 	
 	def frameIconImages = [imageIcon('/globe64.png').image, imageIcon('/globe48.png').image, imageIcon('/globe32.png').image, imageIcon('/globe16.png').image]
 	
@@ -618,29 +599,6 @@ ousia.edt {
         action id: 'exitAction', name: rs('Exit'), accelerator: shortcut('Q'), closure: {
             System.exit(0)
         }
-
-		action id: 'addCalendarAction', name: rs('Calendar'), closure: {
-			def url = JOptionPane.showInputDialog(frame, rs('URL'))
-			if (url) {
-				doOutside {
-					try {
-						planner.addCalendar(url)
-					}
-					catch (MalformedURLException e) {
-						doLater {
-							JOptionPane.showMessageDialog(frame, "Invalid URL: ${url}")
-						}
-					}
-					catch (Exception e2) {
-						doLater {
-							ErrorInfo error = ['Error', "${e2.message}",
-								"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null]
-							JXErrorPane.showDialog(frame, error);
-						}
-					}
-				}
-			}
-		}
 
 		action id: 'openExplorerView', name: rs('Repository Explorer'), closure: {
 			frame(title: rs('Repository Explorer'), size: [320, 240], show: true, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE) {
@@ -780,11 +738,13 @@ ousia.edt {
 		contactsModule = new ContactsModule(contactsManager: contactsManager)
 		contactsModule.initUI(ousia)
 
+		plannerModule = new PlannerModule(planner: planner)
+		plannerModule.initUI(ousia)
+		
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
 //				['groupTitle': 'New Items', 'entries': [
 //			ribbonApplicationMenuEntrySecondary(id: 'newFeed', icon: feedIcon, text: rs('Feed'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addFeedAction)
-			ribbonApplicationMenuEntrySecondary(id: 'newCalendar', icon: eventIcon, text: rs('Calendar'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addCalendarAction) //]]
 //			}
 			newMenu.addSecondaryMenuGroup 'Create a new item', newCalendar
 			
