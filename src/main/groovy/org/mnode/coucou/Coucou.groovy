@@ -317,15 +317,6 @@ resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
 
 def reloadResults = {
 	ousia.edt {
-		filterTextField.text = null
-//						frame.title = "${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
-		frame.title = breadcrumbTitle(breadcrumb.model.items)
-		frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-		
-		// enable/disable ribbon tasks..
-		quickSearchField.text = null
-		quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
-		quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
 		
 		if (breadcrumb.model.items[0].data.element.path == '/Mail') {
 			frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
@@ -1326,12 +1317,30 @@ ousia.edt {
 			}
 
 			breadcrumb.model.addPathListener({
-				def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
-				if (resultLoader) {
-					resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
-				}
-				else {
-					reloadResults()
+				edt {
+					
+					try {
+						breadcrumb.enabled = false
+						filterTextField.text = null
+						frame.title = breadcrumb.model.items.collect({ it.data.name }).join(' | ') << ' - Coucou'
+						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+						
+						// enable/disable ribbon tasks..
+						quickSearchField.text = null
+						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
+						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
+			
+						def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
+						if (resultLoader) {
+							resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
+						}
+						else {
+							reloadResults()
+						}
+					}
+					finally {
+						breadcrumb.enabled = true
+					}
 				}
 			} as BreadcrumbPathListener)
 		}
