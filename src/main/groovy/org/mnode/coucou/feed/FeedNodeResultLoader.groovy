@@ -64,6 +64,16 @@ class FeedNodeResultLoader {
 				frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(1), false
 			}
 			
+			if (breadcrumb.model.items[0].data.element.path == '/Contacts') {
+				frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(2), true
+				if (breadcrumb.model.items[-1].data.name == 'Contacts') {
+					frame.ribbon.selectedTask = contactsRibbonTask
+				}
+			}
+			else {
+				frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(2), false
+			}
+	
 			actionContext.addFolder = { folderName ->
 				breadcrumb.model.items[-1].data.element.addNode(Text.escapeIllegalJcrChars(folderName))
 				breadcrumb.model.items[-1].data.element.save()
