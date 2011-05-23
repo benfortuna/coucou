@@ -35,14 +35,6 @@ class FeedNodeResultLoader {
 	
 	def reloadResults = { ousia, actionContext, activities, ttsupport ->
 		ousia.edt {
-			filterTextField.text = null
-			frame.title = breadcrumb.model.items.collect({ it.data.name }).join(' | ') << ' - Coucou'
-			frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-			
-			// enable/disable ribbon tasks..
-			quickSearchField.text = null
-			quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
-			quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
 			
 			if (breadcrumb.model.items[0].data.element.path == '/Mail') {
 				frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(0), true
