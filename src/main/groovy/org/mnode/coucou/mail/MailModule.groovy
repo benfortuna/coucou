@@ -20,8 +20,13 @@ package org.mnode.coucou.mail
 
 import java.awt.Color;
 
+import javax.mail.Session;
+import javax.mail.Store;
+import javax.mail.URLName;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 
@@ -32,8 +37,25 @@ class MailModule {
 	def initUI = { ousia ->
 		ousia.edt {
 			
+			resizableIcon('/mail.svg', size: [16, 16], id: 'mailIcon')
+			resizableIcon('/mail.svg', size: [12, 12], id: 'mailIconSmall')
+		
 			actions {
 				
+				// import email..
+				action id: 'importMailAction', name: rs('Email'), closure: {
+					if (dirChooser.showOpenDialog() == JFileChooser.APPROVE_OPTION) {
+						doOutside {
+							// load email..
+							Session importSession = Session.getInstance(new Properties())
+							Store importStore = importSession.getStore(new URLName("mstor:${dirChooser.selectedFile.absolutePath}"))
+							importStore.connect()
+					
+							mailbox.importMail importStore
+						}
+					}
+				}
+		
 				action id: 'addMailAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
 					def emailAddress = JOptionPane.showInputDialog(frame, rs('Email Address'))
 					if (emailAddress) {
@@ -45,6 +67,8 @@ class MailModule {
 				}
 		
 			}
+			
+			ribbonApplicationMenuEntrySecondary(id: 'importMail', icon: mailIcon, text: rs('Email'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: importMailAction)
 			
 			ribbonTask(rs('Action'), id: 'mailRibbonTask', bands: [
 	
