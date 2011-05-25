@@ -23,25 +23,25 @@ import java.util.List;
 
 import javax.jcr.Node;
 
-import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
 import org.mnode.coucou.PathResult;
 import org.mnode.coucou.PathResultException;
 
-public class RosterPathResult extends AbstractXmppPathResult<Roster> {
+public class RosterGroupPathResult extends AbstractXmppPathResult<RosterGroup> {
+
+	public RosterGroupPathResult(RosterGroup group, Node conversationsNode) {
+		super(group, null, conversationsNode);
+	}
 	
-	public RosterPathResult(Roster roster, String name, Node conversationsNode) {
-		super(roster, name, conversationsNode);
+	@Override
+	public String getName() throws PathResultException {
+		return getElement().getName();
 	}
 	
 	@Override
 	public List<PathResult<?, ?>> getChildren() throws PathResultException {
 		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
-		
-		for (RosterGroup group : getElement().getGroups()) {
-			children.add(new RosterGroupPathResult(group, getConversationsNode()));
-		}
 		
 		for (RosterEntry entry : getElement().getEntries()) {
 			children.add(getChild(entry));
@@ -51,7 +51,9 @@ public class RosterPathResult extends AbstractXmppPathResult<Roster> {
 
 	@Override
 	public List<RosterEntry> getResults() throws PathResultException {
-		return new ArrayList<RosterEntry>(getElement().getEntries());
+		// TODO Auto-generated method stub
+		return null;
 	}
+
 	
 }
