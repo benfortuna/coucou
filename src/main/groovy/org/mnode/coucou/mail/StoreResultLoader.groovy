@@ -27,44 +27,34 @@ import org.mnode.coucou.DefaultNodeTableCellRenderer;
 class StoreResultLoader {
 
 	def reloadResults = { ousia, actionContext, activities, ttsupport ->
-		ousia.doOutside {
-			def items = breadcrumb.model.items[-1].data.results
-	
-			doLater {
-				// install new renderer..
-				DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
-				defaultRenderer.background = Color.WHITE
-				
-				DateCellRenderer dateRenderer = [defaultRenderer]
-				dateRenderer.background = Color.WHITE
-				
-				ttsupport.delegateRenderer = defaultRenderer
-				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+		def items = breadcrumb.model.items[-1].data.results
 
-				 activities.withWriteLock {
-					 clear()
-				 }
-			}
-	
-			 items.reverseEach {
-				 def item = [:]
-				 item['title'] = it.name
-				 item['entry'] = it
-	
-				 doLater {
-					 activities.withWriteLock {
-						 add(item)
-					 }
-				 }
-			}
+		doLater {
+			// install new renderer..
+			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+			defaultRenderer.background = Color.WHITE
 			
-			 doLater {
-				 frame.contentPane.cursor = Cursor.defaultCursor
+			DateCellRenderer dateRenderer = [defaultRenderer]
+			dateRenderer.background = Color.WHITE
+			
+			ttsupport.delegateRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+
+			 activities.withWriteLock {
+				 clear()
 			 }
 		}
-		
-		ousia.doLater {
-			activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
+
+		 items.reverseEach {
+			 def item = [:]
+			 item['title'] = it.name
+			 item['entry'] = it
+
+			 doLater {
+				 activities.withWriteLock {
+					 add(item)
+				 }
+			 }
 		}
 	}
 }

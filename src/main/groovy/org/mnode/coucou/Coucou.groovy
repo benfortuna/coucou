@@ -301,7 +301,7 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 def resultLoaders = [:]
 resultLoaders[FeedsNodePathResult] = new FeedNodeResultLoader()
 //resultLoaders[FeedNodePathResult] = new FeedNodeResultLoader()
-resultLoaders[StorePathResult] = new StoreResultLoader()
+//resultLoaders[StorePathResult] = new StoreResultLoader()
 //resultLoaders[FolderPathResult] = new FolderResultLoader()
 //resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
 
@@ -1319,26 +1319,32 @@ ousia.edt {
 						quickSearchField.text = null
 						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
 						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
-			
-						def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
-						if (resultLoader) {
-							resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
-						}
-						else if (breadcrumb.model.items[-1].data.class == FolderPathResult) {
-							mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-						}
-						else if (breadcrumb.model.items[-1].data.class == FeedNodePathResult) {
-							feedsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-						}
-						else if (AbstractXmppPathResult.isAssignableFrom(breadcrumb.model.items[-1].data.class)) {
-							contactsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-						}
-						else {
-							reloadResults()
-						}
-						
-						doLater {
-							activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
+
+						doOutside {
+							def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
+							if (resultLoader) {
+								resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
+							}
+							else if (breadcrumb.model.items[-1].data.class == FolderPathResult) {
+								mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+							}
+							else if (breadcrumb.model.items[-1].data.class == StorePathResult) {
+								mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+							}
+							else if (breadcrumb.model.items[-1].data.class == FeedNodePathResult) {
+								feedsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+							}
+							else if (AbstractXmppPathResult.isAssignableFrom(breadcrumb.model.items[-1].data.class)) {
+								contactsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+							}
+							else {
+								reloadResults()
+							}
+							
+							doLater {
+								activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
+								frame.contentPane.cursor = Cursor.defaultCursor
+							}
 						}
 					}
 					finally {
