@@ -19,9 +19,12 @@
 package org.mnode.coucou.contacts
 
 import java.awt.Color;
+import java.awt.Cursor;
 
 import javax.swing.JOptionPane;
 
+import org.mnode.coucou.DateCellRenderer;
+import org.mnode.coucou.DefaultNodeTableCellRenderer;
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 
@@ -57,6 +60,43 @@ class ContactsModule {
 			])
 			
 			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Contacts'), Color.YELLOW, contactsRibbonTask)
+		}
+	}
+	
+	def loadResults = { ousia, activities, ttsupport, pathResult ->
+		ousia.doOutside {
+	
+			doLater {
+				// install new renderer..
+				DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+				defaultRenderer.background = Color.WHITE
+				
+				DateCellRenderer dateRenderer = [defaultRenderer]
+				dateRenderer.background = Color.WHITE
+				
+				ttsupport.delegateRenderer = defaultRenderer
+				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+				
+				activities.withWriteLock {
+					clear()
+				}
+			}
+	
+			pathResult.element.entries.each {
+				 def item = [:]
+				 item['title'] = it.name ? it.name : it.user
+				 item['entry'] = it
+	
+				 doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+			
+			doLater {
+				frame.contentPane.cursor = Cursor.defaultCursor
+			}
 		}
 	}
 }
