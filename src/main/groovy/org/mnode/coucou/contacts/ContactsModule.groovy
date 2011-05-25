@@ -64,39 +64,33 @@ class ContactsModule {
 	}
 	
 	def loadResults = { ousia, activities, ttsupport, pathResult ->
-		ousia.doOutside {
 	
-			doLater {
-				// install new renderer..
-				DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
-				defaultRenderer.background = Color.WHITE
-				
-				DateCellRenderer dateRenderer = [defaultRenderer]
-				dateRenderer.background = Color.WHITE
-				
-				ttsupport.delegateRenderer = defaultRenderer
-				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
-				
-				activities.withWriteLock {
-					clear()
-				}
-			}
-	
-			pathResult.element.entries.each {
-				 def item = [:]
-				 item['title'] = it.name ? it.name : it.user
-				 item['entry'] = it
-	
-				 doLater {
-					 activities.withWriteLock {
-						 add(item)
-					 }
-				 }
-			}
+		ousia.doLater {
+			// install new renderer..
+			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+			defaultRenderer.background = Color.WHITE
 			
-			doLater {
-				frame.contentPane.cursor = Cursor.defaultCursor
+			DateCellRenderer dateRenderer = [defaultRenderer]
+			dateRenderer.background = Color.WHITE
+			
+			ttsupport.delegateRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+			
+			activities.withWriteLock {
+				clear()
 			}
+		}
+
+		pathResult.element.entries.each {
+			 def item = [:]
+			 item['title'] = it.name ? it.name : it.user
+			 item['entry'] = it
+
+			 ousia.doLater {
+				 activities.withWriteLock {
+					 add(item)
+				 }
+			 }
 		}
 	}
 }

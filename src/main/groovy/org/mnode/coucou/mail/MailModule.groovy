@@ -145,27 +145,46 @@ class MailModule {
 	}
 		
 	def loadResults = { ousia, activities, ttsupport, pathResult ->
-		ousia.doOutside {
-			doLater {
-				// install new renderer..
-				MessageTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
-				defaultRenderer.background = Color.WHITE
-				
-				DateCellRenderer dateRenderer = [defaultRenderer]
-				dateRenderer.background = Color.WHITE
-				
-				ttsupport.delegateRenderer = defaultRenderer
-				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
-				activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
-				
-				activities.withWriteLock {
-					clear()
-				}
+		
+		ousia.doLater {
+			// install new renderer..
+			MessageTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+			defaultRenderer.background = Color.WHITE
+			
+			DateCellRenderer dateRenderer = [defaultRenderer]
+			dateRenderer.background = Color.WHITE
+			
+			ttsupport.delegateRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+			
+			activities.withWriteLock {
+				clear()
 			}
+		}
 
+		if (pathResult.class == StorePathResult) {
+			if (!pathResult.element.connected) {
+				pathResult.element.connect()
+			}
+			
+			pathResult.element.defaultFolder.list().each {
+				 def item = [:]
+				 item['title'] = it.name
+				 item['entry'] = it
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+		}
+		else {
 			if (!pathResult.element.isOpen()) {
 				pathResult.element.open(Folder.READ_ONLY);
 			}
+			
 			if ((pathResult.element.getType() & Folder.HOLDS_MESSAGES) > 0) {
 				final Message[] messages = pathResult.element.getMessages();
 				
@@ -174,45 +193,39 @@ class MailModule {
 				fp.add(FetchProfile.Item.FLAGS);
 	
 				pathResult.element.fetch(messages, fp);
-/*				
-				List<Message> messageList = new ArrayList<Message>(Arrays.asList(messages));
-				for (Iterator<Message> iter = messageList.iterator(); iter.hasNext();) {
-					if (iter.next().isExpunged()) {
-						iter.remove();
+	/*				
+					List<Message> messageList = new ArrayList<Message>(Arrays.asList(messages));
+					for (Iterator<Message> iter = messageList.iterator(); iter.hasNext();) {
+						if (iter.next().isExpunged()) {
+							iter.remove();
+						}
 					}
-				}
-*/
+	*/
 				messages.reverseEach {
 					 def item = [:]
 					 item['title'] = it.subject
 					 item['source'] = it.from.collect { it.personal ? it.personal : it.address }.join(', ')
 					 item['date'] = it.receivedDate
 					 item['entry'] = it
-					 item.seen = { msg ->
-						 msg.flags.contains(Flags.Flag.SEEN)
-					 }.curry(it)
-					 item.flagged = { msg ->
-						 msg.flags.contains(Flags.Flag.FLAGGED)
-					 }.curry(it)
-					 
-					 doLater {
-						 activities.withWriteLock {
-							 add(item)
+						 item.seen = { msg ->
+							 msg.flags.contains(Flags.Flag.SEEN)
+						 }.curry(it)
+						 item.flagged = { msg ->
+							 msg.flags.contains(Flags.Flag.FLAGGED)
+						 }.curry(it)
+						 
+						 ousia.doLater {
+							 activities.withWriteLock {
+								 add(item)
+							 }
 						 }
-					 }
-				}
-				
-				doLater {
-					frame.contentPane.cursor = Cursor.defaultCursor
-				}
-   
-//				return new ArrayList<Object>(messageList);
+					}
 			}
-//			else {
-//				return Arrays.asList(getElement().list());
-//			}
-	
+	//			else {
+	//				return Arrays.asList(getElement().list());
+	//			}
 		}
+	
 
 	}
 }
