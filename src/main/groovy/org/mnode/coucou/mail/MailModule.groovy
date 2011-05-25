@@ -18,17 +18,23 @@
  */
 package org.mnode.coucou.mail
 
-import java.awt.Color;
+import java.awt.Color
+import java.awt.Cursor
 
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.URLName;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
+import javax.mail.FetchProfile
+import javax.mail.Flags
+import javax.mail.Folder
+import javax.mail.Message
+import javax.mail.Session
+import javax.mail.Store
+import javax.mail.URLName
+import javax.swing.JFileChooser
+import javax.swing.JOptionPane
 
-import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
-import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
+import org.mnode.coucou.DateCellRenderer
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
 
 class MailModule {
 	
@@ -136,5 +142,77 @@ class MailModule {
 			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
 			
 		}
+	}
+		
+	def loadResults = { ousia, activities, ttsupport, pathResult ->
+		ousia.doOutside {
+			doLater {
+				// install new renderer..
+				MessageTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+				defaultRenderer.background = Color.WHITE
+				
+				DateCellRenderer dateRenderer = [defaultRenderer]
+				dateRenderer.background = Color.WHITE
+				
+				ttsupport.delegateRenderer = defaultRenderer
+				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+				activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+				
+				activities.withWriteLock {
+					clear()
+				}
+			}
+
+			if (!pathResult.element.isOpen()) {
+				pathResult.element.open(Folder.READ_ONLY);
+			}
+			if ((pathResult.element.getType() & Folder.HOLDS_MESSAGES) > 0) {
+				final Message[] messages = pathResult.element.getMessages();
+				
+				FetchProfile fp = new FetchProfile();
+				fp.add(FetchProfile.Item.ENVELOPE);
+				fp.add(FetchProfile.Item.FLAGS);
+	
+				pathResult.element.fetch(messages, fp);
+/*				
+				List<Message> messageList = new ArrayList<Message>(Arrays.asList(messages));
+				for (Iterator<Message> iter = messageList.iterator(); iter.hasNext();) {
+					if (iter.next().isExpunged()) {
+						iter.remove();
+					}
+				}
+*/
+				messages.reverseEach {
+					 def item = [:]
+					 item['title'] = it.subject
+					 item['source'] = it.from.collect { it.personal ? it.personal : it.address }.join(', ')
+					 item['date'] = it.receivedDate
+					 item['entry'] = it
+					 item.seen = { msg ->
+						 msg.flags.contains(Flags.Flag.SEEN)
+					 }.curry(it)
+					 item.flagged = { msg ->
+						 msg.flags.contains(Flags.Flag.FLAGGED)
+					 }.curry(it)
+					 
+					 doLater {
+						 activities.withWriteLock {
+							 add(item)
+						 }
+					 }
+				}
+				
+				doLater {
+					frame.contentPane.cursor = Cursor.defaultCursor
+				}
+   
+//				return new ArrayList<Object>(messageList);
+			}
+//			else {
+//				return Arrays.asList(getElement().list());
+//			}
+	
+		}
+
 	}
 }

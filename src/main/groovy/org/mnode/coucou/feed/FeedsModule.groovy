@@ -21,14 +21,19 @@ package org.mnode.coucou.feed
 import groovy.xml.MarkupBuilder;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.event.ActionListener;
 
+import javax.jcr.PropertyType;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
+import org.mnode.coucou.DateCellRenderer;
+import org.mnode.coucou.DefaultNodeTableCellRenderer;
+import org.mnode.coucou.util.HtmlCodes;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
@@ -221,6 +226,73 @@ class FeedsModule {
 			
 			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
 			
+		}
+	}
+	
+	def loadResults = { ousia, activities, ttsupport, pathResult ->
+		ousia.doOutside {
+			doLater {
+				// install new renderer..
+				DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+				defaultRenderer.background = Color.WHITE
+				
+				DateCellRenderer dateRenderer = [defaultRenderer]
+				dateRenderer.background = Color.WHITE
+				
+				ttsupport.delegateRenderer = defaultRenderer
+				activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+				activityTable.columnModel.getColumn(2).cellRenderer = dateRenderer
+				
+				activities.withWriteLock {
+					clear()
+				}
+			}
+		
+//			items.reverseEach {
+			for (itemNode in pathResult.element.nodes) {
+				 def item = [:]
+				 // feeds / items..
+				 if (itemNode.hasProperty('title')) {
+					 item['title'] = HtmlCodes.unescape(itemNode.title.string)
+				 }
+				 else {
+					 item['title'] = HtmlCodes.unescape(itemNode.name)
+				 }
+				 
+				 if (itemNode.hasProperty('source')) {
+					 if (itemNode.source.type == PropertyType.REFERENCE) {
+//						 item['source'] = HtmlCodes.unescape(itemNode.source.node.title.string).intern()
+						 item['source'] = HtmlCodes.unescape(itemNode.getProperty('source').getNode().getProperty('title').string).intern()
+					 }
+					 else {
+						 item['source'] = HtmlCodes.unescape(itemNode.source.string).intern()
+					 }
+				 }
+				 else {
+					 item['source'] = itemNode.parent.name
+				 }
+	
+				 if (itemNode.hasProperty('date')) {
+					 item['date'] = itemNode.date.date.time
+				 }
+				 else if (itemNode.hasProperty('received')) {
+					 item['date'] = itemNode.received.date.time
+				 }
+	
+				 item['node'] = itemNode
+				 item.seen = { itemNode.seen?.boolean == true }
+				 item.flagged = { itemNode.flagged?.boolean == true }
+				 
+				 doLater {
+					 activities.withWriteLock {
+						 add(item)
+					}
+				}
+			}
+			
+			doLater {
+				frame.contentPane.cursor = Cursor.defaultCursor
+			}
 		}
 	}
 }

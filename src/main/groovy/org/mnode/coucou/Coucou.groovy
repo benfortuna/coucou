@@ -71,6 +71,7 @@ import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.activity.DateExpansionModel
 import org.mnode.coucou.breadcrumb.PathResultCallback
 import org.mnode.coucou.chat.PeerListCellRenderer
+import org.mnode.coucou.contacts.AbstractXmppPathResult;
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.contacts.ContactsModule
 import org.mnode.coucou.contacts.RosterEntryResultLoader
@@ -297,23 +298,12 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 	(groupSort != 0) ? groupSort : b.date <=> a.date
 } as Comparator
 
-def breadcrumbTitle = { items ->
-	def title = items.collect({ it.data.name }).join(' | ')
-//	items.each {
-//		title << it.data.name
-//		title << ' | '
-//	}
-	title += ' - Coucou'
-//	"${breadcrumb.model.items[-1].data.name} - ${rs('Coucou')}"
-	return title
-}
-
 def resultLoaders = [:]
 resultLoaders[FeedsNodePathResult] = new FeedNodeResultLoader()
 //resultLoaders[FeedNodePathResult] = new FeedNodeResultLoader()
 resultLoaders[StorePathResult] = new StoreResultLoader()
-resultLoaders[FolderPathResult] = new FolderResultLoader()
-resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
+//resultLoaders[FolderPathResult] = new FolderResultLoader()
+//resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
 
 def reloadResults = {
 	ousia.edt {
@@ -1082,7 +1072,7 @@ ousia.edt {
 	//					ttsupport.delegateRenderer = new DefaultNodeTableCellRenderer(session.rootNode)
 						ttsupport.delegateRenderer.background = Color.WHITE
 						
-						activityTable.columnModel.getColumn(0).maxWidth = 200
+						activityTable.columnModel.getColumn(0).maxWidth = 250
 						activityTable.columnModel.getColumn(0).preferredWidth = 200
 						activityTable.columnModel.getColumn(2).maxWidth = 150
 						activityTable.columnModel.getColumn(2).preferredWidth = 150
@@ -1334,8 +1324,21 @@ ousia.edt {
 						if (resultLoader) {
 							resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
 						}
+						else if (breadcrumb.model.items[-1].data.class == FolderPathResult) {
+							mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+						}
+						else if (breadcrumb.model.items[-1].data.class == FeedNodePathResult) {
+							feedsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+						}
+						else if (AbstractXmppPathResult.isAssignableFrom(breadcrumb.model.items[-1].data.class)) {
+							contactsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+						}
 						else {
 							reloadResults()
+						}
+						
+						doLater {
+							activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
 						}
 					}
 					finally {
