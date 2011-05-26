@@ -74,7 +74,9 @@ import org.mnode.coucou.chat.PeerListCellRenderer
 import org.mnode.coucou.contacts.AbstractXmppPathResult;
 import org.mnode.coucou.contacts.ContactsManager
 import org.mnode.coucou.contacts.ContactsModule
+import org.mnode.coucou.contacts.ContactsNodePathResult;
 import org.mnode.coucou.contacts.RosterEntryResultLoader
+import org.mnode.coucou.contacts.RosterGroupPathResult;
 import org.mnode.coucou.contacts.RosterPathResult
 import org.mnode.coucou.feed.Aggregator
 import org.mnode.coucou.feed.FeedNodePathResult
@@ -88,6 +90,7 @@ import org.mnode.coucou.mail.FolderPathResult
 import org.mnode.coucou.mail.FolderResultLoader
 import org.mnode.coucou.mail.MailModule
 import org.mnode.coucou.mail.Mailbox
+import org.mnode.coucou.mail.MailboxNodePathResult;
 import org.mnode.coucou.mail.StorePathResult
 import org.mnode.coucou.mail.StoreResultLoader
 import org.mnode.coucou.planner.Planner
@@ -299,11 +302,6 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 } as Comparator
 
 def resultLoaders = [:]
-resultLoaders[FeedsNodePathResult] = new FeedNodeResultLoader()
-//resultLoaders[FeedNodePathResult] = new FeedNodeResultLoader()
-//resultLoaders[StorePathResult] = new StoreResultLoader()
-//resultLoaders[FolderPathResult] = new FolderResultLoader()
-//resultLoaders[RosterPathResult] = new RosterEntryResultLoader()
 
 def reloadResults = {
 	ousia.edt {
@@ -712,15 +710,24 @@ ousia.edt {
 		
 		mailModule = new MailModule(mailbox: mailbox)
 		mailModule.initUI(ousia)
-		
+		resultLoaders[MailboxNodePathResult] = mailModule
+		resultLoaders[StorePathResult] = mailModule
+		resultLoaders[FolderPathResult] = mailModule
+
 		feedsModule = new FeedsModule(aggregator: aggregator)
 		feedsModule.initUI(ousia)
-		
+		resultLoaders[FeedsNodePathResult] = feedsModule
+		resultLoaders[FeedNodePathResult] = feedsModule
+
 		contactsModule = new ContactsModule(contactsManager: contactsManager)
 		contactsModule.initUI(ousia)
-
+		resultLoaders[ContactsNodePathResult] = contactsModule
+		resultLoaders[RosterPathResult] = contactsModule
+		resultLoaders[RosterGroupPathResult] = contactsModule
+		
 		plannerModule = new PlannerModule(planner: planner)
 		plannerModule.initUI(ousia)
+		
 		
 		ribbonApplicationMenu(id: 'appMenu') {
 			ribbonApplicationMenuEntryPrimary(id: 'newMenu', icon: newIcon, text: rs('New'), kind: CommandButtonKind.POPUP_ONLY)
@@ -1323,19 +1330,7 @@ ousia.edt {
 						doOutside {
 							def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
 							if (resultLoader) {
-								resultLoader.reloadResults(ousia, actionContext, activities, ttsupport)
-							}
-							else if (breadcrumb.model.items[-1].data.class == FolderPathResult) {
-								mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-							}
-							else if (breadcrumb.model.items[-1].data.class == StorePathResult) {
-								mailModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-							}
-							else if (breadcrumb.model.items[-1].data.class == FeedNodePathResult) {
-								feedsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
-							}
-							else if (AbstractXmppPathResult.isAssignableFrom(breadcrumb.model.items[-1].data.class)) {
-								contactsModule.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
+								resultLoader.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
 							}
 							else {
 								reloadResults()
@@ -1391,8 +1386,11 @@ ousia.edt {
 			return passwordField.text
 		}
 	}
-	contactsManager.connect()
-	pathResultContext.putSharedValue('xmppConnections', contactsManager.xmppConnections)
+	
+	doOutside {
+		contactsManager.connect()
+		pathResultContext.putSharedValue('xmppConnections', contactsManager.xmppConnections)
+	}
 	
 	
 	

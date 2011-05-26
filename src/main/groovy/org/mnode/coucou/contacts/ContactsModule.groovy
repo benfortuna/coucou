@@ -66,6 +66,20 @@ class ContactsModule {
 	def loadResults = { ousia, activities, ttsupport, pathResult ->
 	
 		ousia.doLater {
+			
+			for (i in 0..frame.ribbon.contextualTaskGroupCount - 1) {
+				if (frame.ribbon.getContextualTaskGroup(i).title == 'Contacts') {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), true
+					
+					if (breadcrumb.model.items[-1].data.name == 'Contacts') {
+						frame.ribbon.selectedTask = contactsRibbonTask
+					}
+				}
+				else {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), false
+				}
+			}
+			
 			// install new renderer..
 			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
 			defaultRenderer.background = Color.WHITE
@@ -81,16 +95,31 @@ class ContactsModule {
 			}
 		}
 
-		pathResult.element.entries.each {
-			 def item = [:]
-			 item['title'] = it.name ? it.name : it.user
-			 item['entry'] = it
-
-			 ousia.doLater {
-				 activities.withWriteLock {
-					 add(item)
+		if (pathResult.class == ContactsNodePathResult) {
+			for (accountNode in pathResult.element.accounts.nodes) {
+				def item = [:]
+				item['title'] = accountNode.name
+				item['node'] = accountNode
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
 				 }
-			 }
+			}
+		}
+		else {
+			pathResult.element.entries.each {
+				 def item = [:]
+				 item['title'] = it.name ? it.name : it.user
+				 item['entry'] = it
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
 		}
 	}
 }

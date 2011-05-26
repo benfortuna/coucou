@@ -147,7 +147,21 @@ class MailModule {
 	def loadResults = { ousia, activities, ttsupport, pathResult ->
 		
 		ousia.doLater {
-			// install new renderer..
+			
+			for (i in 0..frame.ribbon.contextualTaskGroupCount - 1) {
+				if (frame.ribbon.getContextualTaskGroup(i).title == 'Mail') {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), true
+					
+					if (breadcrumb.model.items[-1].data.name == 'Mail') {
+						frame.ribbon.selectedTask = mailRibbonTask
+					}
+				}
+				else {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), false
+				}
+			}
+
+						// install new renderer..
 			MessageTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
 			defaultRenderer.background = Color.WHITE
 			
@@ -163,7 +177,32 @@ class MailModule {
 			}
 		}
 
-		if (pathResult.class == StorePathResult) {
+		if (pathResult.class == MailboxNodePathResult) {
+			for (accountNode in pathResult.element.accounts.nodes) {
+				def item = [:]
+				item['title'] = accountNode.name
+				item['node'] = accountNode
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+			
+			for (folderNode in pathResult.element.folders.nodes) {
+				def item = [:]
+				item['title'] = folderNode.name
+				item['node'] = folderNode
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+		}
+		else if (pathResult.class == StorePathResult) {
 			if (!pathResult.element.connected) {
 				pathResult.element.connect()
 			}
