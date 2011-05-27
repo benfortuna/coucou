@@ -54,31 +54,59 @@
 			<url>http://m2.modularity.net.au/snapshots</url>
 		</repository>
 	</repositories>
-	
+
 	<dependencies>
 		<dependency>
-	        <groupId>org.codehaus.groovy</groupId>
-	        <artifactId>groovy-all</artifactId>
-    	</dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-feed</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-    	
+
 		<dependency>
-        	<groupId>org.apache.jackrabbit</groupId>
-        	<artifactId>jackrabbit-core</artifactId>
-        </dependency>
+			<groupId>org.apache.jackrabbit</groupId>
+			<artifactId>jackrabbit-core</artifactId>
+		</dependency>
+
+		<!-- Logging -->
 		<dependency>
-        	<groupId>org.slf4j</groupId>
-        	<artifactId>slf4j-log4j12</artifactId>
-        </dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
 		<dependency>
-        	<groupId>javax.jcr</groupId>
-        	<artifactId>jcr</artifactId>
-        	<version>2.0</version>
-        </dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+		</dependency>
+		<!-- 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+		</dependency>
+		 -->
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.1.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>0.9.28</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.jcr</groupId>
+			<artifactId>jcr</artifactId>
+			<version>2.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.mnode.base</groupId>
 			<artifactId>base-wiki</artifactId>
@@ -89,13 +117,8 @@
 			<artifactId>mstor</artifactId>
 			<version>0.9.13-SNAPSHOT</version>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>jgoodies</groupId>
-			<artifactId>forms</artifactId>
-			<version>1.0.5</version>
-		</dependency>
-		-->
+		<!-- <dependency> <groupId>jgoodies</groupId> <artifactId>forms</artifactId> 
+			<version>1.0.5</version> </dependency> -->
 		<dependency>
 			<groupId>org.mnode.ousia</groupId>
 			<artifactId>ousia</artifactId>
@@ -106,102 +129,102 @@
 			<artifactId>base-log</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-        <dependency>
-            <groupId>net.java.dev.substance</groupId>
-            <artifactId>substance</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.substance</groupId>
-            <artifactId>substance-swingx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.substance</groupId>
-            <artifactId>swingx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.substance</groupId>
-            <artifactId>trident</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>eu.kostia.gtkjfilechooser</groupId>
-            <artifactId>gtkjfilechooser</artifactId>
-            <version>1.4.8</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.flamingo</groupId>
-            <artifactId>flamingo</artifactId>
-            <version>5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-transcoder</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-swing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.miglayout</groupId>
-            <artifactId>miglayout</artifactId>
-            <version>3.7.3.1</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.glazedlists</groupId>
-            <artifactId>glazedlists_java15</artifactId>
-            <version>1.8.0</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.mnode.juicer</groupId>
-        	<artifactId>juicer</artifactId>
-        	<version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.codehaus.gpars</groupId>
-        	<artifactId>gpars</artifactId>
-        	<version>0.11</version>
-        	<type>jar</type>
-        	<scope>compile</scope>
-        </dependency>
-        <dependency>
-        	<groupId>com.ocpsoft</groupId>
-        	<artifactId>ocpsoft-pretty-time</artifactId>
-        	<version>1.0.6</version>
-        	<type>jar</type>
-        	<scope>compile</scope>
-        </dependency>
-        <dependency>
-        	<groupId>net.fortuna.ical4j</groupId>
-        	<artifactId>ical4j-connector</artifactId>
-        	<version>0.9.1-SNAPSHOT</version>
-        	<scope>compile</scope>
-        </dependency>
-        <dependency>
-        	<groupId>org.gcontracts</groupId>
-        	<artifactId>gcontracts</artifactId>
-        	<version>1.1.3</version>
-        	<type>jar</type>
-        	<scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.swinglabs</groupId>
-            <artifactId>jxlayer</artifactId>
-            <version>3.0.4</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.igniterealtime.smack</groupId>
-        	<artifactId>smack</artifactId>
-        	<version>3.1.0</version>
-        	<type>jar</type>
-        	<scope>compile</scope>
-        </dependency>
-        <dependency>
-        	<groupId>org.igniterealtime.smack</groupId>
-        	<artifactId>smackx</artifactId>
-        	<version>3.1.0</version>
-        	<type>jar</type>
-        	<scope>compile</scope>
-        </dependency>
+		<dependency>
+			<groupId>net.java.dev.substance</groupId>
+			<artifactId>substance</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.substance</groupId>
+			<artifactId>substance-swingx</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.substance</groupId>
+			<artifactId>swingx</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.substance</groupId>
+			<artifactId>trident</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>eu.kostia.gtkjfilechooser</groupId>
+			<artifactId>gtkjfilechooser</artifactId>
+			<version>1.4.8</version>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.flamingo</groupId>
+			<artifactId>flamingo</artifactId>
+			<version>5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-transcoder</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-swing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout</artifactId>
+			<version>3.7.3.1</version>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.glazedlists</groupId>
+			<artifactId>glazedlists_java15</artifactId>
+			<version>1.8.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mnode.juicer</groupId>
+			<artifactId>juicer</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.gpars</groupId>
+			<artifactId>gpars</artifactId>
+			<version>0.11</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.ocpsoft</groupId>
+			<artifactId>ocpsoft-pretty-time</artifactId>
+			<version>1.0.6</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.fortuna.ical4j</groupId>
+			<artifactId>ical4j-connector</artifactId>
+			<version>0.9.1-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.gcontracts</groupId>
+			<artifactId>gcontracts</artifactId>
+			<version>1.1.3</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.swinglabs</groupId>
+			<artifactId>jxlayer</artifactId>
+			<version>3.0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.igniterealtime.smack</groupId>
+			<artifactId>smack</artifactId>
+			<version>3.1.0</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.igniterealtime.smack</groupId>
+			<artifactId>smackx</artifactId>
+			<version>3.1.0</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:hg:https://coucou.googlecode.com/hg/</connection>
@@ -211,16 +234,16 @@
 	<build>
 		<plugins>
 
-            <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-            </plugin>
+			<plugin>
+				<groupId>org.codehaus.gmaven</groupId>
+				<artifactId>gmaven-plugin</artifactId>
+			</plugin>
 
-            <plugin>
-                <groupId>com.google.code.maven-license-plugin</groupId>
-                <artifactId>maven-license-plugin</artifactId>
-            </plugin>
-		
+			<plugin>
+				<groupId>com.google.code.maven-license-plugin</groupId>
+				<artifactId>maven-license-plugin</artifactId>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -246,38 +269,23 @@
 					</execution>
 				</executions>
 				<configuration>
-					<!--outputDirectory></outputDirectory--> <!-- not required?? -->
-					<!--
-						Set to true to exclude all transitive dependencies. Default is
-						false.
-					-->
+					<!--outputDirectory></outputDirectory --> <!-- not required?? -->
+					<!-- Set to true to exclude all transitive dependencies. Default is 
+						false. -->
 					<excludeTransitive>false</excludeTransitive>
-					<!--
-						The path where the libraries are stored within the jnlp structure.
-						not required. by default the libraries are within the working
-						directory
-					-->
+					<!-- The path where the libraries are stored within the jnlp structure. 
+						not required. by default the libraries are within the working directory -->
 					<libPath>lib</libPath>
-					<!--
-						[optional] transitive dependencies filter - if omitted, all
-						transitive dependencies are included
-					-->
+					<!-- [optional] transitive dependencies filter - if omitted, all transitive 
+						dependencies are included -->
 					<dependencies>
-						<!--
-							Note that only groupId and artifactId must be specified here.
-							because of a limitation of the Include/ExcludesArtifactFilter
-						-->
-						<!--
-							<includes> <include>net.modularity.core:desktop</include>
-							<include>net.modularity.core:xmpp</include>
-							<include>net.modularity.core:mail</include>
-							<include>net.modularity.core:calendar</include>
-							<include>net.modularity.core:logging</include>
-							<include>commons-lang:commons-lang</include> </includes>
-						-->
-						<!--
-							excludes> <exclude></exclude> <excludes
-						-->
+						<!-- Note that only groupId and artifactId must be specified here. 
+							because of a limitation of the Include/ExcludesArtifactFilter -->
+						<!-- <includes> <include>net.modularity.core:desktop</include> <include>net.modularity.core:xmpp</include> 
+							<include>net.modularity.core:mail</include> <include>net.modularity.core:calendar</include> 
+							<include>net.modularity.core:logging</include> <include>commons-lang:commons-lang</include> 
+							</includes> -->
+						<!-- excludes> <exclude></exclude> <excludes -->
 					</dependencies>
 
 					<resourcesDirectory>${project.basedir}/src/main/jnlp/resources</resourcesDirectory>
@@ -287,17 +295,11 @@
 					<!-- JNLP generation -->
 					<jnlp>
 						<!-- default values -->
-						<!--
-							inputTemplateResourcePath>${project.basedir}</inputTemplateResourcePath
-						-->
-						<!--inputTemplate>src/main/jnlp/template.vm</inputTemplate--> <!-- relative to inputTemplateResourcePath -->
+						<!-- inputTemplateResourcePath>${project.basedir}</inputTemplateResourcePath -->
+						<!--inputTemplate>src/main/jnlp/template.vm</inputTemplate --> <!-- relative to inputTemplateResourcePath -->
 						<!-- defaults to launch.jnlp -->
-						<!-- 
-						<outputFile>views.jnlp</outputFile>
-						 -->
-						<!--
-							used to automatically identify the jar containing the main class.
-						-->
+						<!-- <outputFile>views.jnlp</outputFile> -->
+						<!-- used to automatically identify the jar containing the main class. -->
 						<!-- this is perhaps going to change -->
 						<mainClass>org.mnode.coucou.Coucou</mainClass>
 						<j2seVersion>1.6+</j2seVersion>
@@ -305,19 +307,14 @@
 
 
 					<!-- SIGNING -->
-					<!--
-						defining this will automatically sign the jar and its
-						dependencies, if necessary
-					-->
+					<!-- defining this will automatically sign the jar and its dependencies, 
+						if necessary -->
 					<sign>
 						<keystore>micronode</keystore>
 						<keypass>!modular1</keypass>
-						<!--
-							we need to override passwords easily from the command line.
-							${keypass}
-						-->
+						<!-- we need to override passwords easily from the command line. ${keypass} -->
 						<storepass>!modular1</storepass> <!-- ${storepass} -->
-						<!--storetype>fillme</storetype-->
+						<!--storetype>fillme</storetype -->
 						<alias>webstart</alias>
 
 						<!-- only required for generating the keystore -->
@@ -342,15 +339,11 @@
 					<!-- BUILDING PROCESS -->
 					<pack200>true</pack200>
 					<gzip>true</gzip> <!-- default force when pack200 false, true when pack200 selected ?? -->
-					<!--
-						causes a version attribute to be output in each jar resource
-						element, optional, default is false
-					-->
-					<!-- 
-					<outputJarVersions>true</outputJarVersions>
-					 -->
+					<!-- causes a version attribute to be output in each jar resource element, 
+						optional, default is false -->
+					<!-- <outputJarVersions>true</outputJarVersions> -->
 
-					<!--install>false</install--> <!-- not yet supported -->
+					<!--install>false</install --> <!-- not yet supported -->
 					<verbose>true</verbose>
 				</configuration>
 			</plugin>
@@ -363,8 +356,7 @@
 						<phase>deploy</phase>
 						<configuration>
 							<tasks>
-								<scp file="target/${project.build.finalName}.zip"
-									todir="modularity@mnode.org:basetools.org/coucou"
+								<scp file="target/${project.build.finalName}.zip" todir="modularity@mnode.org:basetools.org/coucou"
 									keyfile="${user.home}/.ssh/id_rsa" passphrase="" />
 
 								<sshexec host="mnode.org" username="modularity"
