@@ -18,11 +18,19 @@
  */
 package org.mnode.coucou.planner
 
+import java.awt.Color;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+
 import javax.swing.JOptionPane;
 
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
+import org.mnode.coucou.DateCellRenderer;
+import org.mnode.coucou.DefaultNodeTableCellRenderer;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
 
 class PlannerModule {
 	
@@ -55,9 +63,105 @@ class PlannerModule {
 						}
 					}
 				}
+		
+				action id: 'addCalendarAccountAction', name: rs('Add Account'), SmallIcon: newIcon, closure: {
+					def url = JOptionPane.showInputDialog(frame, rs('Calendar URL'))
+					if (url) {
+						def accountNode = planner.addAccount(url)
+					}
+				}
 			}
 			
+			ribbonTask(rs('Action'), id: 'plannerRibbonTask', bands: [
+				
+				ribbonBand(rs('Configure'), id: 'plannerConfigurationBand', resizePolicies: ['mirror']) {
+					ribbonComponent([
+						component: commandButton(addCalendarAccountAction),
+						priority: RibbonElementPriority.TOP
+					])
+				},
+	
+			])
+			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Planner'), Color.CYAN, plannerRibbonTask)
+			
 			ribbonApplicationMenuEntrySecondary(id: 'newCalendar', icon: eventIcon, text: rs('Calendar'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addCalendarAction)
+		}
+	}
+	
+	def loadResults = { ousia, activities, ttsupport, pathResult ->
+	
+		ousia.doLater {
+			
+			for (i in 0..frame.ribbon.contextualTaskGroupCount - 1) {
+				if (frame.ribbon.getContextualTaskGroup(i).title == 'Planner') {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), true
+					
+					if (breadcrumb.model.items[-1].data.name == 'Planner') {
+						frame.ribbon.selectedTask = plannerRibbonTask
+					}
+				}
+				else {
+					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), false
+				}
+			}
+			
+			// install new renderer..
+			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
+			defaultRenderer.background = Color.WHITE
+			
+			DateCellRenderer dateRenderer = [defaultRenderer]
+			dateRenderer.background = Color.WHITE
+			
+			ttsupport.delegateRenderer = defaultRenderer
+			activityTable.columnModel.getColumn(1).cellRenderer = defaultRenderer
+			
+			activities.withWriteLock {
+				clear()
+			}
+		}
+
+		if (pathResult.class == PlannerNodePathResult) {
+			for (accountNode in pathResult.element.accounts.nodes) {
+				def item = [:]
+				item['title'] = accountNode.name
+				item['node'] = accountNode
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+		}
+		else if (pathResult.class == CalendarStorePathResult) {
+			if (!pathResult.element.connected) {
+				final PasswordAuthentication pa = Authenticator.requestPasswordAuthentication(null, -1, null, "Password", null);
+				pathResult.element.connect(pa.userName, pa.password)
+			}
+			pathResult.element.collections.each {
+				def item = [:]
+				item['title'] = it.displayName
+				item['collection'] = it
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
+		}
+		else {
+			pathResult.element.entries.each {
+				 def item = [:]
+				 item['title'] = it.getProperty('X-WR-CALNAME').value
+				 item['calendar'] = it
+	
+				 ousia.doLater {
+					 activities.withWriteLock {
+						 add(item)
+					 }
+				 }
+			}
 		}
 	}
 }

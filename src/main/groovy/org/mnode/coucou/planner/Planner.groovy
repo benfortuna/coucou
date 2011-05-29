@@ -25,6 +25,7 @@ import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection
 import net.fortuna.ical4j.connector.jcr.JcrCalendarStore
 import net.fortuna.ical4j.util.Calendars
 
+import org.apache.jackrabbit.util.Text;
 import org.jcrom.Jcrom
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.adapter.Slf4jAdapter
@@ -45,6 +46,13 @@ class Planner extends AbstractNodeManager {
 	Planner(Repository repository, String nodeName) {
 		super(repository, 'planner', nodeName)
 		this.repository = repository
+		if (!rootNode.hasNode('accounts')) {
+			rootNode.addNode('accounts')
+		}
+		if (!rootNode.hasNode('collections')) {
+			rootNode.addNode('collections')
+		}
+		save rootNode
 	}
 	
 	def addCalendar = {url ->
@@ -63,5 +71,11 @@ class Planner extends AbstractNodeManager {
 		Calendars.split(calendar).each {
 			collection.addCalendar it
 		}
+	}
+	
+	def addAccount = { url ->
+		def accountNode = getNode(rootNode.accounts, Text.escapeIllegalJcrChars(url), true)
+		accountNode.url = url
+		save accountNode
 	}
 }
