@@ -37,9 +37,13 @@ public class DefaultExceptionHandler implements UncaughtExceptionHandler {
 	public void uncaughtException(Thread thread, Throwable exception) {
 		LOG.log(LogEntries.UNEXPECTED_ERROR, exception);
 		
-		final ErrorInfo error = new ErrorInfo("Error", exception.getMessage(),
-				String.format("<html><body>Unexpected error in thead <em>%s</em>: %s</body></html>", thread, exception),
-				null, null, null, null);
+		final String title = "Error";
+		final String basicErrorMessage = exception.getMessage();
+		final String detailedErrorMessage = String.format("<html><body>Unexpected error in thead <em>%s</em>: %s</body></html>", thread, exception);
+		final String category = thread.getName();
+		
+		final ErrorInfo error = new ErrorInfo(title, basicErrorMessage, detailedErrorMessage,
+				category, exception, null, null);
 		
 		JXErrorPane.showDialog(dialogOwner, error);
 	}
