@@ -24,9 +24,11 @@ import java.util.concurrent.TimeUnit
 import javax.jcr.Repository
 import javax.jcr.query.qom.QueryObjectModelConstants
 import javax.mail.Authenticator
+import javax.mail.FetchProfile;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.Folder
+import javax.mail.Message;
 import javax.mail.MessagingException
 import javax.mail.PasswordAuthentication
 import javax.mail.Session
@@ -119,18 +121,22 @@ class Mailbox extends AbstractNodeManager {
 	}
 	
 	def updateAccount = { account ->
-		Properties props = new Properties()
-		props.setProperty("mail.store.protocol", account.protocol.string)
-		props.setProperty("mail.host", account.server.string)
-		props.setProperty("mail.user", account.address.string)
-		Session session = Session.getInstance(props, passwordPrompt)
-		Store store = session.getStore(account.protocol.string)
-		store.connect()
-		importMail store
+		
+		if (account.protocol == 'pop3') {
+			Properties props = new Properties()
+			props.setProperty("mail.store.protocol", account.protocol.string)
+			props.setProperty("mail.host", account.server.string)
+			props.setProperty("mail.user", account.address.string)
+			Session session = Session.getInstance(props, passwordPrompt)
+			Store store = session.getStore(account.protocol.string)
+			store.connect()
+			importMail store
+		}
 	}
 	
 	def importMail = { importStore ->
 		
+			
 		def now = Calendar.instance
 		
 		for (folder in importStore.defaultFolder.list()) {
@@ -172,6 +178,28 @@ class Mailbox extends AbstractNodeManager {
 				e.printStackTrace()
 			}
 		}
+	}
+	
+	def fetch = { folder ->
+		Message[] messages = folder.messages
+		
+		FetchProfile fp = new FetchProfile()
+		fp.add FetchProfile.Item.ENVELOPE
+		fp.add FetchProfile.Item.FLAGS
+
+		folder.fetch messages, fp
+		
+		def localStore = mailSession.store
+		localStore.connect()
+		def localFolder = localStore.defaultFolder.getFolder(folder.name)
+		if (!localFolder.exists()) {
+			localFolder.create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES)
+		}
+		localFolder.open(Folder.READ_WRITE)
+		localFolder.appendMessages messages
+		
+		localFolder.close false
+		localStore.close()
 	}
 	
 	def delete = { node ->
