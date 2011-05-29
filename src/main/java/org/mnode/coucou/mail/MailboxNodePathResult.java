@@ -86,6 +86,13 @@ public class MailboxNodePathResult extends NodePathResult {
 					children.add(new SearchPathResult(query, Text.unescapeIllegalJcrChars(node.getName())));
 				}
 			}
+
+			// accounts..
+			final NodeIterator accountNodes = getElement().getNode("accounts").getNodes();
+			while (accountNodes.hasNext()) {
+				final Node accountNode = accountNodes.nextNode();
+				children.add(getChild(accountNode));
+			}
 			
 			// add folders..
 			final NodeIterator folderNodes = getElement().getNode("folders").getNodes();
