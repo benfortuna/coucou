@@ -93,9 +93,13 @@ import org.mnode.coucou.mail.Mailbox
 import org.mnode.coucou.mail.MailboxNodePathResult;
 import org.mnode.coucou.mail.StorePathResult
 import org.mnode.coucou.mail.StoreResultLoader
+import org.mnode.coucou.planner.CalendarCollectionPathResult;
+import org.mnode.coucou.planner.CalendarStorePathResult;
 import org.mnode.coucou.planner.Planner
 import org.mnode.coucou.planner.PlannerModule;
+import org.mnode.coucou.planner.PlannerNodePathResult;
 import org.mnode.coucou.search.SearchPathResult
+import org.mnode.coucou.search.SearchPathResultLoader;
 import org.mnode.coucou.util.HtmlCodes
 import org.mnode.juicer.query.QueryBuilder
 import org.mnode.ousia.HTMLEditorKitExt
@@ -302,7 +306,9 @@ sortComparators[ousia.rs('Source')] = {a, b ->
 } as Comparator
 
 def resultLoaders = [:]
+resultLoaders[SearchPathResult] = new SearchPathResultLoader()
 
+/*
 def reloadResults = {
 	ousia.edt {
 		
@@ -501,13 +507,14 @@ def reloadResults = {
 			session.workspace.observationManager.addEventListener(tableUpdater, 1|2|4|8|16|32, path, true, null, null, false)
 			println "Listening for changes: ${path}"
 		}
-*/
+*
 	}
-	
+
 	ousia.doLater {
 		activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
 	}
 }
+*/
 
 def buildActivityTableModel = {
 	ousia.build {
@@ -727,6 +734,9 @@ ousia.edt {
 		
 		plannerModule = new PlannerModule(planner: planner)
 		plannerModule.initUI(ousia)
+		resultLoaders[PlannerNodePathResult] = plannerModule
+		resultLoaders[CalendarStorePathResult] = plannerModule
+		resultLoaders[CalendarCollectionPathResult] = plannerModule
 		
 		
 		ribbonApplicationMenu(id: 'appMenu') {
@@ -1267,11 +1277,14 @@ ousia.edt {
 									}
 								}
 								else {
-									doLater {
-										final PathResult<?, javax.jcr.Node> pr = breadcrumb.model.items[-1].data.getChild(selectedItem.node)
-										def breadcrumbItem = new BreadcrumbItem<PathResult<?, javax.jcr.Node>>(pr.name, pr)
+									doOutside {
+										final PathResult pr = breadcrumb.model.items[-1].data.getChild(selectedItem.node)
+										def breadcrumbItem = new BreadcrumbItem<PathResult>(pr.name, pr)
 										breadcrumbItem.icon = pathIcons[pr.class]
-										breadcrumb.model.addLast(breadcrumbItem)
+										
+										doLater {
+											breadcrumb.model.addLast(breadcrumbItem)
+										}
 									}
 								}
 		                    }
@@ -1316,18 +1329,24 @@ ousia.edt {
 			breadcrumb.model.addPathListener({
 				edt {
 					
-					try {
-						breadcrumb.enabled = false
-						filterTextField.text = null
-						frame.title = breadcrumb.model.items.collect({ it.data.name }).join(' | ') << ' - Coucou'
-						frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-						
-						// enable/disable ribbon tasks..
-						quickSearchField.text = null
-						quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
-						quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
+					filterTextField.text = null
+					unreadFilterCheckbox.selected = false
+					importantFilterCheckbox.selected = false
+					
+					frame.title = breadcrumb.model.items.collect({ it.data.name }).join(' | ') << ' - Coucou'
+					
+					// enable/disable ribbon tasks..
+					quickSearchField.text = null
+					quickSearchField.enabled = !breadcrumb.model.items[-1].data.leaf
+					quickSearchButton.enabled = !breadcrumb.model.items[-1].data.leaf
 
-						doOutside {
+					doOutside {
+						try {
+							doLater {
+								frame.contentPane.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+								breadcrumb.enabled = false
+							}
+							
 							def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
 							if (resultLoader) {
 								resultLoader.loadResults(ousia, activities, ttsupport, breadcrumb.model.items[-1].data)
@@ -1335,15 +1354,14 @@ ousia.edt {
 							else {
 								reloadResults()
 							}
-							
+						}
+						finally {
 							doLater {
 								activityTable.scrollRectToVisible(activityTable.getCellRect(0, 0, true))
 								frame.contentPane.cursor = Cursor.defaultCursor
+								breadcrumb.enabled = true
 							}
 						}
-					}
-					finally {
-						breadcrumb.enabled = true
 					}
 				}
 			} as BreadcrumbPathListener)
@@ -1373,6 +1391,7 @@ ousia.edt {
 		
 		
 	Thread.defaultUncaughtExceptionHandler = new DefaultExceptionHandler(dialogOwner: frame)
+	Authenticator.default = new org.mnode.ousia.DialogAuthenticator(frame)
 	
 	aggregator.start()
 	
