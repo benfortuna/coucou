@@ -21,6 +21,8 @@
  */
 package org.mnode.coucou.planner;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,11 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+
+import net.fortuna.ical4j.connector.CalendarStore;
+import net.fortuna.ical4j.connector.dav.CalDavCalendarCollection;
+import net.fortuna.ical4j.connector.dav.CalDavCalendarStore;
+import net.fortuna.ical4j.connector.dav.PathResolver;
 
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
@@ -51,6 +58,13 @@ public class PlannerNodePathResult extends NodePathResult {
 		final List<PathResult<?, ?>> children = new ArrayList<PathResult<?, ?>>();
 		try {
 			// add search queries..
+
+			// accounts..
+			final NodeIterator accountNodes = getElement().getNode("accounts").getNodes();
+			while (accountNodes.hasNext()) {
+				final Node accountNode = accountNodes.nextNode();
+				children.add(getChild(accountNode));
+			}
 			
 			// add collections..
 			final NodeIterator collectionNodes = getElement().getNode("collections").getNodes();
@@ -68,8 +82,23 @@ public class PlannerNodePathResult extends NodePathResult {
 	}
 	
 	@Override
-	public PathResult<?, Node> getChild(Node result) throws PathResultException {
-		return new CollectionNodePathResult(result);
+	public PathResult<?, ?> getChild(Node result) throws PathResultException {
+		try {
+			if (result.getParent().getName().equals("accounts")) {
+				final URL storeUrl = new URL(result.getProperty("url").getString());
+				final CalendarStore<CalDavCalendarCollection> store = new CalDavCalendarStore("", storeUrl, PathResolver.CHANDLER);
+				return new CalendarStorePathResult<CalDavCalendarCollection>(store, result.getName());
+			}
+			else {
+				return new CollectionNodePathResult(result);
+			}
+		}
+		catch (RepositoryException e) {
+			throw new PathResultException(e);
+		}
+		catch (MalformedURLException mue) {
+			throw new PathResultException(mue);
+		}
 	}
 	
 	@Override
@@ -79,6 +108,14 @@ public class PlannerNodePathResult extends NodePathResult {
 			final NodeIterator collectionNodes = getElement().getNode("collections").getNodes();
 			while (collectionNodes.hasNext()) {
 				final Node node = collectionNodes.nextNode();
+				if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
+					results.add(node);
+				}
+			}
+			
+			final NodeIterator accountNodes = getElement().getNode("accounts").getNodes();
+			while (accountNodes.hasNext()) {
+				final Node node = accountNodes.nextNode();
 				if (node.isNodeType(NodeType.NT_UNSTRUCTURED)) {
 					results.add(node);
 				}
