@@ -42,7 +42,7 @@ public class NoteView extends JXPanel{
         name = node.getProperty('title').string
         border = swing.emptyBorder(10)
 
-        add swing.scrollPane() {
+        add (swing.scrollPane() {
             if ('text/html' == node.getProperty('contentType').string) { 
                 editorPane(editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null, id: 'contentView')
                 if (node.hasProperty('markupLanguage')) {
@@ -75,7 +75,7 @@ public class NoteView extends JXPanel{
                 editorPane(editable: false, contentType: node.getProperty('contentType').string, opaque: true, border: null, id: 'contentView')
                 contentView.text = node.getProperty('content').string
             }
-        }
+        })
         
         add swing.hbox(border: swing.emptyBorder([10, 0, 0, 0])) {
             button(text: 'Revisions..')
