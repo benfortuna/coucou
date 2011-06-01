@@ -38,7 +38,7 @@ public class ExplorerView extends JXPanel{
         name = swing.rs('Repository Explorer')
         border = swing.emptyBorder(10)
         
-        add swing.splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
+        add (swing.splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
             scrollPane(constraints: 'left') {
                 treeTable(id: 'explorerTree')
 //                explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
@@ -78,7 +78,7 @@ public class ExplorerView extends JXPanel{
                 table(showHorizontalLines: false, id: 'propertyTable')
 //                propertyTable.addHighlighter(HighlighterFactory.createSimpleStriping(HighlighterFactory.GENERIC_GRAY))
             }
-        }
+        })
     }
     
 }
