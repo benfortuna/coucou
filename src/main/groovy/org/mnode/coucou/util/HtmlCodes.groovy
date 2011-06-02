@@ -27,6 +27,7 @@ class HtmlCodes {
 		codes['amp'] = '&'
 		codes['quot'] = '"'
 		codes['#8217'] = "'"
+		codes['ndash'] = '–'
 	}
 	
 	static String unescape(String input) {
