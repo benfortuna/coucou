@@ -76,6 +76,12 @@ class Planner extends AbstractNodeManager {
 	def addAccount = { url ->
 		def accountNode = getNode(rootNode.accounts, Text.escapeIllegalJcrChars(url), true)
 		accountNode.url = url
+		if (url =~ /^.*chandlerproject\.org$/) {
+			accountNode.type = 'chandler'
+		}
+		else if (url =~ /^.*google\.com\/calendar\/dav\/$/) {
+			accountNode.type = 'gcal'
+		}
 		save accountNode
 	}
 }

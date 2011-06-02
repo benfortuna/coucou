@@ -33,8 +33,6 @@ import javax.jcr.nodetype.NodeType;
 
 import net.fortuna.ical4j.connector.CalendarStore;
 import net.fortuna.ical4j.connector.dav.CalDavCalendarCollection;
-import net.fortuna.ical4j.connector.dav.CalDavCalendarStore;
-import net.fortuna.ical4j.connector.dav.PathResolver;
 
 import org.mnode.coucou.NodePathResult;
 import org.mnode.coucou.PathResult;
@@ -46,11 +44,14 @@ import org.mnode.coucou.PathResultException;
  */
 public class PlannerNodePathResult extends NodePathResult {
 
+	private final CalendarStoreFactory calendarStoreFactory;
+	
 	/**
 	 * @param node
 	 */
 	public PlannerNodePathResult(Node node) {
 		super(node);
+		calendarStoreFactory = new CalendarStoreFactory("-//Ben Fortuna//Coucou 1.0//EN");
 	}
 
 	@Override
@@ -86,7 +87,8 @@ public class PlannerNodePathResult extends NodePathResult {
 		try {
 			if (result.getParent().getName().equals("accounts")) {
 				final URL storeUrl = new URL(result.getProperty("url").getString());
-				final CalendarStore<CalDavCalendarCollection> store = new CalDavCalendarStore("", storeUrl, PathResolver.CHANDLER);
+				final String storeType = result.getProperty("type").getString();
+				final CalendarStore<CalDavCalendarCollection> store = calendarStoreFactory.newInstance(storeUrl, storeType);
 				return new CalendarStorePathResult<CalDavCalendarCollection>(store, result.getName());
 			}
 			else {
