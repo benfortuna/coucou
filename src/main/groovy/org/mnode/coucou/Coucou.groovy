@@ -587,7 +587,7 @@ ousia.edt {
         }
 
 		action id: 'openExplorerView', name: rs('Repository Explorer'), closure: {
-			frame(title: rs('Repository Explorer'), size: [320, 240], show: true, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE) {
+			frame(title: rs('Repository Explorer'), size: [320, 240], show: true, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, trackingEnabled: true) {
 				widget(new ExplorerView(session.rootNode, frame, actionContext))
 			}
 		}
