@@ -82,7 +82,7 @@ class PlannerModule {
 				},
 	
 			])
-			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Planner'), Color.CYAN, plannerRibbonTask)
+			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Planner'), Color.GREEN, plannerRibbonTask)
 			
 			ribbonApplicationMenuEntrySecondary(id: 'newCalendar', icon: eventIcon, text: rs('Calendar'), kind: CommandButtonKind.ACTION_ONLY, actionPerformed: addCalendarAction)
 		}
