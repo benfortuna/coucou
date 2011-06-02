@@ -22,7 +22,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.logging.LogFactory;
-import org.jdesktop.swingx.treetable.TreeTableNode;
 import org.mnode.base.log.LogAdapter;
 import org.mnode.base.log.adapter.JclAdapter;
 
@@ -30,7 +29,7 @@ import org.mnode.base.log.adapter.JclAdapter;
  * @author Ben
  *
  */
-public class ExplorerTreeTableNode extends AbstractRepositoryTreeTableNode<ExplorerTreeTableNode> {
+public class ExplorerTreeTableNode extends AbstractMutableRepositoryTreeTableNode<ExplorerTreeTableNode> {
     
     private static final LogAdapter LOG = new JclAdapter(LogFactory.getLog(ExplorerTreeTableNode.class));
 
@@ -45,7 +44,7 @@ public class ExplorerTreeTableNode extends AbstractRepositoryTreeTableNode<Explo
      * @param node
      * @param parent
      */
-    public ExplorerTreeTableNode(Node node, TreeTableNode parent) {
+    public ExplorerTreeTableNode(Node node, ExplorerTreeTableNode parent) {
         super(node, parent);
     }
 
