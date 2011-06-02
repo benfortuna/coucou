@@ -33,52 +33,58 @@ public class ExplorerView extends JXPanel{
 
     ExplorerView(def rootNode, def parentWindow, def editContext) {
         def swing = new OusiaBuilder()
+        swing.panel(this) {
+        	borderLayout()
+			name = rs('Repository Explorer')
+			border = emptyBorder(10)
         
-        layout = swing.borderLayout()
-        name = swing.rs('Repository Explorer')
-        border = swing.emptyBorder(10)
-        
-        add (swing.splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
-            scrollPane(constraints: 'left') {
-                treeTable(id: 'explorerTree')
-//                explorerTree.treeTableModel = new RepositoryTreeTableModel(node)
-                explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(rootNode), [rs('Name'), rs('Type'), rs('State')])
-                explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
-                explorerTree.selectionModel.valueChanged = {
+			actions {
+		        action id: 'deleteNodeAction', name: rs('Delete'), closure: {
                     def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
-                    if (selectedPath) {
-                        swing.edt {
-                            propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent.userObject)
-                            editContext.delete = {
-                                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(parentWindow, "${rs('Delete node')}: ${selectedPath.lastPathComponent.userObject.name}?", rs('Confirm delete'), JOptionPane.OK_CANCEL_OPTION)) {
-                                    explorerTree.clearSelection()
-//                                    def removedIndices = [explorerTree.treeTableModel.getIndexOfChild(selectedPath.lastPathComponent.parent, selectedPath.lastPathComponent)]
-                                    removeNode selectedPath.lastPathComponent.userObject
-//                                    println removedIndices
-                                    swing.edt {
-//                                                explorerTree.treeTableModel.fireTreeNodesRemoved(explorerTree, selectedPath.parentPath.path, removedIndices as int[], [selectedPath.lastPathComponent] as Object[])
-                                        explorerTree.treeTableModel.reload() //selectedPath.parentPath.lastPathComponent)
-                                    }
-                                }
+					if (selectedPath 
+						&& JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(parentWindow, "${rs('Delete node')}: ${selectedPath.lastPathComponent.userObject.name}?", rs('Confirm delete'), JOptionPane.OK_CANCEL_OPTION)) {
+						
+//                            selectedPath.lastPathComponent.userObject.remove()
+//							selectedPath.lastPathComponent.userObject.session.save()
+                            swing.edt {
+								explorerTree.clearSelection()
+//								def model = explorerTree.treeTableModel
+//                                model.fireTreeNodesRemoved model, model.getPathToRoot(selectedPath.parentPath),
+//									 [] as int[], [selectedPath.lastPathComponent.userObject] as Object[]  //selectedPath.parentPath.lastPathComponent)
+								explorerTree.treeTableModel.removeNodeFromParent selectedPath.lastPathComponent
                             }
-                        }
-//                        editContext.enabled = true
                     }
-                    else {
-                        swing.edt {
-                            propertyTable.model = EMPTY_TABLE_MODEL
-//                        editContext.enabled = false
-                            editContext.delete = null
-                        }
-                    }
+		        }
+        	}
+			
+        	splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 200, continuousLayout: true) {
+				scrollPane(constraints: 'left') {
+					treeTable(id: 'explorerTree') {
+						keyStrokeAction(explorerTree, actionKey: 'deleteNode', keyStroke: 'DELETE', action: deleteNodeAction)
+		                explorerTree.treeTableModel = new DefaultTreeTableModel(new ExplorerTreeTableNode(rootNode), [rs('Name'), rs('Type'), rs('State')])
+		                explorerTree.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+		                explorerTree.selectionModel.valueChanged = {
+							def selectedPath = explorerTree.getPathForRow(explorerTree.selectedRow)
+		                    if (selectedPath) {
+		                        swing.edt {
+		                            propertyTable.model = new PropertiesTableModel(selectedPath.lastPathComponent.userObject)
+		                        }
+		                    }
+		                    else {
+		                        swing.edt {
+		                            propertyTable.model = EMPTY_TABLE_MODEL
+		                        }
+		                    }
+						}
+						explorerTree.packAll()
+					}
                 }
-                explorerTree.packAll()
+	            scrollPane(constraints: 'right') {
+	                table(showHorizontalLines: false, id: 'propertyTable')
+	//                propertyTable.addHighlighter(HighlighterFactory.createSimpleStriping(HighlighterFactory.GENERIC_GRAY))
+	            }
             }
-            scrollPane(constraints: 'right') {
-                table(showHorizontalLines: false, id: 'propertyTable')
-//                propertyTable.addHighlighter(HighlighterFactory.createSimpleStriping(HighlighterFactory.GENERIC_GRAY))
-            }
-        })
+        }
     }
     
 }

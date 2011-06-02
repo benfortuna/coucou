@@ -43,7 +43,7 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
 
     private final Node node;
     
-    private final TreeTableNode parent;
+    private final T parent;
     
     /**
      * @param node
@@ -56,7 +56,7 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
      * @param node
      * @param parent
      */
-    public AbstractRepositoryTreeTableNode(Node node, TreeTableNode parent) {
+    public AbstractRepositoryTreeTableNode(Node node, T parent) {
         this.node = node;
         this.parent = parent;
     }
@@ -67,8 +67,8 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
      * {@inheritDoc}
      */
     @Override
-    public final Enumeration<? extends TreeTableNode> children() {
-        Vector<TreeTableNode> children = new Vector<TreeTableNode>();
+    public final Enumeration<T> children() {
+        Vector<T> children = new Vector<T>();
         final Node node = (Node) getUserObject();
         try {
             final NodeIterator nodes = node.getNodes();
@@ -91,9 +91,11 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
         final Node node = (Node) getUserObject();
         try {
             final NodeIterator nodes = node.getNodes();
-            nodes.skip(index);
-            Node nextNode = nodes.nextNode();
-            childNode = createChildNode(nextNode);
+            if (index < nodes.getSize()) {
+                nodes.skip(index);
+                Node nextNode = nodes.nextNode();
+                childNode = createChildNode(nextNode);
+            }
         } catch (RepositoryException e) {
             LOG.log(LogEntries.NODE_ERROR, e, node);
         }
@@ -101,7 +103,7 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
     }
     
     @Override
-    public TreeTableNode getParent() {
+    public T getParent() {
         return parent;
     }
     
@@ -126,8 +128,7 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
      */
     @Override
     public void setUserObject(Object arg0) {
-        // TODO Auto-generated method stub
-
+    	throw new UnsupportedOperationException("Method not supported");
     }
 
     /**
@@ -172,7 +173,7 @@ public abstract class AbstractRepositoryTreeTableNode<T extends TreeTableNode> i
             while (nodes.hasNext()) {
                 Node nextNode = nodes.nextNode();
                 if (nextNode.isSame((Node) ((TreeTableNode) treeNode).getUserObject())) {
-                    index = (int) nodes.getPosition();
+                    index = (int) nodes.getPosition() - 1;
                     break;
                 }
             }
