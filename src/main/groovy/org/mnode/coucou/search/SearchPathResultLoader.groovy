@@ -31,19 +31,6 @@ class SearchPathResultLoader {
 	def loadResults = { ousia, activities, ttsupport, pathResult ->
 		ousia.doLater {
 			
-			for (i in 0..frame.ribbon.contextualTaskGroupCount - 1) {
-				if (frame.ribbon.getContextualTaskGroup(i).title == 'Feeds') {
-					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), true
-					
-					if (breadcrumb.model.items[-1].data.name == 'Feeds') {
-						frame.ribbon.selectedTask = feedRibbonTask
-					}
-				}
-				else {
-					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), false
-				}
-			}
-			
 			// install new renderer..
 			DefaultNodeTableCellRenderer defaultRenderer = [activityTree, ['Today', 'Yesterday', 'Older Items']]
 			defaultRenderer.background = Color.WHITE
@@ -92,8 +79,12 @@ class SearchPathResultLoader {
 			 }
 
 			 item['node'] = it
-			 item.seen = { it.seen?.boolean == true }
-			 item.flagged = { it.flagged?.boolean == true }
+			 item.seen = { node ->
+				 node.seen?.boolean == true
+			 }.curry(it)
+			 item.flagged = { node ->
+				 node.flagged?.boolean == true
+			 }.curry(it)
 			 
 			 ousia.doLater {
 				 activities.withWriteLock {
