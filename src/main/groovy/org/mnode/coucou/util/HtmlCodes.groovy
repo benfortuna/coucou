@@ -26,13 +26,21 @@ class HtmlCodes {
 		codes['nbsp'] = ' '
 		codes['amp'] = '&'
 		codes['quot'] = '"'
-		codes['#8217'] = "'"
-		codes['ndash'] = '–'
+		codes['ndash'] = '\u2013'
+		codes['mdash'] = '\u2014'
 	}
 	
 	static String unescape(String input) {
 		codes.each {
 			input = input.replaceAll("&$it.key;", it.value)
+			def unicodePattern = ~/&#(.*);/
+			def matcher = unicodePattern.matcher(input)
+			while (matcher.find()) {
+				def decValue = matcher.group(1)
+				def unicodeValue = (char) Integer.parseInt(decValue)
+				input = input.replaceAll("&#$decValue;", "$unicodeValue")
+				matcher = unicodePattern.matcher(input)
+			}
 		}
 		return input
 	}
