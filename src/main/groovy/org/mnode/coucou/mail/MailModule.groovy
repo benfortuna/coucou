@@ -1,3 +1,4 @@
+
 /**
  * This file is part of Coucou.
  *
@@ -17,10 +18,11 @@
  * along with Coucou.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.mnode.coucou.mail
+import static org.mnode.juicer.JuicerUtils.hasPropertyValue
 
 import java.awt.Color
-import java.awt.Cursor
 
+import javax.jcr.nodetype.NodeType
 import javax.mail.FetchProfile
 import javax.mail.Flags
 import javax.mail.Folder
@@ -28,15 +30,24 @@ import javax.mail.Message
 import javax.mail.Session
 import javax.mail.Store
 import javax.mail.URLName
+import javax.mail.internet.MailDateFormat;
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
+import javax.swing.text.html.StyleSheet;
 
 import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.layer.StatusLayerUI;
+import org.mnode.juicer.JuicerUtils
+import org.mnode.ousia.HTMLEditorKitExt;
+import org.mnode.ousia.HyperlinkBrowser;
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
 
 class MailModule {
+	
+	def mailDateFormat = new MailDateFormat()
 	
 	def mailbox
 	
@@ -141,6 +152,32 @@ class MailModule {
 			
 			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Mail'), Color.PINK, mailRibbonTask)
 			
+			// add result list for mail folders and messages..
+			
+			// add preview pane for mail folders and messages..
+			panel(id: 'mailMessageView') {
+				borderLayout()
+				
+				def statusLayer = new StatusLayerUI()
+				layer(statusLayer) {
+					scrollPane {
+						def styleSheet = new StyleSheet()
+						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+				//        styleSheet.addRule("img {border-width:0; }")
+						
+						defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+				
+						editorPane(id: 'mailMessageContent', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+						mailMessageContent.addHyperlinkListener(new HyperlinkBrowser(feedback: [
+								show: { uri -> statusLayer.showStatusMessage uri.toString() },
+								hide: { statusLayer.hideStatusMessage() }
+							] as HyperlinkFeedback))
+					}
+				}
+			}
+
 		}
 	}
 		
@@ -219,6 +256,73 @@ class MailModule {
 				 }
 			}
 		}
+		else if (pathResult.class == FolderNodePathResult) {
+			if ((Folder.HOLDS_MESSAGES & pathResult.element.getProperty("type").long) > 0) {
+				// add messages..
+				for (messageNode in pathResult.element.messages.nodes) {
+					if (messageNode.isNodeType(NodeType.NT_UNSTRUCTURED)
+							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, "deleted")
+							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, "archived")) {
+						
+						def item = [:]
+						if (messageNode.headers.hasProperty('Subject')) {
+							item['title'] = messageNode.headers.Subject.string
+						}
+						else {
+							item['title'] = '<No Subject>'
+						}
+						
+						if (messageNode.parent.parent.name == 'Sent' && messageNode.headers.hasProperty('To')) {
+							item['source'] = messageNode.headers.getProperty('To').string.intern()
+						}
+						else if (messageNode.headers.hasProperty('From')) {
+							item['source'] = messageNode.headers.getProperty('From').string.intern()
+						}
+						else {
+							item['source'] = '<Unknown Sender>'
+						}
+						
+						if (messageNode.headers.hasProperty('Date')) {
+							item['date'] = mailDateFormat.parse(messageNode.headers.getProperty('Date').string)
+						}
+						else if (messageNode.hasProperty('received')) {
+							item['date'] = messageNode.getProperty('received').date.time
+						}
+						item.seen = { node ->
+							node.seen?.boolean == true
+						}.curry(messageNode)
+						
+						item.flagged = { node ->
+							node.flagged?.boolean == true
+						}.curry(messageNode)
+						item['node'] = messageNode
+						
+						ousia.doLater {
+							activities.withWriteLock {
+								add(item)
+							}
+						}
+					}
+				}
+			}
+			else if ((Folder.HOLDS_FOLDERS & pathResult.element.getProperty("type").long) > 0) {
+				// add folders..
+				for (folderNode in pathResult.element.folders.nodes) {
+					if (folderNode.isNodeType(NodeType.NT_UNSTRUCTURED)) {
+						def item = [:]
+						item['title'] = (folderNode.folderName) ? folderNode.folderName : folderNode.name
+						item['source'] = folderNode.parent.name
+						item['node'] = folderNode
+						
+						ousia.doLater {
+							activities.withWriteLock {
+								add(item)
+							}
+						}
+					}
+				}
+			}
+		}
 		else {
 			if (!pathResult.element.isOpen()) {
 				pathResult.element.open(Folder.READ_ONLY);
@@ -266,5 +370,40 @@ class MailModule {
 		}
 	
 
+	}
+	
+	def loadPreview = { ousia, entry ->
+		ousia.edt {
+			if (entry) {
+				contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
+				
+				mailMessageContent.editorKit = defaultEditorKit
+				
+				if (entry['node'].hasNode('body')) {
+					def content = entry['node'].getNode('body').getNode('part').getNode('jcr:content')
+					if (content.getProperty('jcr:mimeType').string =~ /(?i)^text\/plain.*$/) {
+						contentView.text = "<html><pre>${content.getProperty('jcr:data').string}"
+					}
+					else {
+						contentView.text = content.getProperty('jcr:data').string
+					}
+					contentView.caretPosition = 0
+				}
+				else if (entry['node'].hasNode('content')) {
+					def content = entry['node'].getNode('content').getNode('data').getNode('jcr:content').getProperty('jcr:data').string
+					contentView.text = content
+					contentView.caretPosition = 0
+				}
+				else {
+					mailMessageContent.text = null
+				}
+			}
+			else {
+				contentTitle.text = ''
+				mailMessageContent.text = null
+			}
+			
+			previewPane.layout.show(previewPane, 'mailMessageView')
+		}
 	}
 }
