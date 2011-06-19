@@ -86,6 +86,7 @@ import org.mnode.coucou.feed.FeedsNodePathResult
 import org.mnode.coucou.layer.ProgressLayerUI
 import org.mnode.coucou.layer.StatusLayerUI
 import org.mnode.coucou.mail.DialogAuthenticator
+import org.mnode.coucou.mail.FolderNodePathResult;
 import org.mnode.coucou.mail.FolderPathResult
 import org.mnode.coucou.mail.FolderResultLoader
 import org.mnode.coucou.mail.MailModule
@@ -231,8 +232,6 @@ Runtime.getRuntime().addShutdownHook({
 })
 
 Mailbox mailbox = [repository, 'Mail']
-
-def mailDateFormat = new MailDateFormat()
 
 // initialise feeds..
 Aggregator aggregator = [repository, 'Feeds']
@@ -720,6 +719,7 @@ ousia.edt {
 		resultLoaders[MailboxNodePathResult] = mailModule
 		resultLoaders[StorePathResult] = mailModule
 		resultLoaders[FolderPathResult] = mailModule
+		resultLoaders[FolderNodePathResult] = mailModule
 
 		feedsModule = new FeedsModule(aggregator: aggregator)
 		feedsModule.initUI(ousia)
@@ -1185,45 +1185,55 @@ ousia.edt {
 											bookmarkFeedButton.actionModel.selected = false
 										}
 										
-										edt {
-											contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
-											
-											contentView.editorKit = defaultEditorKit
-											
-											if (entry['node'].hasProperty('description')) {
-			//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
-												def content = entry['node'].getProperty('description').string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, 'http://coucou.im/favicon.gif') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
-												contentView.text = content
-												contentView.caretPosition = 0
-											}
-											else if (entry['node'].hasNode('body')) {
-												def content = entry['node'].getNode('body').getNode('part').getNode('jcr:content')
-												if (content.getProperty('jcr:mimeType').string =~ /(?i)^text\/plain.*$/) {
-													contentView.text = "<html><pre>${content.getProperty('jcr:data').string}"
+										def resultLoader = resultLoaders[breadcrumb.model.items[-1].data.class]
+										if (resultLoader) {
+											resultLoader.loadPreview ousia, entry
+										}
+										else {
+											edt {
+												contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
+												
+												contentView.editorKit = defaultEditorKit
+												
+												if (entry['node'].hasProperty('description')) {
+				//                                        println "Entry selected: ${entryList.model[entryList.selectedRow]}"
+													def content = entry['node'].getProperty('description').string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, 'http://coucou.im/favicon.gif') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+													contentView.text = content
+													contentView.caretPosition = 0
+												}
+												else if (entry['node'].hasNode('body')) {
+													def content = entry['node'].getNode('body').getNode('part').getNode('jcr:content')
+													if (content.getProperty('jcr:mimeType').string =~ /(?i)^text\/plain.*$/) {
+														contentView.text = "<html><pre>${content.getProperty('jcr:data').string}"
+													}
+													else {
+														contentView.text = content.getProperty('jcr:data').string
+													}
+													contentView.caretPosition = 0
+												}
+												else if (entry['node'].hasNode('content')) {
+													def content = entry['node'].getNode('content').getNode('data').getNode('jcr:content').getProperty('jcr:data').string
+													contentView.text = content
+													contentView.caretPosition = 0
+												}
+												else if (entry['node'].hasNode('description')) {
+													def content = entry['node'].getNode('description').getNode('text').getNode('jcr:content').getProperty('jcr:data').string
+													contentView.text = content
+													contentView.caretPosition = 0
 												}
 												else {
-													contentView.text = content.getProperty('jcr:data').string
+													contentView.text = null
 												}
-												contentView.caretPosition = 0
-											}
-											else if (entry['node'].hasNode('content')) {
-												def content = entry['node'].getNode('content').getNode('data').getNode('jcr:content').getProperty('jcr:data').string
-												contentView.text = content
-												contentView.caretPosition = 0
-											}
-											else if (entry['node'].hasNode('description')) {
-												def content = entry['node'].getNode('description').getNode('text').getNode('jcr:content').getProperty('jcr:data').string
-												contentView.text = content
-												contentView.caretPosition = 0
-											}
-											else {
-												contentView.text = null
+												previewPane.layout.show(previewPane, 'defaultView')
 											}
 										}
 									}
 									else {
-										contentTitle.text = ''
-										contentView.text = null
+										edt {
+											contentTitle.text = ''
+											contentView.text = null
+											previewPane.layout.show(previewPane, 'defaultView')
+										}
 										actionContext.markAsRead = null
 										bookmarkFeedButton.enabled = false
 										bookmarkFeedButton.actionModel.selected = false
@@ -1233,6 +1243,7 @@ ousia.edt {
 									edt {
 										contentTitle.text = ''
 										contentView.text = null
+										previewPane.layout.show(previewPane, 'defaultView')
 									}
 									actionContext.markAsRead = null
 									actionContext.previousItem = null
@@ -1305,6 +1316,21 @@ ousia.edt {
 //						contentTitle.font = contentTitle.font.deriveFont(Font.BOLD, 14f)
 					}
 					
+					panel(id: 'previewPane') {
+						cardLayout()
+						
+						panel(id: 'defaultView', constraints: 'defaultView') {
+							borderLayout()
+							scrollPane {
+								def styleSheet = new StyleSheet()
+								styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+								defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+								editorPane(id: 'contentView', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+							}
+						}
+						panel(feedItemView, constraints: 'feedItemView')
+					}
+/*
 					def statusLayer = new StatusLayerUI()
 					layer(statusLayer) {
 						scrollPane {
@@ -1323,6 +1349,7 @@ ousia.edt {
 								] as HyperlinkFeedback))
 						}
 					}
+*/
 				}
 			}
 

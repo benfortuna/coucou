@@ -28,12 +28,17 @@ import java.awt.event.ActionListener;
 import javax.jcr.PropertyType;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.text.html.StyleSheet;
 
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
 import org.mnode.coucou.DateCellRenderer;
 import org.mnode.coucou.DefaultNodeTableCellRenderer;
+import org.mnode.coucou.layer.StatusLayerUI;
 import org.mnode.coucou.util.HtmlCodes;
+import org.mnode.ousia.HTMLEditorKitExt;
+import org.mnode.ousia.HyperlinkBrowser;
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
@@ -226,6 +231,31 @@ class FeedsModule {
 			
 			frame.ribbon.addContextualTaskGroup new RibbonContextualTaskGroup(rs('Feeds'), Color.CYAN, feedRibbonTask)
 			
+			// add result list for feeds and feed items..
+			
+			// add preview pane for feeds and feed items..
+			panel(id: 'feedItemView') {
+				borderLayout()
+				
+				def statusLayer = new StatusLayerUI()
+				layer(statusLayer) {
+					scrollPane {
+						def styleSheet = new StyleSheet()
+						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
+				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
+				//        styleSheet.addRule("img {border-width:0; }")
+						
+						defaultEditorKit = new HTMLEditorKitExt(styleSheet: styleSheet)
+				
+						editorPane(id: 'feedItemContent', editorKit: defaultEditorKit, editable: false, contentType: 'text/html', opaque: true, border: null)
+						feedItemContent.addHyperlinkListener(new HyperlinkBrowser(feedback: [
+								show: { uri -> statusLayer.showStatusMessage uri.toString() },
+								hide: { statusLayer.hideStatusMessage() }
+							] as HyperlinkFeedback))
+					}
+				}
+			}
 		}
 	}
 	
@@ -301,6 +331,31 @@ class FeedsModule {
 					 add(item)
 				}
 			}
+		}
+	}
+	
+	def loadPreview = { ousia, entry ->
+		ousia.edt {
+			if (entry) {
+				contentTitle.text = "<html><strong>${entry['title']}</strong><br/>${entry['source']} <em>${entry['date']}</em></html>"
+				
+				feedItemContent.editorKit = defaultEditorKit
+				
+				if (entry['node'].description) {
+					def content = entry['node'].description.string.replaceAll(/(?<=img src\=\")http:\/\/.+:.*(?=")/, 'http://coucou.im/favicon.gif') //.replaceAll(/(http:\/\/)?([a-zA-Z0-9\-.]+\.[a-zA-Z0-9\-]{2,}([\/]([a-zA-Z0-9_\/\-.?&%=+])*)*)(\s+|$)/, '<a href="http://$2">$2</a> ')
+					feedItemContent.text = content
+					feedItemContent.caretPosition = 0
+				}
+				else {
+					feedItemContent.text = null
+				}
+			}
+			else {
+				contentTitle.text = ''
+				feedItemContent.text = null
+			}
+			
+			previewPane.layout.show(previewPane, 'feedItemView')
 		}
 	}
 }
