@@ -18,6 +18,11 @@
  */
 package org.mnode.coucou.util
 
+import java.util.regex.Matcher;
+
+import groovy.util.logging.Slf4j
+
+@Slf4j
 class HtmlCodes {
 
 	static def codes = [:]
@@ -33,13 +38,18 @@ class HtmlCodes {
 	static String unescape(String input) {
 		codes.each {
 			input = input.replaceAll("&$it.key;", it.value)
-			def unicodePattern = ~/&#(.*);/
+			def unicodePattern = ~/&#(\d+);/
 			def matcher = unicodePattern.matcher(input)
 			while (matcher.find()) {
 				def decValue = matcher.group(1)
 				def unicodeValue = (char) Integer.parseInt(decValue)
-				input = input.replaceAll("&#$decValue;", "$unicodeValue")
-				matcher = unicodePattern.matcher(input)
+				
+				try {
+					input = input.replaceAll("&#$decValue;", Matcher.quoteReplacement("$unicodeValue"))
+					matcher = unicodePattern.matcher(input)
+				} catch (e) {
+					log.error("$input, $decValue - $e.message" as String)
+				}
 			}
 		}
 		return input
