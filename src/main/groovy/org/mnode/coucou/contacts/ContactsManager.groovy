@@ -20,14 +20,13 @@ package org.mnode.coucou.contacts
 
 import javax.jcr.Repository
 
-import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.ChatStateManager;
+import org.jivesoftware.smack.ConnectionConfiguration
+import org.jivesoftware.smack.XMPPConnection
+import org.jivesoftware.smack.util.StringUtils
+import org.jivesoftware.smackx.ChatStateManager
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
-import org.mnode.coucou.mail.Mailbox
 import org.slf4j.LoggerFactory
 
 /**
@@ -101,7 +100,7 @@ class ContactsManager extends AbstractNodeManager {
 		node.setProperty('email', address.address)
 		node.setProperty('personal', address.personal)
 		save node
-		return node
+		node
 	}
 	
 	def addAccount = { user ->
@@ -123,8 +122,6 @@ class ContactsManager extends AbstractNodeManager {
 		else if (participant?.user) {
 			return participant.user
 		}
-		else {
-			StringUtils.parseName(message.from)
-		}
+		StringUtils.parseName(message.from)
 	}
 }

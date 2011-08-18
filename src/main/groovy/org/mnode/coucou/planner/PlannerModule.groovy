@@ -18,19 +18,19 @@
  */
 package org.mnode.coucou.planner
 
-import java.awt.Color;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
+import java.awt.Color
+import java.net.Authenticator
+import java.net.PasswordAuthentication
 
-import javax.swing.JOptionPane;
+import javax.swing.JOptionPane
 
-import org.jdesktop.swingx.JXErrorPane;
-import org.jdesktop.swingx.error.ErrorInfo;
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
-import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
-import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
+import org.jdesktop.swingx.JXErrorPane
+import org.jdesktop.swingx.error.ErrorInfo
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
 
 class PlannerModule {
 	
@@ -135,7 +135,7 @@ class PlannerModule {
 		}
 		else if (pathResult.class == CalendarStorePathResult) {
 			if (!pathResult.element.connected) {
-				final PasswordAuthentication pa = Authenticator.requestPasswordAuthentication(null, -1, null, "Password", null);
+				final PasswordAuthentication pa = Authenticator.requestPasswordAuthentication(null, -1, null, 'Password', null)
 				pathResult.element.connect(pa.userName, pa.password)
 			}
 			pathResult.element.collections.each {

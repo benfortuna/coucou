@@ -124,9 +124,9 @@ class Mailbox extends AbstractNodeManager {
 		
 		if (account.protocol == 'pop3') {
 			Properties props = new Properties()
-			props.setProperty("mail.store.protocol", account.protocol.string)
-			props.setProperty("mail.host", account.server.string)
-			props.setProperty("mail.user", account.address.string)
+			props.setProperty('mail.store.protocol', account.protocol.string)
+			props.setProperty('mail.host', account.server.string)
+			props.setProperty('mail.user', account.address.string)
 			Session session = Session.getInstance(props, passwordPrompt)
 			Store store = session.getStore(account.protocol.string)
 			store.connect()
@@ -157,18 +157,18 @@ class Mailbox extends AbstractNodeManager {
 				}
 				inbox.open(Folder.READ_WRITE)
 				
-				int interval = 100;
-				long start = -1, init = System.currentTimeMillis();
+				int interval = 100
+				long start = -1, init = System.currentTimeMillis()
 				for (int i = 1; i <= folder.getMessageCount();) {
-					int end = Math.min(interval + i - 1, folder.getMessageCount());
+					int end = Math.min(interval + i - 1, folder.getMessageCount())
 //					LOG.info("Appending messages: " + i + " - " + (end));
-					start = System.currentTimeMillis();
-					inbox.appendMessages(folder.getMessages(i, end));
+					start = System.currentTimeMillis()
+					inbox.appendMessages(folder.getMessages(i, end))
 //					LOG.info((1f / ((System.currentTimeMillis() - start) / (1000 * interval)))
 //							+ " message(s)/s. Est. completion: "
 //							+ DurationFormatUtils.formatDurationHMS((((System.currentTimeMillis() - init) / end)
 //									* (initFolder.getMessageCount() - end))));
-					i += interval;
+					i += interval
 				}
 
 //				inbox.appendMessages(messages)

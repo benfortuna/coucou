@@ -25,7 +25,6 @@ import javax.jcr.Repository
 import javax.jcr.Session
 import javax.jcr.SimpleCredentials
 
-import org.gcontracts.annotations.Invariant;
 import org.mnode.base.log.FormattedLogEntry
 import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
@@ -47,7 +46,7 @@ abstract class AbstractNodeManager {
 	
 	javax.jcr.Node rootNode
 	
-	AbstractNodeManager(Repository repository, String user, String nodeName) {
+	protected AbstractNodeManager(Repository repository, String user, String nodeName) {
 		session = repository.login(new SimpleCredentials(user, ''.toCharArray()))
 		rootNode = getNode(session.rootNode, nodeName)
 		save rootNode
@@ -65,7 +64,7 @@ abstract class AbstractNodeManager {
 				}
 			}
 		}
-		return rootNode."$path"
+		rootNode."$path"
 	}
 
 	void updateProperty(javax.jcr.Node aNode, String propertyName, Object value) {
@@ -89,6 +88,6 @@ abstract class AbstractNodeManager {
 		session.withLock(lock) {
 			parent.save()
 		}
-		return node
+		node
 	}
 }

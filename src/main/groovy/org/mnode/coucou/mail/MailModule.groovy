@@ -30,17 +30,17 @@ import javax.mail.Message
 import javax.mail.Session
 import javax.mail.Store
 import javax.mail.URLName
-import javax.mail.internet.MailDateFormat;
+import javax.mail.internet.MailDateFormat
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
-import javax.swing.text.html.StyleSheet;
+import javax.swing.text.html.StyleSheet
 
 import org.mnode.coucou.DateCellRenderer
-import org.mnode.coucou.layer.StatusLayerUI;
+import org.mnode.coucou.layer.StatusLayerUI
 import org.mnode.juicer.JuicerUtils
-import org.mnode.ousia.HTMLEditorKitExt;
-import org.mnode.ousia.HyperlinkBrowser;
-import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
+import org.mnode.ousia.HTMLEditorKitExt
+import org.mnode.ousia.HyperlinkBrowser
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
@@ -162,7 +162,7 @@ class MailModule {
 				layer(statusLayer) {
 					scrollPane {
 						def styleSheet = new StyleSheet()
-						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+						styleSheet.addRule('body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }')
 				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
 				//        styleSheet.addRule("img {border-width:0; }")
@@ -257,12 +257,12 @@ class MailModule {
 			}
 		}
 		else if (pathResult.class == FolderNodePathResult) {
-			if ((Folder.HOLDS_MESSAGES & pathResult.element.getProperty("type").long) > 0) {
+			if ((Folder.HOLDS_MESSAGES & pathResult.element.getProperty('type').long) > 0) {
 				// add messages..
 				for (messageNode in pathResult.element.messages.nodes) {
 					if (messageNode.isNodeType(NodeType.NT_UNSTRUCTURED)
-							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, "deleted")
-							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, "archived")) {
+							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, 'deleted')
+							&& !JuicerUtils.hasPropertyValue(messageNode.flags.values, 'archived')) {
 						
 						def item = [:]
 						if (messageNode.headers.hasProperty('Subject')) {
@@ -305,7 +305,7 @@ class MailModule {
 					}
 				}
 			}
-			else if ((Folder.HOLDS_FOLDERS & pathResult.element.getProperty("type").long) > 0) {
+			else if ((Folder.HOLDS_FOLDERS & pathResult.element.getProperty('type').long) > 0) {
 				// add folders..
 				for (folderNode in pathResult.element.folders.nodes) {
 					if (folderNode.isNodeType(NodeType.NT_UNSTRUCTURED)) {
@@ -325,22 +325,22 @@ class MailModule {
 		}
 		else {
 			if (!pathResult.element.isOpen()) {
-				pathResult.element.open(Folder.READ_ONLY);
+				pathResult.element.open(Folder.READ_ONLY)
 			}
 			
 			if ((pathResult.element.getType() & Folder.HOLDS_MESSAGES) > 0) {
-				final Message[] messages = pathResult.element.getMessages();
+				final Message[] messages = pathResult.element.getMessages()
 				
-				FetchProfile fp = new FetchProfile();
-				fp.add(FetchProfile.Item.ENVELOPE);
-				fp.add(FetchProfile.Item.FLAGS);
+				FetchProfile fp = new FetchProfile()
+				fp.add(FetchProfile.Item.ENVELOPE)
+				fp.add(FetchProfile.Item.FLAGS)
 	
-				pathResult.element.fetch(messages, fp);
+				pathResult.element.fetch(messages, fp)
 	/*				
 					List<Message> messageList = new ArrayList<Message>(Arrays.asList(messages));
 					for (Iterator<Message> iter = messageList.iterator(); iter.hasNext();) {
 						if (iter.next().isExpunged()) {
-							iter.remove();
+							iter.remove()
 						}
 					}
 	*/

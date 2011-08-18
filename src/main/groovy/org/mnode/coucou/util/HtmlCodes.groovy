@@ -18,14 +18,14 @@
  */
 package org.mnode.coucou.util
 
-import java.util.regex.Matcher;
-
 import groovy.util.logging.Slf4j
+
+import java.util.regex.Matcher
 
 @Slf4j
 class HtmlCodes {
 
-	static def codes = [:]
+	static codes = [:]
 	
 	static {
 		codes['nbsp'] = ' '
@@ -52,6 +52,6 @@ class HtmlCodes {
 				}
 			}
 		}
-		return input
+		input
 	}
 }
