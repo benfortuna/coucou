@@ -18,13 +18,13 @@
  */
 package org.mnode.coucou.search
 
-import java.awt.Color;
+import java.awt.Color
 
-import javax.jcr.PropertyType;
+import javax.jcr.PropertyType
 
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
-import org.mnode.coucou.util.HtmlCodes;
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+import org.mnode.coucou.util.HtmlCodes
 
 class SearchPathResultLoader {
 	

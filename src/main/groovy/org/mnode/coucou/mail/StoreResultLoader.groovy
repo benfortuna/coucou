@@ -18,11 +18,11 @@
  */
 package org.mnode.coucou.mail
 
-import java.awt.Color;
-import java.awt.Cursor;
+import java.awt.Color
 
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+
 
 class StoreResultLoader {
 

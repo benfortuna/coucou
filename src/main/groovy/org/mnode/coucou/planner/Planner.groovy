@@ -25,12 +25,11 @@ import net.fortuna.ical4j.connector.jcr.JcrCalendarCollection
 import net.fortuna.ical4j.connector.jcr.JcrCalendarStore
 import net.fortuna.ical4j.util.Calendars
 
-import org.apache.jackrabbit.util.Text;
+import org.apache.jackrabbit.util.Text
 import org.jcrom.Jcrom
 import org.mnode.base.log.LogAdapter
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
-import org.mnode.coucou.mail.Mailbox
 import org.slf4j.LoggerFactory
 
 /**

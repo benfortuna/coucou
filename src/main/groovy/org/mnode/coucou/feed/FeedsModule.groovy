@@ -18,30 +18,29 @@
  */
 package org.mnode.coucou.feed
 
-import groovy.xml.MarkupBuilder;
+import groovy.xml.MarkupBuilder
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.event.ActionListener;
+import java.awt.Color
+import java.awt.Desktop
+import java.awt.event.ActionListener
 
-import javax.jcr.PropertyType;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.text.html.StyleSheet;
+import javax.jcr.PropertyType
+import javax.swing.JFileChooser
+import javax.swing.JOptionPane
+import javax.swing.text.html.StyleSheet
 
-import org.jdesktop.swingx.JXErrorPane;
-import org.jdesktop.swingx.error.ErrorInfo;
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
-import org.mnode.coucou.layer.StatusLayerUI;
-import org.mnode.coucou.util.HtmlCodes;
-import org.mnode.ousia.HTMLEditorKitExt;
-import org.mnode.ousia.HyperlinkBrowser;
-import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback;
-import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind;
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
-import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
+import org.jdesktop.swingx.JXErrorPane
+import org.jdesktop.swingx.error.ErrorInfo
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+import org.mnode.coucou.layer.StatusLayerUI
+import org.mnode.coucou.util.HtmlCodes
+import org.mnode.ousia.HTMLEditorKitExt
+import org.mnode.ousia.HyperlinkBrowser
+import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
+import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
 
 class FeedsModule {
 
@@ -87,7 +86,7 @@ class FeedsModule {
 								doLater {
 									def error = new ErrorInfo('Import Error', 'An error occurred importing feeds - see log for details',
 										"<html><body>Error importing feeds: ${errorMap}</body></html>", null, null, null, null)
-									JXErrorPane.showDialog(frame, error);
+									JXErrorPane.showDialog(frame, error)
 								}
 							}
 		*/
@@ -135,7 +134,7 @@ class FeedsModule {
 								doLater {
 									ErrorInfo error = ['Error', "${e2.message}",
 										"<html><body>Error adding feed: ${e2}</body></html>", null, null, null, null]
-									JXErrorPane.showDialog(frame, error);
+									JXErrorPane.showDialog(frame, error)
 								}
 							}
 						}
@@ -241,7 +240,7 @@ class FeedsModule {
 				layer(statusLayer) {
 					scrollPane {
 						def styleSheet = new StyleSheet()
-						styleSheet.addRule("body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }")
+						styleSheet.addRule('body {background-color:#ffffff; color:#444b56; font-family:verdana,sans-serif; margin:8px; }')
 				//        styleSheet.addRule("a {text-decoration:underline; color:blue; }")
 				//                            styleSheet.addRule("a:hover {text-decoration:underline; }")
 				//        styleSheet.addRule("img {border-width:0; }")

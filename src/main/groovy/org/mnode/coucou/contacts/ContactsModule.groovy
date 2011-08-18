@@ -18,15 +18,14 @@
  */
 package org.mnode.coucou.contacts
 
-import java.awt.Color;
-import java.awt.Cursor;
+import java.awt.Color
 
-import javax.swing.JOptionPane;
+import javax.swing.JOptionPane
 
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
-import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
-import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
+import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
 
 class ContactsModule {
 	

@@ -18,11 +18,12 @@
  */
 package org.mnode.coucou.contacts
 
-import java.awt.Color;
-import java.awt.Cursor;
+import java.awt.Color
+import java.awt.Cursor
 
-import org.mnode.coucou.DateCellRenderer;
-import org.mnode.coucou.DefaultNodeTableCellRenderer;
+import org.mnode.coucou.DateCellRenderer
+import org.mnode.coucou.DefaultNodeTableCellRenderer
+
 
 class RosterEntryResultLoader {
 
