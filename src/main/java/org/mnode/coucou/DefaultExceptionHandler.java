@@ -21,6 +21,8 @@ package org.mnode.coucou;
 import java.awt.Component;
 import java.lang.Thread.UncaughtExceptionHandler;
 
+import javax.swing.SwingUtilities;
+
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
 import org.mnode.base.log.LogAdapter;
@@ -45,7 +47,12 @@ public class DefaultExceptionHandler implements UncaughtExceptionHandler {
 		final ErrorInfo error = new ErrorInfo(title, basicErrorMessage, detailedErrorMessage,
 				category, exception, null, null);
 		
-		JXErrorPane.showDialog(dialogOwner, error);
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				JXErrorPane.showDialog(dialogOwner, error);
+			}
+		});
 	}
 
 	/**
