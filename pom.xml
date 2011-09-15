@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.mnode.base</groupId>
 		<artifactId>base-parent</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
+		<version>0.0.3</version>
 	</parent>
 	<groupId>org.mnode.coucou</groupId>
 	<artifactId>coucou</artifactId>
@@ -245,7 +245,7 @@
 			</plugin>
 
 			<plugin>
-				<groupId>com.google.code.maven-license-plugin</groupId>
+				<groupId>com.mycila.maven-license-plugin</groupId>
 				<artifactId>maven-license-plugin</artifactId>
 			</plugin>
 
