@@ -243,10 +243,6 @@
 		</dependency>
 	</dependencies>
 	
-	<properties>
-	   <smack.version>3.2.1</smack.version>
-	</properties>
-	
 	<scm>
 		<connection>scm:hg:https://coucou.googlecode.com/hg/</connection>
 		<developerConnection>scm:hg:https://coucou.googlecode.com/hg/</developerConnection>
@@ -270,8 +266,12 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<archive>
+					    <manifest>
+					       <addClasspath>true</addClasspath>
+					    </manifest>
 						<manifestEntries>
 							<SplashScreen-Image>splash.png</SplashScreen-Image>
+                            <Main-Class>${mainClass}</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>
@@ -322,7 +322,7 @@
 						<!-- <outputFile>views.jnlp</outputFile> -->
 						<!-- used to automatically identify the jar containing the main class. -->
 						<!-- this is perhaps going to change -->
-						<mainClass>org.mnode.coucou.Coucou</mainClass>
+						<mainClass>${mainClass}</mainClass>
 						<j2seVersion>1.6+</j2seVersion>
 					</jnlp>
 
@@ -331,10 +331,10 @@
 					<!-- defining this will automatically sign the jar and its dependencies, 
 						if necessary -->
 					<sign>
-						<keystore>micronode</keystore>
-						<keypass>!modular1</keypass>
+						<keystore>${mnode.keystore}</keystore>
+						<keypass>${mnode.keypass}</keypass>
 						<!-- we need to override passwords easily from the command line. ${keypass} -->
-						<storepass>!modular1</storepass> <!-- ${storepass} -->
+						<storepass>${mnode.storepass}</storepass> <!-- ${storepass} -->
 						<!--storetype>fillme</storetype -->
 						<alias>webstart</alias>
 
@@ -412,4 +412,9 @@
             </plugin>
 		</plugins>
 	</build>
+	
+	<properties>
+		<mainClass>org.mnode.coucou.Coucou</mainClass>
+	    <smack.version>3.2.1</smack.version>
+	</properties>
 </project>
