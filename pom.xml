@@ -129,7 +129,7 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>net.fortuna.mstor</groupId>
+			<groupId>org.mnode.mstor</groupId>
 			<artifactId>mstor</artifactId>
 			<version>0.9.13-SNAPSHOT</version>
 		</dependency>
@@ -193,7 +193,7 @@
 		<dependency>
 			<groupId>org.mnode.juicer</groupId>
 			<artifactId>juicer</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.9-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.gpars</groupId>
