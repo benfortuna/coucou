@@ -45,17 +45,17 @@ class Planner extends AbstractNodeManager {
 	Planner(Repository repository, String nodeName) {
 		super(repository, 'planner', nodeName)
 		this.repository = repository
-		if (!rootNode.hasNode('accounts')) {
-			rootNode.addNode('accounts')
+		if (!baseNode.hasNode('accounts')) {
+			baseNode.addNode('accounts')
 		}
-		if (!rootNode.hasNode('collections')) {
-			rootNode.addNode('collections')
+		if (!baseNode.hasNode('collections')) {
+			baseNode.addNode('collections')
 		}
-		save rootNode
+		save baseNode
 	}
 	
 	def addCalendar = {url ->
-		JcrCalendarStore store = new JcrCalendarStore(new Jcrom(), repository, rootNode.path)
+		JcrCalendarStore store = new JcrCalendarStore(new Jcrom(), repository, baseNode.path)
 		store.connect 'planner', ''.toCharArray()
 		def calendar = Calendars.load(new URL(url))
 		def collectionName = calendar.properties.getProperty('X-WR-CALNAME').value
@@ -73,7 +73,7 @@ class Planner extends AbstractNodeManager {
 	}
 	
 	def addAccount = { url ->
-		def accountNode = getNode(rootNode.accounts, Text.escapeIllegalJcrChars(url), true)
+		def accountNode = getNode(baseNode.accounts, Text.escapeIllegalJcrChars(url), true)
 		accountNode.url = url
 		if (url =~ /^.*chandlerproject\.org$/) {
 			accountNode.type = 'chandler'
