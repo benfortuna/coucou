@@ -36,11 +36,11 @@ import javax.swing.JOptionPane
 import javax.swing.text.html.StyleSheet
 
 import org.mnode.coucou.DateCellRenderer
-import org.mnode.coucou.layer.StatusLayerUI
 import org.mnode.juicer.JuicerUtils
 import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
 import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
+import org.mnode.ousia.layer.StatusLayerUI
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
