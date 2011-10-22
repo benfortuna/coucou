@@ -20,6 +20,8 @@ package org.mnode.coucou
 
 import static org.jdesktop.swingx.JXStatusBar.Constraint.ResizeBehavior.*
 
+import groovy.transform.Field;
+
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
@@ -83,8 +85,7 @@ import org.mnode.coucou.feed.FeedNodePathResult
 import org.mnode.coucou.feed.FeedNodeResultLoader
 import org.mnode.coucou.feed.FeedsModule
 import org.mnode.coucou.feed.FeedsNodePathResult
-import org.mnode.coucou.layer.ProgressLayerUI
-import org.mnode.coucou.layer.StatusLayerUI
+import org.mnode.ousia.layer.StatusLayerUI
 import org.mnode.coucou.mail.DialogAuthenticator
 import org.mnode.coucou.mail.FolderNodePathResult;
 import org.mnode.coucou.mail.FolderPathResult
@@ -107,6 +108,7 @@ import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
 import org.mnode.ousia.OusiaBuilder
 import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
+import org.mnode.ousia.layer.ProgressLayerUI;
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbItem
 import org.pushingpixels.flamingo.api.bcb.BreadcrumbPathListener
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
@@ -185,6 +187,15 @@ Thread.start {
 
 File repositoryLocation = [System.getProperty("user.home"), ".coucou/data"]
 
+//@Field
+//MailModule mailModule
+//@Field
+//FeedsModule feedsModule
+//@Field
+//ContactsModule contactsModule
+//@Field
+//PlannerModule plannerModule
+
 ousia.edt {
 	
 	//	lookAndFeel('substance-nebula')
@@ -260,9 +271,9 @@ Planner planner = [repository, 'Planner']
 def actionContext = [:] as ObservableMap
 
 def dateGroup = { date ->
-	today = Calendar.instance
+	def today = Calendar.instance
 	today.clearTime()
-	yesterday = Calendar.instance
+	def yesterday = Calendar.instance
 	yesterday.add Calendar.DAY_OF_YEAR, -1
 	yesterday.clearTime()
 	if (date < yesterday.time) {
@@ -277,7 +288,7 @@ def dateGroup = { date ->
 }
 
 def dateGroupComparator = {a, b ->
-	groups = ['Today', 'Yesterday', 'Older Items']
+	def groups = ['Today', 'Yesterday', 'Older Items']
 	groups.indexOf(a) - groups.indexOf(b)
 } as Comparator
 
