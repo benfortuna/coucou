@@ -33,7 +33,7 @@ import org.mnode.base.log.LogEntry.Level
  * @author fortuna
  *
  */
-//@Invariant({ session && rootNode })
+//@Invariant({ session && baseNode })
 abstract class AbstractNodeManager {
 	
 	private Lock lock = new ReentrantLock()
@@ -42,36 +42,37 @@ abstract class AbstractNodeManager {
 	protected static LogEntry saving_node = new FormattedLogEntry(Level.Info, 'Saving node: %s')
 	protected static LogEntry unexpected_error = new FormattedLogEntry(Level.Error, 'An unexpected error has occurred')
 
-	Session session
+//	Session session
 	
-	javax.jcr.Node rootNode
+	javax.jcr.Node baseNode
 	
 	protected AbstractNodeManager(Repository repository, String user, String nodeName) {
-		session = repository.login(new SimpleCredentials(user, ''.toCharArray()))
-		rootNode = getNode(session.rootNode, nodeName)
-		save rootNode
+		Session session = repository.login(new SimpleCredentials(user, ''.toCharArray()))
+		session.save {
+			baseNode = getNode(rootNode, nodeName)
+		}
 	}
 
-	javax.jcr.Node getNode(javax.jcr.Node rootNode, String path, boolean referenceable = false) {
-		if (!rootNode.hasNode(path)) {
+	javax.jcr.Node getNode(javax.jcr.Node baseNode, String path, boolean referenceable = false) {
+		if (!baseNode.hasNode(path)) {
 			log.log adding_path, path
 			
 			// lock to avoid concurrent modification..
-			session.withLock(lock) {
-				def node = rootNode.addNode(path)
+			baseNode.session.withLock(lock) {
+				def node = baseNode.addNode(path)
 				if (referenceable) {
 					node.addMixin('mix:referenceable')
 				}
 			}
 		}
-		rootNode."$path"
+		baseNode."$path"
 	}
 
 	void updateProperty(javax.jcr.Node aNode, String propertyName, Object value) {
 		// XXX: value may be a boolean value itself..
 		if (value != null) {
 			// lock to avoid concurrent modification..
-			session.withLock(lock) {
+			aNode.session.withLock(lock) {
 				aNode."$propertyName" = value
 			}
 		}
@@ -85,8 +86,8 @@ abstract class AbstractNodeManager {
 			parent = parent.parent
 		}
 		// lock to avoid concurrent modification..
-		session.withLock(lock) {
-			parent.save()
+		node.session.withLock(lock) {
+			save()
 		}
 		node
 	}
