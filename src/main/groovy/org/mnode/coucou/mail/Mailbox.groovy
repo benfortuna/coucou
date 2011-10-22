@@ -57,14 +57,14 @@ class Mailbox extends AbstractNodeManager {
 	Mailbox(Repository repository, String nodeName) {
 		super(repository, 'mail', nodeName)
 		
-		if (!rootNode.hasNode('folders')) {
-			rootNode.addNode('folders')
+		if (!baseNode.hasNode('folders')) {
+			baseNode.addNode('folders')
 		}
-		if (!rootNode.hasNode('accounts')) {
-			rootNode.addNode('accounts')
+		if (!baseNode.hasNode('accounts')) {
+			baseNode.addNode('accounts')
 		}
 
-		save rootNode
+		save baseNode
 		
 		// email init..
 		def mailSessionProps = new Properties()
@@ -98,7 +98,7 @@ class Mailbox extends AbstractNodeManager {
 
 	void start() {
 	   updateThread.scheduleAtFixedRate({
-		   for (account in rootNode.accounts.nodes) {
+		   for (account in baseNode.accounts.nodes) {
 			   try {
 				   updateAccount account
 			   }
@@ -111,7 +111,7 @@ class Mailbox extends AbstractNodeManager {
 	}
 	
 	def addAccount = { emailAddress ->
-		def accountNode = getNode(rootNode.accounts, emailAddress, true)
+		def accountNode = getNode(baseNode.accounts, emailAddress, true)
 		accountNode.address = emailAddress
 		if (emailAddress =~ /^.*@gmail\.com$/) {
 			accountNode.protocol = 'imaps'

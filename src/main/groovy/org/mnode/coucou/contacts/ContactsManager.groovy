@@ -37,7 +37,7 @@ class ContactsManager extends AbstractNodeManager {
 	
 	private static LogAdapter log = new Slf4jAdapter(LoggerFactory.getLogger(ContactsManager))
 	
-//	javax.jcr.Node rootNode
+//	javax.jcr.Node baseNode
 	
 	List<XMPPConnection> xmppConnections = []
 	
@@ -46,26 +46,26 @@ class ContactsManager extends AbstractNodeManager {
 	def passwordPrompt
 	
 	ContactsManager(Repository repository, String nodeName) {
-//		if (!session.rootNode.hasNode(nodeName)) {
-//			rootNode = session.rootNode.addNode(nodeName)
+//		if (!session.baseNode.hasNode(nodeName)) {
+//			baseNode = session.rootNode.addNode(nodeName)
 //			session.rootNode.save()
 //		}
 //		else {
-//			rootNode = session.rootNode.getNode(nodeName)
+//			baseNode = session.rootNode.getNode(nodeName)
 //		}		
 		super(repository, 'contacts', nodeName)
-		if (!rootNode.hasNode('accounts')) {
-			rootNode.addNode('accounts')
+		if (!baseNode.hasNode('accounts')) {
+			baseNode.addNode('accounts')
 		}
-		if (!rootNode.hasNode('conversations')) {
-			rootNode.addNode('conversations')
+		if (!baseNode.hasNode('conversations')) {
+			baseNode.addNode('conversations')
 		}
 
-		save rootNode
+		save baseNode
 	}
 	
 	void connect() {
-		for (account in rootNode.accounts.nodes) {
+		for (account in baseNode.accounts.nodes) {
 			connect account
 		}
 	}
@@ -91,11 +91,11 @@ class ContactsManager extends AbstractNodeManager {
 	
 	javax.jcr.Node add(def address) {
 		def node
-		if (rootNode.hasNode(address.address)) {
-			node = rootNode.getNode(address.address)
+		if (baseNode.hasNode(address.address)) {
+			node = baseNode.getNode(address.address)
 		}
 		else {
-			node = rootNode.addNode(address.address)
+			node = baseNode.addNode(address.address)
 		}
 		node.setProperty('email', address.address)
 		node.setProperty('personal', address.personal)
@@ -104,7 +104,7 @@ class ContactsManager extends AbstractNodeManager {
 	}
 	
 	def addAccount = { user ->
-		def accountNode = getNode(rootNode.accounts, user, true)
+		def accountNode = getNode(baseNode.accounts, user, true)
 		accountNode.user = user
 		if (user =~ /^.*@gmail\.com$/) {
 			accountNode.host = 'talk.google.com'
