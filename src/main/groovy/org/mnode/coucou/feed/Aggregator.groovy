@@ -18,14 +18,13 @@
  */
 package org.mnode.coucou.feed
 
-import groovyx.gpars.GParsExecutorsPool
-import groovyx.gpars.GParsPool;
+import groovyx.gpars.GParsPool
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 import javax.jcr.Repository
-import javax.jcr.query.Query;
+import javax.jcr.query.Query
 
 import org.apache.jackrabbit.util.Text
 import org.mnode.base.log.FormattedLogEntry
@@ -34,10 +33,16 @@ import org.mnode.base.log.LogEntry
 import org.mnode.base.log.LogEntry.Level
 import org.mnode.base.log.adapter.Slf4jAdapter
 import org.mnode.coucou.AbstractNodeManager
-import org.mnode.juicer.JcrNodeCategory;
-import org.mnode.juicer.query.QueryBuilder;
+import org.mnode.ousia.layer.ProgressLayerUI
+import org.mnode.ousia.layer.ProgressLayerUI.ProgressMonitor;
 import org.slf4j.LoggerFactory
 
+import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.feed.synd.SyndLink
+import com.sun.syndication.fetcher.FeedFetcher;
+import com.sun.syndication.fetcher.impl.FeedFetcherCache;
+import com.sun.syndication.fetcher.impl.HashMapFeedInfoCache;
+import com.sun.syndication.fetcher.impl.HttpURLFeedFetcher;
 import com.sun.syndication.io.SyndFeedInput
 import com.sun.syndication.io.XmlReader
 
@@ -55,15 +60,15 @@ class Aggregator extends AbstractNodeManager {
 	
 	Query allFeedsQuery
 	
-	def progressMonitor;
+	ProgressLayerUI progressMonitor;
 		
 	Aggregator(Repository repository, String nodeName) {
 		super(repository, 'feeds', nodeName)
 		
 		updateThread = Executors.newSingleThreadScheduledExecutor()
 		
-		allFeedsQuery = session.workspace.queryManager.createQuery(
-			"SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, [${rootNode.path}]) AND all_nodes.url IS NOT NULL",
+		allFeedsQuery = baseNode.session.workspace.queryManager.createQuery(
+			"SELECT * FROM [nt:unstructured] AS all_nodes WHERE ISDESCENDANTNODE(all_nodes, [${baseNode.path}]) AND all_nodes.url IS NOT NULL",
 			Query.JCR_JQOM)
 	}
 	
@@ -71,23 +76,33 @@ class Aggregator extends AbstractNodeManager {
 	   updateThread.scheduleAtFixedRate({
 		   GParsPool.withPool {
 			   def asyncUpdateFeed = updateFeed.async()
+//			   def asyncUpdateFeed = { url, parent -> parent }.async()
 			   def allFeeds = allFeedsQuery.execute().nodes
-			   progressMonitor?.maximum = allFeeds.size
-			   progressMonitor?.progress = 0
+//			   progressMonitor?.maximum = allFeeds.size
+//			   progressMonitor?.progress = 0
+			   ProgressMonitor monitor = ['Updating Feeds', 0, allFeeds.size as int] 
+			   progressMonitor?.addMonitor(monitor)
+			   def futures = []
 			   for (node in allFeeds) {
 					log.log updating_feed, node.title.string
-					
+					futures << asyncUpdateFeed(node.url.string, node.parent)
+			   }
+			   
+//			   ParallelEnhancer.enhanceInstance(futures)
+			   futures.each {
 					try {
-						asyncUpdateFeed(node.url.string, node.parent)
+						def node = it.get()
+						log.info "Completed: $node.title.string"
 					}
 					catch (Exception e) {
 						log.log unexpected_error, e
 					}
 					finally {
 						// technically as this is async we haven't completed the update here, but the effect is good..
-						if (progressMonitor) {
-							progressMonitor.progress = progressMonitor.progress + 1
-						}
+//						if (progressMonitor) {
+//							progressMonitor.addProgress(1)
+//						}
+						monitor.addDelta(1)
 					}
 				}
 		   }
@@ -117,18 +132,48 @@ class Aggregator extends AbstractNodeManager {
 	
 	def loadOpml = { file ->
 		def opml = new XmlSlurper().parse(file)
-		GParsExecutorsPool.withPool(10) {
+		GParsPool.withPool(50) {
+			def feedUrls = [:]
 			opml.body.outline.each {
 				if (it.@xmlUrl.text()) {
-					updateFeed.callAsync(it.@xmlUrl.text())
+//					updateFeed.callAsync(it.@xmlUrl.text())
+					feedUrls[it.@xmlUrl.text()] = null
 				}
 				else {
-					def folder = getNode(rootNode, Text.escapeIllegalJcrChars(it.@title.text()))
-//					def folder = rootNode.addNode(it.@title.text())
-					save rootNode
+//					def folder = getNode(baseNode, Text.escapeIllegalJcrChars(it.@title.text()))
+//					save baseNode
+					def folder = it.@title.text()
 					it.outline.each {
-						updateFeed.callAsync(it.@xmlUrl.text(), folder)
+//						updateFeed.callAsync(it.@xmlUrl.text(), folder)
+						feedUrls[it.@xmlUrl.text()] = folder
 					}
+				}
+			}
+			ProgressMonitor monitor = ['Importing Feeds', 0, feedUrls.size()]
+			progressMonitor?.addMonitor(monitor)
+
+			def futures = []
+			def asyncUpdateFeed = updateFeed.async()
+			feedUrls.keySet().each {
+				if (feedUrls[it]) {
+					def folder = getNode(baseNode, Text.escapeIllegalJcrChars(feedUrls[it]))
+					futures << asyncUpdateFeed(it, folder)
+				}
+				else {
+					futures << asyncUpdateFeed(it)
+				}
+			}
+//			ParallelEnhancer.enhanceInstance(futures)
+		   futures.each {
+				try {
+					def node = it.get()
+					log.info "Completed: $node.title.string"
+				}
+				catch (Exception e) {
+					log.log unexpected_error, e
+				}
+				finally {
+					monitor.addDelta(1)
 				}
 			}
 		}
@@ -157,7 +202,7 @@ class Aggregator extends AbstractNodeManager {
 */
 	}
 	
-	def addFeed = { url, parent = rootNode ->
+	def addFeed = { url, parent = baseNode ->
 		 def feedNode = null
 		 def feedUrl
 		 try {
@@ -186,11 +231,15 @@ class Aggregator extends AbstractNodeManager {
 		 }
 	}
 	
-	def updateFeed = { url, parent = rootNode ->
+	def updateFeed = { url, parent = baseNode ->
 		// rome uses Thread.contextClassLoader..
 		Thread.currentThread().contextClassLoader = Aggregator.classLoader
 		
-		def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
+//		def feed = new SyndFeedInput().build(new XmlReader(new URL(url)))
+		FeedFetcherCache feedInfoCache = HashMapFeedInfoCache.instance
+		FeedFetcher feedFetcher = new HttpURLFeedFetcher(feedInfoCache)
+		SyndFeed feed = feedFetcher.retrieveFeed(new URL(url))
+		
 		javax.jcr.Node feedNode = getNode(parent, Text.escapeIllegalJcrChars(feed.title), true)
 		updateProperty(feedNode, 'url', url)
 		updateProperty(feedNode, 'title', feed?.title)
@@ -199,7 +248,12 @@ class Aggregator extends AbstractNodeManager {
 			updateProperty(feedNode, 'source', feed.link)
 		}
 		else if (!feed.links?.isEmpty()) {
-			updateProperty(feedNode, 'source', feed.links[0])
+			if (feed.links[0] instanceof SyndLink) {
+				updateProperty(feedNode, 'source', feed.links[0].href)
+			}
+			else {
+				updateProperty(feedNode, 'source', feed.links[0])
+			}
 		}
 
 		def now = Calendar.instance
@@ -270,13 +324,15 @@ class Aggregator extends AbstractNodeManager {
 	}
 
 	def markNodeRead = { node ->
-        node.setProperty('seen', true)
-        save node
+		node.session.save {
+			node.setProperty('seen', true)
+		}
 	}
 	
 	def delete = { node ->
-		def parent = node.parent
-		node.remove()
-		save parent
+		node.session.save {
+			def parent = node.parent
+			node.remove()
+		}
 	}
 }
