@@ -33,11 +33,11 @@ import org.jdesktop.swingx.JXErrorPane
 import org.jdesktop.swingx.error.ErrorInfo
 import org.mnode.coucou.DateCellRenderer
 import org.mnode.coucou.DefaultNodeTableCellRenderer
-import org.mnode.coucou.layer.StatusLayerUI
 import org.mnode.coucou.util.HtmlCodes
 import org.mnode.ousia.HTMLEditorKitExt
 import org.mnode.ousia.HyperlinkBrowser
 import org.mnode.ousia.HyperlinkBrowser.HyperlinkFeedback
+import org.mnode.ousia.layer.StatusLayerUI
 import org.pushingpixels.flamingo.api.common.JCommandButton.CommandButtonKind
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority
@@ -262,10 +262,10 @@ class FeedsModule {
 		ousia.doLater {
 			
 			for (i in 0..frame.ribbon.contextualTaskGroupCount - 1) {
-				if (frame.ribbon.getContextualTaskGroup(i).title == 'Feeds') {
+				if (frame.ribbon.getContextualTaskGroup(i).title == rs('Feeds')) {
 					frame.ribbon.setVisible frame.ribbon.getContextualTaskGroup(i), true
 					
-					if (breadcrumb.model.items[-1].data.name == 'Feeds') {
+					if (breadcrumb.model.items[-1].data.name == rs('Feeds')) {
 						frame.ribbon.selectedTask = feedRibbonTask
 					}
 				}
